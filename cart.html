@@ -1,84 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Your Cart</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cart</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 30px;
-      background: #f0f0f0;
+      background-color: #f0f4f8;
+      margin: 0;
     }
-    h1 {
+
+    header {
+      background-color: #1a202c;
+      color: white;
+      padding: 1rem;
       text-align: center;
     }
-    .cart-container {
-      max-width: 600px;
-      margin: 0 auto;
+
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
       background: white;
-      padding: 20px;
+      padding: 2rem;
       border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .item {
+
+    h2 {
+      text-align: center;
+    }
+
+    .cart-item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.5rem;
     }
+
+    .total {
+      font-weight: bold;
+      text-align: right;
+    }
+
     .actions {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 1.5rem;
     }
-    button {
-      padding: 10px 16px;
-      margin: 5px;
+
+    .actions button {
+      padding: 0.6rem 1.2rem;
+      margin: 0 0.5rem;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-    .clear { background-color: #f44336; color: white; }
-    .checkout { background-color: #4CAF50; color: white; }
+
+    .clear-btn {
+      background-color: #e53e3e;
+      color: white;
+    }
+
+    .checkout-btn {
+      background-color: #38a169;
+      color: white;
+    }
+
+    .back-btn {
+      background-color: #2b6cb0;
+      color: white;
+      text-decoration: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 5px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
-  <h1>Your Cart</h1>
-  <div class="cart-container">
+  <header>
+    <h1>Your Cart</h1>
+  </header>
+
+  <div class="container">
+    <a href="index.html" class="back-btn">← Back to Store</a>
+
     <div id="cart-items"></div>
-    <p><strong>Total:</strong> $<span id="total">0.00</span></p>
+    <div class="total" id="total">Total: $0.00</div>
+
     <div class="actions">
-      <button class="clear" onclick="clearCart()">Clear Cart</button>
-      <button class="checkout" onclick="checkout()">Checkout</button>
+      <button class="clear-btn" onclick="clearCart()">Clear Cart</button>
+      <button class="checkout-btn" onclick="checkout()">Checkout</button>
     </div>
   </div>
 
   <script>
-    function loadCart() {
-      const cart = JSON.parse(localStorage.getItem('myStoreCart') || '[]');
-      const container = document.getElementById('cart-items');
-      const totalEl = document.getElementById('total');
-      container.innerHTML = '';
-      let total = 0;
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const cartItemsDiv = document.getElementById("cart-items");
+    const totalDiv = document.getElementById("total");
 
+    if (cart.length === 0) {
+      cartItemsDiv.innerHTML = "<p>Your cart is empty.</p>";
+    } else {
+      let total = 0;
       cart.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `<span>${item.name} x${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span>`;
-        container.appendChild(div);
         total += item.price * item.quantity;
+
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <span>${item.name} x ${item.quantity}</span>
+          <span>$${(item.price * item.quantity).toFixed(2)}</span>
+        `;
+        cartItemsDiv.appendChild(div);
       });
 
-      totalEl.textContent = total.toFixed(2);
+      totalDiv.textContent = `Total: $${total.toFixed(2)}`;
     }
 
     function clearCart() {
-      localStorage.removeItem('myStoreCart');
-      loadCart();
+      localStorage.removeItem("cart");
+      location.reload();
     }
 
     function checkout() {
-      alert('Checkout feature coming soon!');
+      alert("Checkout is not implemented.");
     }
-
-    loadCart();
   </script>
 </body>
 </html>
+
