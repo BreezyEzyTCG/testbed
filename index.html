@@ -37,6 +37,18 @@
       opacity: 0.7;
     }
 
+    .controls {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .controls input, .controls select {
+      padding: 0.5rem;
+      margin: 0 0.5rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
     .card-container {
       display: flex;
       flex-wrap: wrap;
@@ -92,11 +104,21 @@
     <a class="cart-link" href="cart.html">🛒 Cart</a>
   </header>
 
+  <!-- Filters -->
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+    <select id="category-filter" onchange="applyFilters()">
+      <option value="all">All Categories</option>
+    </select>
+  </div>
+
   <div class="card-container"></div>
 
   <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
 
   <script>
+    let allProducts = [];
+
     function showToast(message) {
       const toast = document.getElementById("toast");
       toast.innerText = message;
@@ -106,13 +128,13 @@
       }, 2000);
     }
 
-    function addToCart(name, price, image) {
+    function addToCart(name, price, image_url) {
       let cart = JSON.parse(localStorage.getItem("cart")) || [];
       const existing = cart.find(item => item.name === name);
       if (existing) {
         existing.quantity += 1;
       } else {
-        cart.push({ name, price, quantity: 1, image });
+        cart.push({ name, price, quantity: 1, image: image_url });
       }
       localStorage.setItem("cart", JSON.stringify(cart));
       showToast(`${name} added to cart!`);
@@ -126,7 +148,7 @@
         const rows = data.trim().split("\n").map(row => row.split(","));
         const headers = rows.shift().map(h => h.trim().toLowerCase());
 
-        const products = rows.map(row => {
+        allProducts = rows.map(row => {
           const obj = {};
           row.forEach((cell, i) => {
             const key = headers[i];
@@ -135,7 +157,8 @@
           return obj;
         });
 
-        renderStore(products);
+        populateCategoryDropdown();
+        renderStore(allProducts);
       } catch (error) {
         console.error("Failed to load inventory:", error);
         document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
@@ -153,19 +176,44 @@
         const card = document.createElement("div");
         card.classList.add("card");
         card.innerHTML = `
-          <img src="${product.image}" alt="${product.name}" />
+          <img src="${product.image_url}" alt="${product.name}" />
           <h3>${product.name}</h3>
           <p>Condition: NM</p>
           <p>$${product.price.toFixed(2)}</p>
           <p><strong>Stock:</strong> ${product.stock}</p>
-          <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image}')">${buttonText}</button>
+          <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
         `;
         container.appendChild(card);
       });
+    }
+
+    function populateCategoryDropdown() {
+      const select = document.getElementById("category-filter");
+      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+      categories.sort().forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const keyword = document.getElementById("search").value.toLowerCase();
+      const selectedCategory = document.getElementById("category-filter").value;
+
+      const filtered = allProducts.filter(p => {
+        const matchName = p.name.toLowerCase().includes(keyword);
+        const matchCategory = selectedCategory === "all" || p.category === selectedCategory;
+        return matchName && matchCategory;
+      });
+
+      renderStore(filtered);
     }
 
     fetchInventoryFromSheet();
   </script>
 </body>
 </html>
+
 
