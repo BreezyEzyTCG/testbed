@@ -92,19 +92,35 @@
   </div>
 
   <script>
-    function addToCart(name, price) {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  function addToCart(name, price) {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  const existing = cart.find(item => item.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, quantity: 1 });
+    const existing = cart.find(item => item.name === name);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ name, price, quantity: 1 });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+
+    // ✅ Show toast after item is added
+    showToast(`${name} added to cart!`);
   }
 
-  localStorage.setItem("cart", JSON.stringify(cart));
-  alert(`${name} added to cart!`);
-}
-  </script>
+  // ✅ Move this outside the addToCart function
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.innerText = message;
+    toast.style.display = "block";
+    setTimeout(() => {
+      toast.style.display = "none";
+    }, 2000);
+  }
+</script>
+
+
+  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px; border-radius:5px; z-index:1000;"></div>
+
 </body>
 </html>
