@@ -85,5 +85,54 @@
 <body>
   <header>
     <h1>My Pokémon Card Store</h1>
-    <a class="cart-link" href="car
+    <a class="cart-link" href="cart.html">🛒 Cart</a>
+  </header>
+
+  <!-- ✅ Use corrected container class -->
+  <div class="card-container">
+    <div class="card">
+      <img src="assets/images/sunflora1.png" alt="Sunflora Vintage 1" />
+      <h3>Sunflora Vintage 1</h3>
+      <p>Condition: NM</p>
+      <p>$2.00</p>
+      <button onclick="addToCart('Sunflora Vintage 1', 2.00)">Add to Cart</button>
+    </div>
+    <div class="card">
+      <img src="assets/images/sunflora2.png" alt="Sunflora Vintage 2" />
+      <h3>Sunflora Vintage 2</h3>
+      <p>Condition: NM</p>
+      <p>$2.00</p>
+      <button onclick="addToCart('Sunflora Vintage 2', 2.00)">Add to Cart</button>
+    </div>
+  </div>
+
+  <!-- ✅ Toast element -->
+  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
+
+  <!-- ✅ Scripts -->
+  <script>
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 2000);
+    }
+
+    function addToCart(name, price) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const existing = cart.find(item => item.name === name);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ name, price, quantity: 1 });
+      }
+      localStorage.setItem("cart", JSON.stringify(cart));
+      showToast(`${name} added to cart!`);
+    }
+  </script>
+</body>
+</html>
+
 
