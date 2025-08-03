@@ -1,100 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pokémon Card Store</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
       margin: 0;
-      padding: 20px;
+      background-color: #f0f4f8;
     }
     header {
-      background-color: #3b4cca;
+      background-color: #1a202c;
       color: white;
-      padding: 15px 30px;
+      padding: 1rem;
       text-align: center;
-      font-size: 24px;
+      position: sticky;
+      top: 0;
     }
     .cart-link {
       position: absolute;
-      top: 20px;
-      right: 30px;
-      background: white;
-      color: #3b4cca;
-      padding: 8px 12px;
-      border-radius: 4px;
+      right: 1rem;
+      top: 1rem;
+      color: white;
       text-decoration: none;
-      font-weight: bold;
+      background: #2d3748;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
     }
-    .store {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      margin-top: 40px;
-      flex-wrap: wrap;
+    .store-container {
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: auto;
     }
-    .product {
-      background: white;
+    .card {
+      background-color: white;
       border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      width: 250px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
       text-align: center;
     }
-    .product img {
+    .card img {
       width: 100%;
-      border-radius: 4px;
+      height: auto;
+      border-radius: 5px;
     }
-    .product h3 {
-      margin: 10px 0 5px;
+    .card h3 {
+      margin: 0.5rem 0 0.2rem;
     }
-    .product button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: #3b4cca;
+    .card p {
+      margin: 0.2rem 0;
+    }
+    button {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #2b6cb0;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
+    button:hover {
+      background-color: #2c5282;
+    }
   </style>
 </head>
 <body>
   <header>
-    Pokémon Card Store
-    <a href="cart.html" class="cart-link">🛒 Cart</a>
+    <h1>My Pokémon Card Store</h1>
+    <a class="cart-link" href="cart.html">🛒 Cart</a>
   </header>
-  <div class="store">
-    <div class="product">
-      <img src="assets/images/sunflora1.jpg" alt="Sunflora 1">
+
+  <div class="store-container">
+    <div class="card">
+      <img src="assets/images/sunflora1.jpg" alt="Sunflora Vintage 1" />
       <h3>Sunflora Vintage 1</h3>
       <p>Condition: NM</p>
       <p>$2.00</p>
-      <button onclick="addToCart('1', 'Sunflora Vintage 1', 2.00)">Add to Cart</button>
+      <button onclick="addToCart('Sunflora Vintage 1', 2.00)">Add to Cart</button>
     </div>
-    <div class="product">
-      <img src="assets/images/sunflora2.jpg" alt="Sunflora 2">
+    <div class="card">
+      <img src="assets/images/sunflora2.jpg" alt="Sunflora Vintage 2" />
       <h3>Sunflora Vintage 2</h3>
       <p>Condition: NM</p>
       <p>$2.00</p>
-      <button onclick="addToCart('2', 'Sunflora Vintage 2', 2.00)">Add to Cart</button>
+      <button onclick="addToCart('Sunflora Vintage 2', 2.00)">Add to Cart</button>
     </div>
   </div>
 
   <script>
-    function addToCart(id, name, price) {
-      let cart = JSON.parse(localStorage.getItem('myStoreCart') || '[]');
-      const existing = cart.find(item => item.id === id);
+    function addToCart(product, price) {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const existing = cart.find(item => item.product === product);
       if (existing) {
-        existing.quantity += 1;
+        existing.qty += 1;
       } else {
-        cart.push({ id, name, price, quantity: 1 });
+        cart.push({ product, price, qty: 1 });
       }
-      localStorage.setItem('myStoreCart', JSON.stringify(cart));
-      alert(`${name} has been added to your cart.`);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      alert(`${product} added to cart!`);
     }
   </script>
 </body>
 </html>
+
