@@ -30,13 +30,13 @@
       padding: 0.5rem 1rem;
       border-radius: 5px;
     }
-    button:disabled {
-  background-color: #aaa;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
 
-    /* Layout fix */
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
     .card-container {
       display: flex;
       flex-wrap: wrap;
@@ -86,92 +86,86 @@
     }
   </style>
 </head>
-
 <body>
   <header>
     <h1>My Pokémon Card Store</h1>
     <a class="cart-link" href="cart.html">🛒 Cart</a>
   </header>
 
-<!-- ✅ Fix here -->
-<div class="card-container"></div>
+  <div class="card-container"></div>
 
-  <!-- ✅ Toast element -->
   <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
 
-  <!-- ✅ Scripts -->
   <script>
-  function showToast(message) {
-    const toast = document.getElementById("toast");
-    toast.innerText = message;
-    toast.style.display = "block";
-    setTimeout(() => {
-      toast.style.display = "none";
-    }, 2000);
-  }
-
-  function addToCart(name, price, image) {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-    const existing = cart.find(item => item.name === name);
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      cart.push({ name, price, quantity: 1, image });
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 2000);
     }
 
-    localStorage.setItem("cart", JSON.stringify(cart));
-    showToast(`${name} added to cart!`);
-  }
-</script>
-  <script>
-async function fetchInventoryFromSheet() {
-  const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pubhtml"; // ⬅️ Replace this
-  const response = await fetch(sheetURL);
-  const data = await response.text();
+    function addToCart(name, price, image) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const existing = cart.find(item => item.name === name);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ name, price, quantity: 1, image });
+      }
+      localStorage.setItem("cart", JSON.stringify(cart));
+      showToast(`${name} added to cart!`);
+    }
 
-  const rows = data.split("\n").map(row => row.split(","));
-  const headers = rows.shift();
+    async function fetchInventoryFromSheet() {
+      const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+      try {
+        const response = await fetch(sheetURL);
+        const data = await response.text();
+        const rows = data.trim().split("\n").map(row => row.split(","));
+        const headers = rows.shift().map(h => h.trim().toLowerCase());
 
-  const products = rows.map(row => {
-    const obj = {};
-    row.forEach((cell, i) => {
-      const key = headers[i].trim().toLowerCase();
-      obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : cell;
-    });
-    return obj;
-  });
+        const products = rows.map(row => {
+          const obj = {};
+          row.forEach((cell, i) => {
+            const key = headers[i];
+            obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : cell.trim();
+          });
+          return obj;
+        });
 
-  renderStore(products);
-}
+        renderStore(products);
+      } catch (error) {
+        console.error("Failed to load inventory:", error);
+        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+      }
+    }
 
-function renderStore(products) {
-  const container = document.querySelector(".card-container");
-  container.innerHTML = "";
+    function renderStore(products) {
+      const container = document.querySelector(".card-container");
+      container.innerHTML = "";
 
-  products.forEach(product => {
-    const disabled = product.stock <= 0 ? "disabled" : "";
-    const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+      products.forEach(product => {
+        const disabled = product.stock <= 0 ? "disabled" : "";
+        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
 
-    const card = document.createElement("div");
-    card.classList.add("card");
-    card.innerHTML = `
-      <img src="${product.image}" alt="${product.name}" />
-      <h3>${product.name}</h3>
-      <p>Condition: NM</p>
-      <p>$${product.price.toFixed(2)}</p>
-      <p><strong>Stock:</strong> ${product.stock}</p>
-      <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image}')">${buttonText}</button>
-    `;
-    container.appendChild(card);
-  });
-}
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p>Condition: NM</p>
+          <p>$${product.price.toFixed(2)}</p>
+          <p><strong>Stock:</strong> ${product.stock}</p>
+          <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image}')">${buttonText}</button>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-// Auto-run
-fetchInventoryFromSheet();
-</script>
-
+    fetchInventoryFromSheet();
+  </script>
 </body>
 </html>
-
 
