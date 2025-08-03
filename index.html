@@ -1,28 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My Card Store</title>
+  <meta charset="UTF-8">
+  <title>Pokémon Card Store</title>
   <style>
-    /* inline styles here */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    header {
+      background-color: #3b4cca;
+      color: white;
+      padding: 15px 30px;
+      text-align: center;
+      font-size: 24px;
+    }
+    .cart-link {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      background: white;
+      color: #3b4cca;
+      padding: 8px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .store {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+    .product {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 250px;
+      text-align: center;
+    }
+    .product img {
+      width: 100%;
+      border-radius: 4px;
+    }
+    .product h3 {
+      margin: 10px 0 5px;
+    }
+    .product button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #3b4cca;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>Welcome to My Card Store</h1>
-  <div class="product-card">
-    <h3>Sunflora Vintage 1</h3>
-    <p>$2.00</p>
-    <button onclick="addToCart('1', 'Sunflora Vintage 1', 2.00)">Add to Cart</button>
+  <header>
+    Pokémon Card Store
+    <a href="cart.html" class="cart-link">🛒 Cart</a>
+  </header>
+  <div class="store">
+    <div class="product">
+      <img src="assets/images/sunflora1.jpg" alt="Sunflora 1">
+      <h3>Sunflora Vintage 1</h3>
+      <p>Condition: NM</p>
+      <p>$2.00</p>
+      <button onclick="addToCart('1', 'Sunflora Vintage 1', 2.00)">Add to Cart</button>
+    </div>
+    <div class="product">
+      <img src="assets/images/sunflora2.jpg" alt="Sunflora 2">
+      <h3>Sunflora Vintage 2</h3>
+      <p>Condition: NM</p>
+      <p>$2.00</p>
+      <button onclick="addToCart('2', 'Sunflora Vintage 2', 2.00)">Add to Cart</button>
+    </div>
   </div>
 
   <script>
-    // localStorage cart logic
     function addToCart(id, name, price) {
       let cart = JSON.parse(localStorage.getItem('myStoreCart') || '[]');
       const existing = cart.find(item => item.id === id);
-      if (existing) existing.quantity += 1;
-      else cart.push({ id, name, price, quantity: 1 });
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ id, name, price, quantity: 1 });
+      }
       localStorage.setItem('myStoreCart', JSON.stringify(cart));
-      alert(`${name} added to cart!`);
+      alert(`${name} has been added to your cart.`);
     }
   </script>
 </body>
