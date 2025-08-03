@@ -132,7 +132,7 @@
 
       cart.forEach(item => {
         const row = document.createElement("tr");
-        const imagePath = `assets/images/${item.name.toLowerCase().replace(/\s+/g, '')}.png`;
+        const imagePath = item.image || "assets/images/default.png";
         const lineTotal = (item.price * item.quantity).toFixed(2);
         total += parseFloat(lineTotal);
 
