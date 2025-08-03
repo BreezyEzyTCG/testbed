@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Cart</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f0f0f0;
+    }
+    h1 {
+      text-align: center;
+    }
+    .cart-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .clear { background-color: #f44336; color: white; }
+    .checkout { background-color: #4CAF50; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Your Cart</h1>
+  <div class="cart-container">
+    <div id="cart-items"></div>
+    <p><strong>Total:</strong> $<span id="total">0.00</span></p>
+    <div class="actions">
+      <button class="clear" onclick="clearCart()">Clear Cart</button>
+      <button class="checkout" onclick="checkout()">Checkout</button>
+    </div>
+  </div>
+
+  <script>
+    function loadCart() {
+      const cart = JSON.parse(localStorage.getItem('myStoreCart') || '[]');
+      const container = document.getElementById('cart-items');
+      const totalEl = document.getElementById('total');
+      container.innerHTML = '';
+      let total = 0;
+
+      cart.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `<span>${item.name} x${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span>`;
+        container.appendChild(div);
+        total += item.price * item.quantity;
+      });
+
+      totalEl.textContent = total.toFixed(2);
+    }
+
+    function clearCart() {
+      localStorage.removeItem('myStoreCart');
+      loadCart();
+    }
+
+    function checkout() {
+      alert('Checkout feature coming soon!');
+    }
+
+    loadCart();
+  </script>
+</body>
+</html>
