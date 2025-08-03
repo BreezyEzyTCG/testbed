@@ -30,6 +30,11 @@
       padding: 0.5rem 1rem;
       border-radius: 5px;
     }
+    button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 
     /* Layout fix */
     .card-container {
@@ -89,23 +94,7 @@
   </header>
 
 <!-- ✅ Fix here -->
-<div class="card-container">
-  <div class="card">
-    <img src="assets/images/sunflora1.png" alt="Sunflora Vintage 1" />
-    <h3>Sunflora Vintage 1</h3>
-    <p>Condition: NM</p>
-    <p>$2.00</p>
-    <button onclick="addToCart('Sunflora Vintage 1', 2.00, 'assets/images/sunflora1.png')">Add to Cart</button>
-  </div>
-  <div class="card">
-    <img src="assets/images/sunflora2.png" alt="Sunflora Vintage 2" />
-    <h3>Sunflora Vintage 2</h3>
-    <p>Condition: NM</p>
-    <p>$2.00</p>
-    <button onclick="addToCart('Sunflora Vintage 2', 2.00, 'assets/images/sunflora2.png')">Add to Cart</button>
-  </div>
-</div>
-
+<div class="card-container"></div>
 
   <!-- ✅ Toast element -->
   <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
@@ -135,6 +124,53 @@
     showToast(`${name} added to cart!`);
   }
 </script>
+  <script>
+async function fetchInventoryFromSheet() {
+  const sheetURL = "https://docs.google.com/spreadsheets/d/e/your-sheet-id/pub?output=csv"; // ⬅️ Replace this
+  const response = await fetch(sheetURL);
+  const data = await response.text();
+
+  const rows = data.split("\n").map(row => row.split(","));
+  const headers = rows.shift();
+
+  const products = rows.map(row => {
+    const obj = {};
+    row.forEach((cell, i) => {
+      const key = headers[i].trim().toLowerCase();
+      obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : cell;
+    });
+    return obj;
+  });
+
+  renderStore(products);
+}
+
+function renderStore(products) {
+  const container = document.querySelector(".card-container");
+  container.innerHTML = "";
+
+  products.forEach(product => {
+    const disabled = product.stock <= 0 ? "disabled" : "";
+    const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.innerHTML = `
+      <img src="${product.image}" alt="${product.name}" />
+      <h3>${product.name}</h3>
+      <p>Condition: NM</p>
+      <p>$${product.price.toFixed(2)}</p>
+      <p><strong>Stock:</strong> ${product.stock}</p>
+      <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image}')">${buttonText}</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Auto-run
+fetchInventoryFromSheet();
+</script>
+
 </body>
 </html>
 
