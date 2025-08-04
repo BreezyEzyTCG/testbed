@@ -176,13 +176,13 @@
         const card = document.createElement("div");
         card.classList.add("card");
         card.innerHTML = `
-          <img src="${product.image_url}" alt="${product.name}" />
-          <h3>${product.name}</h3>
-          <p>Condition: NM</p>
-          <p>$${product.price.toFixed(2)}</p>
-          <p><strong>Stock:</strong> ${product.stock}</p>
-          <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
-        `;
+  <img src="${product.image_url}" alt="${product.name}" />
+  <h3>${product.name}</h3>
+  <p>Condition: ${product.condition || "N/A"}</p>
+  <p>$${product.price.toFixed(2)}</p>
+  <p><strong>Stock:</strong> ${product.stock}</p>
+  <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+`;
         container.appendChild(card);
       });
     }
