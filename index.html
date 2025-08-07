@@ -183,87 +183,42 @@
     }
 
     /* --- List View Styling --- */
-.card.list-view {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  text-align: left;
-  padding: 1rem;
-  border: 1px solid #ccc;
-  background: white;
-  border-radius: 10px;
-  flex-wrap: wrap;
-}
+    .card.list-view {
+      flex-direction: row;
+      text-align: left;
+      align-items: center;
+      gap: 1rem;
+      border: 1px solid #ccc;
+    }
 
-.card.list-view img {
-  flex-shrink: 0;
-  width: 120px;
-  height: auto;
-  object-fit: cover;
-  border-radius: 8px;
-}
+    .card.list-view img {
+      width: 120px;
+      height: auto;
+      object-fit: cover;
+    }
 
-.card.list-view .product-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
+    .card.list-view .product-details {
+      flex: 1;
+    }
 
-.card.list-view .product-details h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
+    .card.list-view .product-details h3 {
+      margin: 0 0 0.3rem 0;
+    }
 
-.card.list-view .series-name,
-.card.list-view .condition,
-.card.list-view .stock,
-.card.list-view .price {
-  font-size: 0.9rem;
-  margin: 0.25rem 0;
-}
+    .card.list-view .product-details p {
+      margin: 0.2rem 0;
+    }
 
-.card.list-view .product-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
+    .card.list-view button {
+      align-self: flex-start;
+    }
 
-.card.list-view .product-actions button {
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  flex-grow: 1;
-  min-width: 120px;
-  text-align: center;
-}
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
 
-/* --- Mobile-specific adjustments for list view --- */
-@media screen and (max-width: 500px) {
-  .card.list-view {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .card.list-view img {
-    width: 100%;
-    max-width: 240px;
-  }
-
-  .card.list-view .product-details {
-    align-items: center;
-  }
-
-  .card.list-view .product-actions {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .card.list-view .product-actions button {
-    flex: 1 1 100%;
-  }
-}
       .cart-link {
         position: static;
         display: block;
@@ -369,16 +324,18 @@
         card.classList.add("card");
         if (isListView) card.classList.add("list-view");
 
-        card.innerHTML = isListView ? `
-          <img src="${product.image_url}" alt="${product.name}" />
-          <div class="product-details">
-            <h3>${product.name}</h3>
-            <p class="series-name">${product["series name"] || ""}</p>
-            <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-            <p class="price"><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-            <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
-          </div>
-          <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+        card.innerHTML = `
+  <img src="${product.image_url}" alt="${product.name}" />
+  <div class="product-details">
+    <h3>${product.name}</h3>
+    <p class="series-name">${product["series name"] || ""}</p>
+    <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
+    <p class="price"><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+    <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+    <div class="product-actions">
+      <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+    </div>
+  </div>
         ` : `
           <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
           <img src="${product.image_url}" alt="${product.name}" />
