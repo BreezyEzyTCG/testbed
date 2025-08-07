@@ -217,8 +217,8 @@
   <img src="${product.image_url}" alt="${product.name}" />
   <h3>${product.name}</h3>
   <p class="series-name">${product["series name"] || ""}</p>
-  <p class="condition">Condition: ${product.condition || "N/A"}</p>
   <p>$${product.price.toFixed(2)}</p>
+  <p class="condition">Condition: ${product.condition || "N/A"}</p>
   <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
   <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
 `;
