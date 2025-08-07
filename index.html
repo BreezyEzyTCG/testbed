@@ -113,26 +113,17 @@
 
     button:hover {
       background-color: #2c5282;
-    }
-    .ribbon {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: #e53e3e; /* red for sale */
-  color: white;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  border-radius: 4px;
-  z-index: 1;
-}
 
-.ribbon.popular {
-  background-color: #3182ce; /* blue for popular */
-}
-.card {
-  position: relative; /* so ribbon can anchor properly */
-}
+    <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
+  <img src="${product.image_url}" alt="${product.name}" />
+  <h3>${product.name}</h3>
+  <p class="series-name">${product["series name"] || ""}</p>
+  <p class="condition">Condition: ${product.condition || "N/A"}</p>
+  <p>$${product.price.toFixed(2)}</p>
+  <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+  <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>   
+    }
+  
   </style>
 </head>
 <body>
@@ -213,19 +204,17 @@
         const card = document.createElement("div");
         card.classList.add("card");
        card.innerHTML = `
-  ${product.tag ? `<div class="ribbon ${product.tag === 'popular' ? 'popular' : ''}">${product.tag.charAt(0).toUpperCase() + product.tag.slice(1)}</div>` : ''}
+   <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
   <img src="${product.image_url}" alt="${product.name}" />
   <h3>${product.name}</h3>
   <p class="series-name">${product["series name"] || ""}</p>
-  <p>$${product.price.toFixed(2)}</p>
   <p class="condition">Condition: ${product.condition || "N/A"}</p>
+  <p>$${product.price.toFixed(2)}</p>
   <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
   <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
-`;
         container.appendChild(card);
       });
-    }
-
+      
     function populateCategoryDropdown() {
       const select = document.getElementById("category-filter");
       const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
