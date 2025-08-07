@@ -111,19 +111,38 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #2c5282;
+   button:hover {
+  background-color: #2c5282;
+}
 
-    <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
-  <img src="${product.image_url}" alt="${product.name}" />
-  <h3>${product.name}</h3>
-  <p class="series-name">${product["series name"] || ""}</p>
-  <p class="condition">Condition: ${product.condition || "N/A"}</p>
-  <p>$${product.price.toFixed(2)}</p>
-  <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
-  <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>   
-    }
-  
+.badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  z-index: 1;
+  text-transform: uppercase;
+}
+
+.badge.sale {
+  background-color: #e53e3e; /* red */
+}
+.badge.popular {
+  background-color: #d69e2e; /* yellow */
+  color: black;
+}
+.badge.new {
+  background-color: #805ad5; /* purple */
+}
+.card {
+  position: relative; /* Required for badge positioning */
+}
+
+
   </style>
 </head>
 <body>
@@ -194,25 +213,29 @@
     }
 
     function renderStore(products) {
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
+      function renderStore(products) {
+  const container = document.querySelector(".card-container");
+  container.innerHTML = "";
 
-      products.forEach(product => {
-        const disabled = product.stock <= 0 ? "disabled" : "";
-        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+  products.forEach(product => {
+    const disabled = product.stock <= 0 ? "disabled" : "";
+    const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
 
-        const card = document.createElement("div");
-        card.classList.add("card");
-       card.innerHTML = `
-   <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
-  <img src="${product.image_url}" alt="${product.name}" />
-  <h3>${product.name}</h3>
-  <p class="series-name">${product["series name"] || ""}</p>
-  <p class="condition">Condition: ${product.condition || "N/A"}</p>
-  <p>$${product.price.toFixed(2)}</p>
-  <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
-  <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
-        container.appendChild(card);
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.innerHTML = `
+      <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
+      <img src="${product.image_url}" alt="${product.name}" />
+      <h3>${product.name}</h3>
+      <p class="series-name">${product["series name"] || ""}</p>
+      <p class="condition">Condition: ${product.condition || "N/A"}</p>
+      <p>$${product.price.toFixed(2)}</p>
+      <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+      <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+    `;
+    container.appendChild(card);
+  });
+}
       });
       
     function populateCategoryDropdown() {
