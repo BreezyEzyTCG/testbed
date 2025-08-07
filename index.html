@@ -192,9 +192,14 @@
     }
 
     .card.list-view img {
-      width: 120px;
-      height: auto;
-      object-fit: cover;
+  width: 100px;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+      
     }
 
     .card.list-view .product-details {
@@ -213,22 +218,42 @@
       align-self: flex-start;
     }
 
-    @media (max-width: 768px) {
-      .controls {
-        flex-direction: column;
-        align-items: center;
-      }
+   @media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
 
-      .cart-link {
-        position: static;
-        display: block;
-        margin-top: 1rem;
-        text-align: center;
-      }
+  .cart-link {
+    position: static;
+    display: block;
+    margin-top: 1rem;
+    text-align: center;
+  }
 
-      .card-container.grid-3 {
-        grid-template-columns: repeat(2, 1fr);
-      }
+  .card-container.grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* ✅ Add these rules for fixing image cut-off in list view */
+  .card.list-view {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .card.list-view img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .card.list-view .product-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
     }
   </style>
 </head>
