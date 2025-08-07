@@ -26,6 +26,12 @@
   font-style: italic;
   white-space: normal;
   word-break: break-word;
+  margin-bottom: 0.5rem;
+}
+    .series-name
+.condition {
+  font-size: 1rem; /* Change this to your preferred size */
+  margin-top: 0.2rem;
 }
     .cart-link {
       position: absolute;
@@ -183,13 +189,15 @@
         const card = document.createElement("div");
         card.classList.add("card");
         card.innerHTML = `
+ card.innerHTML = `
   <img src="${product.image_url}" alt="${product.name}" />
   <h3>${product.name}</h3>
-  <p class="series-name">${product["series name"] || ""}</p>
-  <p><strong>Condition</strong>: ${product.condition || "N/A"}</p>
+  <p class="series-name"><em>${product["series name"] || ""}</em></p>
+  <p class="condition">Condition: ${product.condition || "N/A"}</p>
   <p>$${product.price.toFixed(2)}</p>
   <p><strong>Stock:</strong> ${product.stock}</p>
   <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+`;
 `;
         container.appendChild(card);
       });
