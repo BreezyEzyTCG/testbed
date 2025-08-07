@@ -32,40 +32,71 @@
       border-radius: 5px;
     }
 
-    .controls {
-      text-align: center;
-      margin: 1.5rem auto 0;
-    }
+   .controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem auto 0;
+  flex-direction: row;
+  max-width: 100%;
+}
 
-    .controls input, .controls select, .controls button {
-      padding: 0.5rem;
-      margin: 0.25rem;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
+.controls input,
+.controls select {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
 
-    .card-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      transition: all 0.3s ease;
-    }
+.grid-toggle {
+  display: flex;
+  gap: 0.25rem;
+}
 
-    .card-container.grid-2 {
-      grid-template-columns: repeat(2, 1fr);
-    }
+.grid-toggle button {
+  padding: 0.5rem 0.6rem;
+  background: #2b6cb0;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
 
-    .card-container.grid-3 {
-      grid-template-columns: repeat(3, 1fr);
-    }
+.grid-toggle button:hover {
+  background-color: #2c5282;
+}
 
-    .card-container.list {
-      grid-template-columns: 1fr;
-    }
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  transition: all 0.3s ease;
+}
 
+.card-container.grid-1 {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+.card-container.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.card-container.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Mobile optimization */
+@media screen and (max-width: 600px) {
+  .card-container.grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
     .card {
       position: relative;
       background: white;
@@ -193,14 +224,16 @@
   <div class="container-panel">
   <!-- Filters and Grid Toggle -->
   <div class="controls">
-    <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-    <select id="category-filter" onchange="applyFilters()">
-      <option value="all">All Categories</option>
-    </select>
-    <button onclick="setGridView(2)">🔲 2-Grid</button>
-    <button onclick="setGridView(3)">🔳 3-Grid</button>
-    <button onclick="setGridView('list')">📋 List</button>
+  <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+  <select id="category-filter" onchange="applyFilters()">
+    <option value="all">All Categories</option>
+  </select>
+  <div class="grid-toggle">
+    <button onclick="setGridView(1)">📋</button>
+    <button onclick="setGridView(2)">🟦🟦</button>
+    <button onclick="setGridView(3)">🟦🟦🟦</button>
   </div>
+</div>
 
   <div class="card-container"></div>
 </div>
@@ -304,13 +337,13 @@
       renderStore(filtered);
     }
 
-    function setGridView(type) {
-      const container = document.querySelector(".card-container");
-      container.classList.remove("grid-2", "grid-3", "list");
-      if (type === 2) container.classList.add("grid-2");
-      else if (type === 3) container.classList.add("grid-3");
-      else if (type === 'list') container.classList.add("list");
-    }
+   function setGridView(type) {
+  const container = document.querySelector(".card-container");
+  container.classList.remove("grid-1", "grid-2", "grid-3");
+  if (type === 1) container.classList.add("grid-1");
+  else if (type === 2) container.classList.add("grid-2");
+  else if (type === 3) container.classList.add("grid-3");
+}
 
     fetchInventoryFromSheet();
   </script>
