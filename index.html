@@ -218,40 +218,36 @@
       align-self: flex-start;
     }
 
-   @media (max-width: 768px) {
-  .controls {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .cart-link {
-    position: static;
-    display: block;
-    margin-top: 1rem;
-    text-align: center;
-  }
-
-  .card-container.grid-3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  /* ✅ Add these rules for fixing image cut-off in list view */
+ @media (max-width: 600px) {
   .card.list-view {
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
-    text-align: left;
+    gap: 0.75rem;
   }
 
   .card.list-view img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
+    width: 90px;       /* Shrink image width */
+    height: auto;      /* Maintain aspect ratio */
+    object-fit: cover; /* Ensure it doesn't distort */
+    margin-bottom: 0;
+    border-radius: 8px;
+  }
+
+  .card.list-view .product-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .card.list-view button {
+    align-self: flex-start;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
   }
 
   .card.list-view .product-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    margin-top: 0.5rem;
   }
 }
     }
