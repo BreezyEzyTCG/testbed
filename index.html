@@ -68,7 +68,16 @@
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-
+<div class="controls">
+  <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+  <select id="category-filter" onchange="applyFilters()">
+    <option value="all">All Categories</option>
+  </select>
+  <button onclick="setGridView(2)">🔲 2-Grid</button>
+  <button onclick="setGridView(3)">🔳 3-Grid</button>
+  <button onclick="setGridView('list')">📋 List</button>
+</div>
+    
     .card-container {
       display: flex;
       flex-wrap: wrap;
