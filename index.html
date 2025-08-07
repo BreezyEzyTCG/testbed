@@ -311,44 +311,54 @@
       }
     }
 
-    function renderStore(products) {
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
-      const isListView = container.classList.contains("grid-1");
+ function renderStore(products) {
+  const container = document.querySelector(".card-container");
+  container.innerHTML = "";
+  const isListView = container.classList.contains("grid-1");
 
-      products.forEach(product => {
-        const disabled = product.stock <= 0 ? "disabled" : "";
-        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+  products.forEach(product => {
+    const disabled = product.stock <= 0 ? "disabled" : "";
+    const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
 
-        const card = document.createElement("div");
-        card.classList.add("card");
-        if (isListView) card.classList.add("list-view");
+    const card = document.createElement("div");
+    card.classList.add("card");
+    if (isListView) card.classList.add("list-view");
 
-        card.innerHTML = `
-  <img src="${product.image_url}" alt="${product.name}" />
-  <div class="product-details">
-    <h3>${product.name}</h3>
-    <p class="series-name">${product["series name"] || ""}</p>
-    <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-    <p class="price"><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-    <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
-    <div class="product-actions">
-      <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
-    </div>
-  </div>
-        ` : `
-          <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
-          <img src="${product.image_url}" alt="${product.name}" />
+    let html = "";
+
+    if (isListView) {
+      html = `
+        <img src="${product.image_url}" alt="${product.name}" />
+        <div class="product-details">
           <h3>${product.name}</h3>
           <p class="series-name">${product["series name"] || ""}</p>
-          <p class="condition">Condition: ${product.condition || "N/A"}</p>
-          <p>$${product.price.toFixed(2)}</p>
+          <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
+          <p class="price"><strong>Price:</strong> $${product.price.toFixed(2)}</p>
           <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+          <div class="product-actions">
+            <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+          </div>
+        </div>
+      `;
+    } else {
+      html = `
+        <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
+        <img src="${product.image_url}" alt="${product.name}" />
+        <h3>${product.name}</h3>
+        <p class="series-name">${product["series name"] || ""}</p>
+        <p class="condition">Condition: ${product.condition || "N/A"}</p>
+        <p>$${product.price.toFixed(2)}</p>
+        <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+        <div class="product-actions">
           <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
-        `;
-        container.appendChild(card);
-      });
+        </div>
+      `;
     }
+
+    card.innerHTML = html;
+    container.appendChild(card);
+  });
+}
 
     function populateCategoryDropdown() {
       const select = document.getElementById("category-filter");
