@@ -191,15 +191,14 @@
       border: 1px solid #ccc;
     }
 
-    .card.list-view img {
+.card.list-view img {
   width: 100px;
   height: auto;
-  object-fit: contain;
-  flex-shrink: 0;
-  border-radius: 6px;
-}
-
-      
+  object-fit: contain;  /* ← this keeps full image */
+  flex-shrink: 0;        /* ← prevents image from shrinking too much */
+  margin-bottom: 0;
+  border-radius: 8px;
+}     
     }
 
     .card.list-view .product-details {
@@ -225,14 +224,16 @@
     gap: 0.75rem;
   }
 
+ @media (max-width: 768px) {
   .card.list-view img {
-    width: 90px;       /* Shrink image width */
-    height: auto;      /* Maintain aspect ratio */
-    object-fit: cover; /* Ensure it doesn't distort */
+    width: 100px;
+    height: auto;
+    object-fit: contain;
+    flex-shrink: 0;
     margin-bottom: 0;
     border-radius: 8px;
   }
-
+}
   .card.list-view .product-details {
     flex: 1;
     display: flex;
