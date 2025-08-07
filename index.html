@@ -20,11 +20,13 @@
       top: 0;
     }
 .series-name {
-    font-size: 0.80rem;
-    color: #555;
-    margin: 0.3rem 0;
-    font-style: italic;
-  }
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.3rem 0;
+  font-style: italic;
+  white-space: normal;
+  word-break: break-word;
+}
     .cart-link {
       position: absolute;
       right: 1rem;
@@ -183,8 +185,8 @@
         card.innerHTML = `
   <img src="${product.image_url}" alt="${product.name}" />
   <h3>${product.name}</h3>
-  <p class="series-name">${product["series name"] || "N/A"}</p>
-  <p>Condition: ${product.condition || "N/A"}</p>
+  <p class="series-name">${product["series name"] || ""}</p>
+  <p><strong>Condition</strong>: ${product.condition || "N/A"}</p>
   <p>$${product.price.toFixed(2)}</p>
   <p><strong>Stock:</strong> ${product.stock}</p>
   <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
