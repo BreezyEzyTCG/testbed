@@ -159,9 +159,7 @@
           const obj = {};
           row.forEach((cell, i) => {
             const key = headers[i];
-            obj[key] = key === 'price' || key === 'stock' 
-  ? parseFloat(cell) 
-  : cell.trim().replace(/^"(.*)"$/, "$1");
+            obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : cell.trim();
           });
           return obj;
         });
