@@ -19,25 +19,27 @@
       position: sticky;
       top: 0;
     }
-.series-name {
-  font-size: 0.85rem;
-  color: #555;
-  margin-top: 0.3rem;
-  padding-bottom: 1rem;
-  font-style: italic;
-  white-space: normal;
-  word-break: break-word;
-}
 
-.condition {
-  font-size: 0.9rem;
-  margin-top: 0.2rem;
-}
+    .series-name {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 0.3rem;
+      padding-bottom: 1rem;
+      font-style: italic;
+      white-space: normal;
+      word-break: break-word;
+    }
 
-.stock {
-  font-size: 0.9rem;
-  margin-top: 0.2rem;
-}
+    .condition {
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
+    .stock {
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
     .cart-link {
       position: absolute;
       right: 1rem;
@@ -78,6 +80,7 @@
     }
 
     .card {
+      position: relative;
       background-color: white;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -111,38 +114,33 @@
       cursor: pointer;
     }
 
-   button:hover {
-  background-color: #2c5282;
-}
+    button:hover {
+      background-color: #2c5282;
+    }
 
-.badge {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: white;
-  border-radius: 4px;
-  z-index: 1;
-  text-transform: uppercase;
-}
+    .badge {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: white;
+      border-radius: 4px;
+      z-index: 1;
+      text-transform: uppercase;
+    }
 
-.badge.sale {
-  background-color: #e53e3e; /* red */
-}
-.badge.popular {
-  background-color: #d69e2e; /* yellow */
-  color: black;
-}
-.badge.new {
-  background-color: #805ad5; /* purple */
-}
-.card {
-  position: relative; /* Required for badge positioning */
-}
-
-
+    .badge.sale {
+      background-color: #e53e3e;
+    }
+    .badge.popular {
+      background-color: #d69e2e;
+      color: black;
+    }
+    .badge.new {
+      background-color: #805ad5;
+    }
   </style>
 </head>
 <body>
@@ -151,7 +149,6 @@
     <a class="cart-link" href="cart.html">🛒 Cart</a>
   </header>
 
-  <!-- Filters -->
   <div class="controls">
     <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
     <select id="category-filter" onchange="applyFilters()">
@@ -213,31 +210,29 @@
     }
 
     function renderStore(products) {
-      function renderStore(products) {
-  const container = document.querySelector(".card-container");
-  container.innerHTML = "";
+      const container = document.querySelector(".card-container");
+      container.innerHTML = "";
 
-  products.forEach(product => {
-    const disabled = product.stock <= 0 ? "disabled" : "";
-    const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+      products.forEach(product => {
+        const disabled = product.stock <= 0 ? "disabled" : "";
+        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
 
-    const card = document.createElement("div");
-    card.classList.add("card");
-    card.innerHTML = `
-      <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
-      <img src="${product.image_url}" alt="${product.name}" />
-      <h3>${product.name}</h3>
-      <p class="series-name">${product["series name"] || ""}</p>
-      <p class="condition">Condition: ${product.condition || "N/A"}</p>
-      <p>$${product.price.toFixed(2)}</p>
-      <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
-      <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
-    `;
-    container.appendChild(card);
-  });
-}
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = `
+          <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
+          <img src="${product.image_url}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p class="series-name">${product["series name"] || ""}</p>
+          <p class="condition">Condition: ${product.condition || "N/A"}</p>
+          <p>$${product.price.toFixed(2)}</p>
+          <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+          <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+        `;
+        container.appendChild(card);
       });
-      
+    }
+
     function populateCategoryDropdown() {
       const select = document.getElementById("category-filter");
       const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
@@ -266,5 +261,3 @@
   </script>
 </body>
 </html>
-
-
