@@ -170,6 +170,33 @@
     .badge.sale{background:#c21807}
     .badge.popular{background:#ffcc00;color:#000}
     .badge.new{background:#4cbb17}
+
+    /* ---- Compact, centered card content (no huge gap above button) ---- */
+
+/* Don’t stretch the content to fill the card */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* remove any flex:1 or min-height you might have set earlier */
+  flex: initial !important;
+  min-height: 0 !important;
+}
+
+/* Tighten spacing between lines */
+.title { margin: .25rem 0 .15rem; }
+.series-name { margin: 0 0 .5rem; }
+.meta p { margin: .2rem 0; }
+
+/* Put just a small gap before the button */
+.actions {
+  margin-top: .6rem;       /* was auto / big value */
+}
+
+/* Optional: slightly reduce outer padding to make every card denser */
+.card { padding-bottom: .9rem; }
+
   </style>
 </head>
 <body>
