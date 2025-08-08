@@ -109,26 +109,45 @@
       width:100%;height:100%;object-fit:contain;display:block;
     }
 
-    /* Content column: push CTA to bottom */
-    .content{display:flex;flex-direction:column;flex:1;min-height:0}
+/* Center-align text inside the content area */
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  text-align: center; /* <-- added */
+}
 
-    .title{
-      font-size:1.25rem;font-weight:700;margin:.25rem 0 .15rem;
-      line-height:1.25;
-      min-height:1.6em;            /* reserve one line */
-      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden;
-    }
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: .25rem 0 .15rem;
+  line-height: 1.25;
+  min-height: 1.6em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
 
-    .series-name{
-      color:#555;font-style:italic;margin:0 0 .6rem;
-      line-height:1.3;
-      min-height:2.6em;            /* reserve two lines so cards align */
-      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
-      word-break:break-word;
-    }
+.series-name {
+  color: #555;
+  font-style: italic;
+  margin: 0 0 .6rem;
+  line-height: 1.3;
+  min-height: 2.6em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
+}
 
-    .meta p{margin:.25rem 0}
-    .meta .price strong{font-size:1.05rem}
+.meta p {
+  margin: .25rem 0;
+  text-align: center; /* <-- added */
+}
+
 
     /* CTA pinned at the bottom */
     .cta{margin-top:auto}
