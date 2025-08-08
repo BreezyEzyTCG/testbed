@@ -106,15 +106,9 @@
 
   display: flex;
 
-
-  gap: 0.25rem;
-
-
   justify-content: center;
 
-
   gap: 0.5rem;
-
 
   margin: 1rem auto;
 
@@ -122,79 +116,43 @@
 
 
 
-
-.grid-toggle button {
-
-
-  padding: 0.5rem 0.6rem;
-
-
-  background: #2b6cb0;
-
-
 .layout-button {
-
 
   background: transparent;
 
   border: none;
 
-
-  color: white;
-
-
-  border-radius: 5px;
-
-
   padding: 0.5rem;
-
 
   border-radius: 6px;
 
   cursor: pointer;
 
-
-  font-size: 0.9rem;
-
-
   transition: background 0.2s ease;
-
 
   display: flex;
 
-
   align-items: center;
-
 
   justify-content: center;
 
-
 }
-
-
 
 
 
 .layout-button svg {
 
-
   width: 24px;
-
 
   height: 24px;
 
-
   fill: #264b67;
-
 
 }
 
 
 
-
-
 .layout-button.active {
-
 
   background-color: #cce4f6;
 
@@ -496,7 +454,112 @@
 
   }
 
+
+
+
+
+  /* --- List View Styling --- */
+
+
+.card.list-view {
+
+
+  display: flex;
+
+
+  align-items: center;
+
+
+  gap: 1rem;
+
+
+  text-align: left;
+
+
+  padding: 1rem;
+
+
+  border: 1px solid #ccc;
+
+
+  background: white;
+
+
 }
+
+
+
+
+
+.card.list-view img {
+
+
+  width: 100px;
+
+
+  height: auto;
+
+
+  border-radius: 8px;
+
+
+  object-fit: cover;
+
+
+}
+
+
+
+
+
+.card.list-view .product-details {
+
+
+  flex-grow: 1;
+
+
+}
+
+
+
+
+
+.card.list-view h3 {
+
+
+  margin: 0;
+
+
+  font-size: 1.1rem;
+
+
+}
+
+
+
+
+
+.card.list-view .series-name,
+
+
+.card.list-view .condition,
+
+
+.card.list-view .stock,
+
+
+.card.list-view .price {
+
+
+  font-size: 0.9rem;
+
+
+  margin: 0.2rem 0;
+
+}
+
+
+
 
   </style>
 
@@ -528,64 +591,33 @@
 
   </select>
 
-
-  <div class="grid-toggle">
-
-
-    <button onclick="setGridView(1)">📋</button>
-
-
-    <button onclick="setGridView(2)">🟦🟦</button>
-
-
-    <button onclick="setGridView(3)">🟦🟦🟦</button>
-
-
-  </div>
-
-
  <div class="grid-toggle">
-
 
   <!-- List View -->
 
-
   <button class="layout-button list active" type="button" onclick="setGridView(1)" aria-label="List View">
-
 
     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
 
-
       <path fill-rule="evenodd" d="M2 5a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Zm0 7a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Zm2 5a2 2 0 1 0 0 4h16a2 2 0 1 0 0-4H4Z" clip-rule="evenodd"/>
-
 
     </svg>
 
-
   </button>
-
-
 
 
 
   <!-- 2-Grid View -->
 
-
   <button class="layout-button double" type="button" onclick="setGridView(2)" aria-label="2-Grid View">
-
 
     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
 
-
       <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
-
 
     </svg>
 
-
   </button>
-
-
 
 
 
@@ -595,16 +627,20 @@
   <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="1-Grid View">
 
 
+  <button class="layout-button list active" type="button" onclick="setGridView(1)" aria-label="List View">
+
     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
 
 
       <path fill-rule="evenodd" d="M6 2a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4V6a4 4 0 0 0-4-4H6Z" clip-rule="evenodd"/>
 
 
+      <path fill-rule="evenodd" d="M2 5a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Zm0 7a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Zm2 5a2 2 0 1 0 0 4h16a2 2 0 1 0 0-4H4Z" clip-rule="evenodd"/>
+
     </svg>
 
-
   </button>
+
 
 </div>
 
@@ -720,49 +756,178 @@
 
     function renderStore(products) {
 
+
       const container = document.querySelector(".card-container");
+
 
       container.innerHTML = "";
 
 
 
+
+
       products.forEach(product => {
 
+
         const disabled = product.stock <= 0 ? "disabled" : "";
+
 
         const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
 
 
 
+
+
         const card = document.createElement("div");
+
 
         card.classList.add("card");
 
+
         card.innerHTML = `
+
 
           <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
 
+
           <img src="${product.image_url}" alt="${product.name}" />
+
+
+  const container = document.querySelector(".card-container");
+
+
+  container.innerHTML = "";
+
+
+
+
+
+  const isListView = container.classList.contains("grid-1");
+
+
+
+
+
+  products.forEach(product => {
+
+
+    const disabled = product.stock <= 0 ? "disabled" : "";
+
+
+    const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+
+
+
+
+
+    const card = document.createElement("div");
+
+
+    card.classList.add("card");
+
+
+
+
+
+    if (isListView) {
+
+
+      card.classList.add("list-view");
+
+
+      card.innerHTML = `
+
+
+        <img src="${product.image_url}" alt="${product.name}" />
+
+
+        <div class="product-details">
 
           <h3>${product.name}</h3>
 
           <p class="series-name">${product["series name"] || ""}</p>
 
+
           <p class="condition">Condition: ${product.condition || "N/A"}</p>
+
 
           <p>$${product.price.toFixed(2)}</p>
 
+
+          <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
+
+
+          <p class="price"><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+
           <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+
 
           <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
 
+
         `;
+
 
         container.appendChild(card);
 
+
       });
 
+
+        </div>
+
+
+        <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+
+
+      `;
+
+
+    } else {
+
+
+      card.innerHTML = `
+
+
+        <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
+
+
+        <img src="${product.image_url}" alt="${product.name}" />
+
+
+        <h3>${product.name}</h3>
+
+
+        <p class="series-name">${product["series name"] || ""}</p>
+
+
+        <p class="condition">Condition: ${product.condition || "N/A"}</p>
+
+
+        <p>$${product.price.toFixed(2)}</p>
+
+
+        <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+
+
+        <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
+
+
+      `;
+
     }
+
+
+
+
+    container.appendChild(card);
+
+
+  });
+
+
+}
+
 
 
 
@@ -814,16 +979,11 @@
 
 
 
-
-   function setGridView(type) {
-
-
   function setGridView(type) {
 
   const container = document.querySelector(".card-container");
 
   container.classList.remove("grid-1", "grid-2", "grid-3");
-
 
 
 
@@ -835,19 +995,13 @@
 
 
 
-
-
   // Update active button UI
-
 
   document.querySelectorAll(".layout-button").forEach(btn => btn.classList.remove("active"));
 
-
   if (type === 1) document.querySelector(".layout-button.list").classList.add("active");
 
-
   if (type === 2) document.querySelector(".layout-button.double").classList.add("active");
-
 
   if (type === 3) document.querySelector(".layout-button.triple").classList.add("active");
 
