@@ -5,23 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pokémon Card Store</title>
   <style>
-    :root{
-      --ink:#1a202c;
-      --btn:#2b6cb0;
-      --btn-hover:#2c5282;
-      --panel:#fff;
-      --bg:#f0f4f8;
-    }
-
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      background-color: var(--bg);
-      color: #111;
+      background-color: #f0f4f8;
     }
 
     header {
-      background-color: var(--ink);
+      background-color: #1a202c;
       color: white;
       padding: 1rem;
       text-align: center;
@@ -41,168 +32,157 @@
       border-radius: 5px;
     }
 
-    .container-panel {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      background-color: var(--panel);
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    }
-
-    /* Controls */
     .controls {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
       gap: 0.5rem;
-      margin: 1.25rem auto 0.5rem;
+      margin: 1.5rem auto 0;
+      flex-direction: row;
       max-width: 100%;
     }
+
     .controls input,
     .controls select {
       padding: 0.5rem;
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-    .grid-toggle{
-      display:flex;gap:.5rem;justify-content:center;margin:.5rem auto 1rem;
-    }
-    .layout-button{
-      background:transparent;border:none;padding:.5rem;border-radius:6px;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;transition:background .2s ease;
-    }
-    .layout-button svg{width:24px;height:24px;fill:#264b67}
-    .layout-button.active{background:#cce4f6}
-    @media (max-width: 991px){ .layout-button.triple{display:none} }
 
-    /* Grid */
-    .card-container{
-      display:grid;gap:1.5rem;max-width:1200px;margin:0 auto 2rem;padding:0 1rem 1.5rem;
-      transition:all .3s ease;
-    }
-    .card-container.grid-1{grid-template-columns:repeat(1,1fr)}
-    .card-container.grid-2{grid-template-columns:repeat(2,1fr)}
-    .card-container.grid-3{grid-template-columns:repeat(3,1fr)}
-    @media (max-width:360px){ .card-container.grid-2{grid-template-columns:repeat(1,1fr)} }
-
-    /* Card */
-    .card{
-      position:relative;background:#fff;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.08);
-      padding:1rem;display:flex;flex-direction:column;min-height:520px;
+    .grid-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1rem auto;
     }
 
-    /* Fixed image box (no cropping, consistent height) */
-    .media{
-      width:100%;
-      aspect-ratio:4/3;            /* keeps same vertical space on all cards */
-      background:#fafafa;
-      border-radius:8px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      margin-bottom:.75rem;
-    }
-    .media img{
-      width:100%;height:100%;object-fit:contain;display:block;
+    .layout-button {
+      background: transparent;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-/* Center-align text inside the content area */
-.content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  text-align: center; /* <-- added */
-}
-
-.title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: .25rem 0 .15rem;
-  line-height: 1.25;
-  min-height: 1.6em;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
-}
-
-.series-name {
-  color: #555;
-  font-style: italic;
-  margin: 0 0 .6rem;
-  line-height: 1.3;
-  min-height: 2.6em;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  word-break: break-word;
-}
-
-.meta p {
-  margin: .25rem 0;
-  text-align: center; /* <-- added */
-}
-
-
-    /* CTA pinned at the bottom */
-    .cta{margin-top:auto}
-    .cta button{
-      width:100%;
-      margin-top:.75rem;
-      padding:.65rem 1rem;
-      background:var(--btn);
-      color:#fff;border:none;border-radius:8px;cursor:pointer;
+    .layout-button svg {
+      width: 24px;
+      height: 24px;
+      fill: #264b67;
     }
-    .cta button:hover{background:var(--btn-hover)}
-    .cta button:disabled{background:#aaa;cursor:not-allowed;opacity:.7}
 
-    /* Badges */
-    .badge{
-      position:absolute;top:.5rem;left:.5rem;padding:5px 10px;font-size:.75rem;font-weight:bold;
-      color:#fff;border-radius:4px;text-transform:uppercase;box-shadow:0 2px 5px rgba(0,0,0,.2);
-      z-index:2;
+    .layout-button.active {
+      background-color: #cce4f6;
     }
-    .badge.sale{background:#c21807}
-    .badge.popular{background:#ffcc00;color:#000}
-    .badge.new{background:#4cbb17}
 
-    /* ---- Compact, centered card content (no huge gap above button) ---- */
+    .card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      transition: all 0.3s ease;
+    }
 
-/* Don’t stretch the content to fill the card */
-.content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  /* remove any flex:1 or min-height you might have set earlier */
-  flex: initial !important;
-  min-height: 0 !important;
-}
+    .card-container.grid-1 {
+      grid-template-columns: repeat(1, 1fr);
+    }
 
-/* Tighten spacing between lines */
-.title { margin: .25rem 0 .15rem; }
-.series-name { margin: 0 0 .5rem; }
-.meta p { margin: .2rem 0; }
+    .card-container.grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
 
-/* Put just a small gap before the button */
-.actions {
-  margin-top: .6rem;       /* was auto / big value */
-}
+    .card-container.grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
 
-    /* Reduce bottom space below Add to Cart button */
-.card {
-  padding-bottom: 0.5rem !important; /* tighten card padding */
-}
+    .card {
+      position: relative;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      text-align: center;
+    }
 
-.card button {
-  margin-bottom: 0 !important; /* remove unnecessary space under button */
-}
+    .card img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
+      border-radius: 5px;
+    }
 
+    .series-name {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 0.3rem;
+      font-style: italic;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .condition, .stock {
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
+    .badge {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: white;
+      border-radius: 4px;
+      z-index: 2;
+      text-transform: uppercase;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .badge.sale { background-color: #c21807; }
+    .badge.popular { background-color: #ffcc00; color: black; }
+    .badge.new { background-color: #4cbb17; }
+
+    .product-actions {
+      margin-top: auto; /* pushes button to the bottom */
+    }
+
+    button {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #2b6cb0;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover { background-color: #2c5282; }
+
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .container-panel {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    }
   </style>
 </head>
 <body>
@@ -217,21 +197,20 @@
       <select id="category-filter" onchange="applyFilters()">
         <option value="all">All Categories</option>
       </select>
-
       <div class="grid-toggle">
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v14h14V5H5z"/></svg>
+        <button class="layout-button double active" onclick="setGridView(2)" aria-label="2-Grid View">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Z"/>
+          </svg>
         </button>
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM5 6v12h6V6H5zm8 0v12h6V6h-6z"/></svg>
-        </button>
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM5 6v12h4V6H5zm6 0v12h4V6h-4zm6 0v12h4V6h-4z"/></svg>
+        <button class="layout-button triple" onclick="setGridView(3)" aria-label="3-Grid View">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M4 4h5v5H4V4Zm0 7h5v5H4v-5Zm0 7h5v5H4v-5Zm7-14h9v5h-9V4Zm0 7h9v5h-9v-5Zm0 7h9v5h-9v-5Z"/>
+          </svg>
         </button>
       </div>
     </div>
-
-    <div class="card-container"></div>
+    <div class="card-container grid-2"></div>
   </div>
 
   <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
@@ -267,12 +246,11 @@
           const obj = {};
           row.forEach((cell, i) => {
             const key = headers[i];
-            obj[key] = (key === 'price' || key === 'stock') ? parseFloat(cell) : (cell ?? "").trim();
+            obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : cell.trim();
           });
           return obj;
         });
 
-        setInitialGridByViewport();
         populateCategoryDropdown();
         renderStore(allProducts);
       } catch (error) {
@@ -288,32 +266,23 @@
       products.forEach(product => {
         const disabled = product.stock <= 0 ? "disabled" : "";
         const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
-        const series = product["series name"] || "";
 
         const card = document.createElement("div");
         card.classList.add("card");
+
         card.innerHTML = `
           <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
-
-          <div class="media">
-            <img src="${product.image_url}" alt="${product.name}">
-          </div>
-
-          <div class="content">
-            <h3 class="title">${product.name}</h3>
-            <p class="series-name">${series}</p>
-
-            <div class="meta">
-              <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-              <p class="price"><strong>$${(Number(product.price) || 0).toFixed(2)}</strong></p>
-              <p class="stock"><strong>Stock:</strong> ${product.stock ?? 0}</p>
-            </div>
-
-            <div class="cta">
-              <button ${disabled} onclick="addToCart('${(product.name || '').replace(/'/g, "\\'")}', ${Number(product.price) || 0}, '${(product.image_url || '').replace(/'/g, "\\'")}')">${buttonText}</button>
-            </div>
+          <img src="${product.image_url}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p class="series-name">${product["series name"] || ""}</p>
+          <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
+          <p><strong>$${product.price.toFixed(2)}</strong></p>
+          <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
+          <div class="product-actions">
+            <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
           </div>
         `;
+
         container.appendChild(card);
       });
     }
@@ -333,7 +302,7 @@
       const keyword = document.getElementById("search").value.toLowerCase();
       const selectedCategory = document.getElementById("category-filter").value;
       const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(keyword) &&
+        p.name.toLowerCase().includes(keyword) &&
         (selectedCategory === "all" || p.category === selectedCategory)
       );
       renderStore(filtered);
@@ -347,27 +316,11 @@
       else if (type === 3) container.classList.add("grid-3");
 
       document.querySelectorAll(".layout-button").forEach(btn => btn.classList.remove("active"));
-      if (type === 1) document.querySelector(".layout-button.single").classList.add("active");
       if (type === 2) document.querySelector(".layout-button.double").classList.add("active");
       if (type === 3) document.querySelector(".layout-button.triple").classList.add("active");
-    }
 
-    function setInitialGridByViewport() {
-      const isDesktop = window.innerWidth >= 992;
-      setGridView(isDesktop ? 3 : 2);
+      applyFilters();
     }
-
-    window.addEventListener("resize", (() => {
-      let lastIsDesktop = window.innerWidth >= 992;
-      return () => {
-        const nowIsDesktop = window.innerWidth >= 992;
-        if (nowIsDesktop !== lastIsDesktop) {
-          setInitialGridByViewport();
-          applyFilters();
-          lastIsDesktop = nowIsDesktop;
-        }
-      };
-    })());
 
     fetchInventoryFromSheet();
   </script>
