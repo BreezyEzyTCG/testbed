@@ -171,8 +171,8 @@
       .layout-button.triple { display: none; }
     }
 
-    /* On very narrow phones, 2-grid becomes single column */
-    @media (max-width: 500px) {
+    /* Only *very* narrow screens collapse 2-grid to 1 column */
+    @media (max-width: 360px) {
       .card-container.grid-2 { grid-template-columns: repeat(1, 1fr); }
     }
   </style>
