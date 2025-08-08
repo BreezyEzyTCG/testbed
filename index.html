@@ -194,8 +194,14 @@
   margin-top: .6rem;       /* was auto / big value */
 }
 
-/* Optional: slightly reduce outer padding to make every card denser */
-.card { padding-bottom: .9rem; }
+    /* Reduce bottom space below Add to Cart button */
+.card {
+  padding-bottom: 0.5rem !important; /* tighten card padding */
+}
+
+.card button {
+  margin-bottom: 0 !important; /* remove unnecessary space under button */
+}
 
   </style>
 </head>
