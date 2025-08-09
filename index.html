@@ -9,9 +9,9 @@
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#1a202c;  /* dark blue rim around the banner */
+      --shell:#58747c;  
       --fg:#ffffff;
-      --chip-bg:#2d3748;
+      --chip-bg:#789cac;
       --chip-fg:#fff;
       --accent:#ef4444;
     }
@@ -51,7 +51,7 @@
     }
     .cart-link{
       display:inline-flex; align-items:center; gap:.5rem;
-      color:var(--chip-fg); text-decoration:none;
+      background:#789cac
       background:var(--chip-bg); padding:.55rem .85rem;
       border-radius:.7rem; font-weight:700; white-space:nowrap;
     }
@@ -182,7 +182,6 @@
         <div class="topbar">
           <a class="cart-link" href="cart.html" aria-label="Cart">
             <span aria-hidden="true">🛒</span>
-            <span>Cart</span>
             <span class="cart-count" id="cartCount">0</span>
           </a>
         </div>
