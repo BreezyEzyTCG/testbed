@@ -46,7 +46,7 @@
       margin:1.5rem auto 0;
       max-width:1200px;                /* match card container */
       padding:0 1rem;                  /* match card container */
-      flex-wrap:wrap;                  /* allow wrapping on small screens */
+      flex-wrap:wrap;                  /* allow wrapping if needed */
     }
 
     .controls-left{
@@ -66,13 +66,13 @@
 
     .grid-toggle{
       display:flex;
-      justify-content:flex-end;        /* right align icons */
+      justify-content:flex-end;
       gap:0.5rem;
-      margin:0;                        /* remove extra vertical spacing */
+      margin:0;
     }
 
     .layout-button{
-      background:transparent;          /* no bg change */
+      background:transparent;
       border:none;
       padding:0.5rem;
       border-radius:6px;
@@ -84,16 +84,12 @@
     }
     .layout-button:active{ transform:scale(0.96); }
 
-    /* Icon colors via CSS variables */
     .layout-button svg{
-      width:24px;
-      height:24px;
+      width:24px; height:24px;
       fill:var(--icon-color-default);
       transition:fill .2s ease;
     }
     .layout-button.single svg{ width:30px; height:30px; }
-
-    /* Active state: only icon color changes */
     .layout-button.active svg{ fill:var(--icon-color-active); }
 
     .card-container{
@@ -206,34 +202,43 @@
       box-shadow:0 8px 20px rgba(0,0,0,.05);
     }
 
-    /* ---------- Mobile-only overrides (desktop untouched) ---------- */
+    /* ---------- Mobile-only layout (desktop untouched) ---------- */
     @media (max-width:767.98px){
-      /* Flatten .controls-left so its children participate in the parent grid */
-      .controls{ 
-        display:grid;                   /* switch from flex to grid on mobile */
-        grid-template-columns: 1fr auto;/* search expands, toggle hugs right */
-        align-items:center;
+      /* Turn the controls into a 2‑column grid: [ search | toggle ] */
+      .controls{
+        display:grid;                                  /* override flex only on mobile */
+        grid-template-columns:minmax(0,1fr) auto;      /* search flexes, toggle hugs right */
+        column-gap:0.75rem;
         row-gap:0.75rem;
+        align-items:center;
       }
-      .controls-left{ display:contents; } /* exposes its children to the grid */
 
-      /* Top row: Categories centered across full width */
+      /* Let children of .controls-left be placed directly on the grid */
+      .controls-left{ display:contents; }
+
+      /* Row 1: Categories centered across the full width */
       #category-filter{
         grid-column:1 / -1;
+        grid-row:1;
         justify-self:center;
       }
 
-      /* Second row: Search left (fills), Toggle right (aligned with container) */
+      /* Row 2: Search left (won't push toggle down) */
       #search{
         grid-column:1 / 2;
+        grid-row:2;
         width:100%;
+        max-width:72vw;                                /* keep room for the toggle */
       }
+
+      /* Row 2: Toggle right (aligned with container edge) */
       .grid-toggle{
         grid-column:2 / 3;
+        grid-row:2;
         justify-self:end;
       }
 
-      /* Keep previous rule: no 3-grid toggle on mobile */
+      /* Keep: no 3‑grid on mobile */
       .layout-button.triple{ display:none; }
     }
 
