@@ -128,9 +128,9 @@
       word-break: break-word;
     }
 
-    .price, .condition, .stock {
+   .condition, .price, .stock {
       font-size: 1rem;          /* standardize font size */
-      margin: 0.35rem 0;        /* even vertical spacing to match reference */
+      margin: 0.25rem 0;        /* even vertical spacing to match reference */
     }
 
     .badge {
@@ -266,14 +266,14 @@
         const card = document.createElement("div");
         card.classList.add("card");
 
-        /* Re-ordered to: Name -> Series -> Price -> Condition -> Stock (with standardized spacing) */
+        /* Re-ordered to: Name -> Series -> Condition -> Price -> Stock (with standardized spacing) */
         card.innerHTML = `
           <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
           <img src="${product.image_url}" alt="${product.name}" />
           <h3>${product.name}</h3>
           <p class="series-name">${product["series name"] || ""}</p>
-          <p class="price"><strong>$${product.price.toFixed(2)}</strong></p>
           <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
+          <p class="price"><strong>$${product.price.toFixed(2)}</strong></p>
           <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
           <div class="product-actions">
             <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
