@@ -37,15 +37,23 @@
       border-radius: 5px;
     }
 
+    /* --- CONTROLS ROW: left cluster + right-aligned toggle --- */
     .controls {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      justify-content: space-between;     /* push toggle to right edge */
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       margin: 1.5rem auto 0;
-      flex-direction: row;
-      max-width: 100%;
+      max-width: 1200px;                  /* match card container */
+      padding: 0 1rem;                    /* match card container */
+      flex-wrap: wrap;                    /* allow wrapping on small screens */
+    }
+
+    .controls-left {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
     .controls input,
@@ -57,9 +65,9 @@
 
     .grid-toggle {
       display: flex;
-      justify-content: center;
+      justify-content: flex-end;          /* right align icons */
       gap: 0.5rem;
-      margin: 1rem auto;
+      margin: 0;                          /* remove extra vertical spacing */
     }
 
     .layout-button {
@@ -97,309 +105,3 @@
       margin: 2rem auto;
       padding: 0 1rem;
       transition: all 0.3s ease;
-    }
-
-    .card-container.grid-1 { grid-template-columns: repeat(1, 1fr); }
-    .card-container.grid-2 { grid-template-columns: repeat(2, 1fr); }
-    .card-container.grid-3 { grid-template-columns: repeat(3, 1fr); }
-
-    .card {
-      position: relative;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .card img {
-      width: 100%;
-      aspect-ratio: 4/3;
-      object-fit: contain;
-      margin-bottom: 0.5rem;
-      border-radius: 5px;
-    }
-
-    .title-block {
-      min-height: calc(1 * 1.2em + 3 * 1.3em);
-    }
-
-    .card-title {
-      font-size: 1.25rem;
-      margin: 0.25rem 0;
-      line-height: 1.2;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 1;
-      overflow: hidden;
-      min-height: 1.2em;
-    }
-
-    .series-name {
-      font-size: 0.7rem;
-      color: #555;
-      margin: 0.2rem 0 0.6rem;
-      font-style: italic;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 3;
-      overflow: hidden;
-      line-height: 1.3;
-      min-height: calc(3 * 1.3em);
-    }
-
-    .card-info {
-      min-height: 90px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-    }
-
-    .condition, .price, .stock {
-      font-size: 1rem;
-      margin: 0.35rem 0;
-    }
-
-    /* BADGES */
-    .badge {
-      position: absolute;
-      top: 0.5rem;
-      left: 0.5rem;
-      padding: 5px 10px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      border-radius: 4px;
-      z-index: 2;
-      text-transform: uppercase;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      line-height: 1;
-    }
-    .badge.sale { background-color: #e02424; color: #ffffff; }
-    .badge.popular { background-color: #ffcc00; color: #000000; }
-    .badge.new { background-color: #2fbf71; color: #f8f9fb; }
-
-    .product-actions { margin-top: auto; }
-
-    button {
-      margin-top: 0.5rem;
-      padding: 0.5rem 1rem;
-      background-color: #2b6cb0;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .container-panel {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-    }
-
-    @media (max-width: 767.98px) {
-      .layout-button.triple { display: none; }
-    }
-
-    @media (min-width: 768px) {
-      .layout-button.single { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>BreezyEzyTCG Collectibles Store</h1>
-    <a class="cart-link" href="cart.html">🛒 Cart</a>
-  </header>
-
-  <div class="container-panel">
-    <div class="controls">
-      <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-      <select id="category-filter" onchange="applyFilters()">
-        <option value="all">All Categories</option>
-      </select>
-
-      <div class="grid-toggle">
-        <!-- Single Pane -->
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
-        </button>
-
-        <!-- 2-Grid -->
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <!-- no inline fill so CSS controls the color -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-
-        <!-- 3-Grid -->
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <!-- no inline fill so CSS controls the color -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="card-container grid-2"></div>
-  </div>
-
-  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
-
-  <script>
-    let allProducts = [];
-
-    function isMobile() {
-      return window.matchMedia("(max-width: 767.98px)").matches;
-    }
-
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.style.display = "block";
-      setTimeout(() => (toast.style.display = "none"), 2000);
-    }
-
-    function addToCart(name, price, image_url) {
-      let cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const existing = cart.find(item => item.name === name);
-      if (existing) existing.quantity += 1;
-      else cart.push({ name, price, quantity: 1, image: image_url });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      showToast(`${name} added to cart!`);
-    }
-
-    async function fetchInventoryFromSheet() {
-      const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
-      try {
-        const response = await fetch(sheetURL);
-        const data = await response.text();
-        const rows = data.trim().split("\n").map(row => row.split(","));
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
-
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : (cell || "").trim();
-          });
-          return obj;
-        });
-
-        populateCategoryDropdown();
-        renderStore(allProducts);
-      } catch (error) {
-        console.error("Failed to load inventory:", error);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
-      }
-    }
-
-    function getBadgeInfo(raw) {
-      if (!raw) return null;
-      const t = String(raw).trim().toLowerCase();
-      if (["sale", "sales"].includes(t)) return { cls: "sale", label: "SALE" };
-      if (["new"].includes(t)) return { cls: "new", label: "NEW" };
-      if (["popular", "hot"].includes(t)) return { cls: "popular", label: "POPULAR" };
-      return null;
-    }
-
-    function renderStore(products) {
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
-
-      products.forEach(product => {
-        const disabled = product.stock <= 0 ? "disabled" : "";
-        thePrice = Number.isFinite(product.price) ? product.price : 0;
-        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
-        const badgeInfo = getBadgeInfo(product.badge);
-
-        const card = document.createElement("div");
-        card.classList.add("card");
-
-        card.innerHTML = `
-          ${badgeInfo ? `<div class="badge ${badgeInfo.cls}">${badgeInfo.label}</div>` : ``}
-          <img src="${product.image_url}" alt="${product.name}" />
-
-          <div class="title-block">
-            <h3 class="card-title">${product.name}</h3>
-            <p class="series-name">${product["series name"] || ""}</p>
-          </div>
-
-          <div class="card-info">
-            <p class="price">$${thePrice.toFixed(2)}</p>
-            <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-            <p class="stock"><strong>Stock:</strong> ${Number.isFinite(product.stock) ? product.stock : 0}</p>
-          </div>
-
-          <div class="product-actions">
-            <button ${disabled} onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${thePrice || 0}, '${(product.image_url || '').replace(/'/g, "\\'")}')">${buttonText}</button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function populateCategoryDropdown() {
-      const select = document.getElementById("category-filter");
-      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-      categories.sort().forEach(cat => {
-        const option = document.createElement("option");
-        option.value = cat;
-        option.textContent = cat;
-        select.appendChild(option);
-      });
-    }
-
-    function applyFilters() {
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const selectedCategory = document.getElementById("category-filter").value;
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(keyword) &&
-        (selectedCategory === "all" || p.category === selectedCategory)
-      );
-      renderStore(filtered);
-    }
-
-    function activateButton(type) {
-      document.querySelectorAll(".layout-button").forEach(btn => btn.classList.remove("active"));
-      if (type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
-      if (type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
-      if (type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-    }
-
-    function setGridView(type) {
-      if (isMobile() && type === 3) return;
-      if (!isMobile() && type === 1) return;
-
-      const container = document.querySelector(".card-container");
-      container.classList.remove("grid-1", "grid-2", "grid-3");
-      container.classList.add(`grid-${type}`);
-
-      activateButton(type);
-      applyFilters();
-    }
-
-    function enforceResponsiveGrid() {
-      const container = document.querySelector(".card-container");
-      if (isMobile() && container.classList.contains("grid-3")) {
-        setGridView(2);
-      } else if (!isMobile() && container.classList.contains("grid-1")) {
-        setGridView(2);
-      }
-    }
-
-    window.addEventListener("resize", enforceResponsiveGrid);
-    window.addEventListener("orientationchange", enforceResponsiveGrid);
-
-    fetchInventoryFromSheet().then(() => enforceResponsiveGrid());
-  </script>
-</body>
-</html>
