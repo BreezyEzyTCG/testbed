@@ -1,166 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pokémon Card Store</title>
-<style>
-  :root{
-    --icon-color-default:#ddeaef;
-    --icon-color-active:#789cac;
-    --shell:#58747c;
-    --fg:#ffffff;
-    --chip-bg:#072a54;
-    --chip-fg:#fff;
-    --accent:#ef4444;
-  }
-  *,*::before,*::after{ box-sizing:border-box; }
-  body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
-  .site-shell{ position:sticky; top:0; z-index:20; background:var(--shell); box-shadow:0 2px 10px rgba(0,0,0,.08); }
-  .shell-pad{ padding:10px 12px 0; }
-  .hero{ position:relative; height:clamp(160px, 28vw, 260px); border-radius:14px; overflow:hidden; background-image:url("assets/images/Breezy%20Banner.png"); background-size:cover; background-position:center 30%; }
-  .hero::before{ content:""; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25)); pointer-events:none; }
-  .topbar{ position:absolute; top:10px; right:12px; display:flex; align-items:center; gap:.5rem; z-index:5; }
-  .cart-link{ position:relative; display:inline-flex; align-items:center; gap:.5rem; color:var(--chip-fg); text-decoration:none; background:var(--chip-bg); padding:.55rem .85rem; border-radius:.7rem; font-weight:700; white-space:nowrap; }
-  .cart-link img{ width:20px; height:20px; filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%); }
-  .cart-count{ position:absolute; top:-6px; right:-6px; min-width:10px; height:20px; padding:0 6px; background:#1bb9df; color:#f5f5f5; border:2px solid #ffffff; border-radius:999px; font-size:.75rem; display:flex; align-items:center; justify-content:center; font-weight:800; }
-  .brand-center{ position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--fg); pointer-events:none; }
-  .brand-title{ margin:0; line-height:1.1; font-weight:800; font-size:clamp(1.6rem, 5.2vw, 2.6rem); text-shadow:0 2px 10px rgba(0,0,0,.35); }
-  .brand-subtitle{ margin:.35rem 0 0 0; font-size:clamp(.95rem, 3vw, 1.2rem); text-shadow:0 1px 6px rgba(0,0,0,.35); }
-  .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
-  .filter-grid{ max-width:1200px; margin:0 auto; display:grid; gap:0.5rem; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items:center; }
-  .filter-grid select, .filter-grid input[type="text"]{ width:100%; padding:0.6rem 0.7rem; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:#fff; color:#111; }
-  #search{ grid-column:1 / -1; }
-  @media (max-width:1023.98px){ .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .controls{ display:flex; justify-content:flex-end; align-items:center; gap:0.75rem; margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; }
-  .grid-toggle{ display:flex; gap:0.5rem; }
-  .layout-button{ background:transparent; border:none; padding:0.5rem; cursor:pointer; }
-  .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); }
-  .layout-button.active svg{ fill:var(--icon-color-active); }
-  .card-container{ display:grid; gap:1.5rem; max-width:1200px; margin:1.25rem auto 2rem; padding:0 1rem; }
-  .card-container.grid-1{ grid-template-columns:repeat(1,1fr); }
-  .card-container.grid-2{ grid-template-columns:repeat(2,1fr); }
-  .card-container.grid-3{ grid-template-columns:repeat(3,1fr); }
-  .card{ background:#fff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,.08); overflow:hidden; display:flex; flex-direction:column; padding:1rem; text-align:center; }
-  .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; }
-  .badge{ position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold; border-radius:4px; text-transform:uppercase; }
-  .badge.sale{ background:#e02424; color:#fff; }
-  .badge.popular{ background:#ffcc00; color:#000; }
-  .badge.new{ background:#2fbf71; color:#f8f9fb; }
-  button[disabled]{ background:#cbd5e1; color:#6b7280; cursor:not-allowed; }
-  #toast{ display:none; position:fixed; bottom:10px; right:10px; background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px; z-index:1000; opacity:0; transition:opacity .5s ease; }
-  #toast.show{ display:block; opacity:1; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pokémon Card Store</title>
+  <style>
+    :root{
+      --icon-color-default:#ddeaef;
+      --icon-color-active:#789cac;
+
+      --shell:#58747c;           /* header rim + blue area */
+      --fg:#ffffff;
+      --chip-bg:#072a54;         /* cart button background */
+      --chip-fg:#fff;
+      --accent:#ef4444;          /* cart badge fill */
+    }
+
+    /* Consistent sizing */
+    *,*::before,*::after{ box-sizing:border-box; }
+
+    body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
+
+    /* ================== HERO HEADER ================== */
+    .site-shell{
+      position:sticky; top:0; z-index:20;
+      background:var(--shell);
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+    }
+    .shell-pad{ padding:10px 12px 0; }
+
+    .hero{
+      position:relative;
+      height:clamp(160px, 28vw, 260px);
+      border-radius:14px; overflow:hidden;
+      background-image:url("assets/images/Breezy%20Banner.png");
+      background-size:cover;
+      background-position:center 30%;
+    }
+    .hero::before{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
+      pointer-events:none;
+    }
+
+    .topbar{
+      position:absolute; top:10px; right:12px;
+      display:flex; align-items:center; gap:.5rem; z-index:5;
+    }
+    .cart-link{
+      position:relative; display:inline-flex; align-items:center; gap:.5rem;
+      color:var(--chip-fg); text-decoration:none; background:var(--chip-bg);
+      padding:.55rem .85rem; border-radius:.7rem; font-weight:700; white-space:nowrap;
+    }
+    .cart-link img{ width:20px; height:20px; display:block;
+      filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%); }
+    .cart-count{
+      position:absolute; top:-6px; right:-6px; min-width:10px; height:20px; padding:0 6px;
+      background:#1bb9df; color:#f5f5f5; border:2px solid #ffffff; border-radius:999px;
+      font-size:.75rem; line-height:16px; display:flex; align-items:center; justify-content:center;
+      font-weight:800; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.18);
+    }
+    @media (min-width:768px){
+      .cart-link img{ width:22px; height:22px; }
+      .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
+    }
+
+    .brand-center{
+      position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
+      text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
+    }
+    .brand-title{
+      margin:0; line-height:1.1; font-weight:800; font-size:clamp(1.6rem, 5.2vw, 2.6rem);
+      text-shadow:0 2px 10px rgba(0,0,0,.35);
+    }
+    .brand-subtitle{
+      margin:.35rem 0 0 0; opacity:.95; font-size:clamp(.95rem, 3vw, 1.2rem);
+      text-shadow:0 1px 6px rgba(0,0,0,.35);
+    }
+
+    /* ========= Filter bar (inside blue header) ========= */
+    .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+    .filter-grid{
+      max-width:1200px; margin:0 auto;
+      display:grid; gap:0.5rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop */
+      align-items:center;
+    }
+
+    .filter-grid select, .filter-grid input[type="text"]{
+      width:100%;
+      padding:0.6rem 0.7rem;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.3);
+      background:#ffffff;
+      color:#111;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
+
+    /* Search alignment:
+       - Desktop: own full-width row ABOVE all 4 dropdowns
+       - Tablet/Mobile: full row width, same inner bounds as selects (no edge-to-edge overflow) */
+    #search{
+      grid-column:1 / -1;        /* desktop: full width above the selects */
+      justify-self:stretch;
+    }
+
+    /* Dropdown placement: one row of four on desktop */
+    #category-filter   { grid-column:1; }
+    #subcategory-filter{ grid-column:2; }
+    #rarity-filter     { grid-column:3; }
+    #condition-filter  { grid-column:4; }
+
+    @media (max-width:1023.98px){
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      /* search spans both cols; selects in 2x2 */
+      #search{ grid-column:1 / -1; }
+      #category-filter   { grid-column:auto; }
+      #subcategory-filter{ grid-column:auto; }
+      #rarity-filter     { grid-column:auto; }
+      #condition-filter  { grid-column:auto; }
+    }
+    @media (max-width:767.98px){
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #search{ grid-column:1 / -1; }
+    }
+
+    /* ================== Controls (grid toggle only) ================== */
+    .controls{
+      display:flex; justify-content:flex-end; align-items:center; gap:0.75rem;
+      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem;
+    }
+    .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
+    .layout-button{
+      background:transparent; border:none; padding:0.5rem; border-radius:6px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:transform .15s ease;
+    }
+    .layout-button:active{ transform:scale(0.96); }
+    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
+    .layout-button.single svg{ width:30px; height:30px; }
+    .layout-button.active svg{ fill:var(--icon-color-active); }
+
+    /* ================== Cards ================== */
+    .card-container{
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:1.5rem; max-width:1200px; margin:1.25rem auto 2rem; padding:0 1rem; transition:all .3s ease;
+    }
+    .card-container.grid-1{ grid-template-columns:repeat(1,1fr); }
+    .card-container.grid-2{ grid-template-columns:repeat(2,1fr); }
+    .card-container.grid-3{ grid-template-columns:repeat(3,1fr); }
+
+    .card{
+      position:relative; background:#fff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,.08);
+      overflow:hidden; display:flex; flex-direction:column; padding:1rem; text-align:center;
+    }
+    .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; }
+
+    .title-block{ min-height:calc(1 * 1.2em + 3 * 1.3em); }
+    .card-title{
+      font-size:1.25rem; margin:0.25rem 0; line-height:1.2; display:-webkit-box;
+      -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
+    }
+    .series-name{
+      font-size:0.7rem; color:#555; margin:0.2rem 0 0.6rem; font-style:italic;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+      line-height:1.3; min-height:calc(3 * 1.3em);
+    }
+
+    .card-info{ min-height: calc(4 * (1.3em + 0.5rem)); display:flex; flex-direction:column; }
+    .price,.rarity,.condition,.stock{ font-size:1rem; line-height:1.3; margin:0.25rem 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .badge{ position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold; border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1; }
+    .badge.sale{ background:#e02424; color:#fff; }
+    .badge.popular{ background:#ffcc00; color:#000; }
+    .badge.new{ background:#2fbf71; color:#f8f9fb; }
+
+    .product-actions{ margin-top:auto; }
+    button{ margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff; border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s; }
+
+    .container-panel{ max-width:1200px; margin:0 auto 2rem; padding:0 0 1rem; background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05); }
+
+    /* Mobile: keep no single on desktop, no triple on mobile */
+    @media (max-width:767.98px){ .layout-button.triple{ display:none; } }
+    @media (min-width:768px){ .layout-button.single{ display:none; } }
+
+    .product-actions button[disabled], button[disabled]{
+      background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !important;
+      pointer-events:none; box-shadow:none !important; transform:none !important; opacity:1 !important;
+    }
+
+    /* Toast */
+    #toast{ display:none; position:fixed; bottom:10px; right:10px; background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px; z-index:1000; opacity:0; transition:opacity .5s ease; }
+    #toast.show{ display:block; opacity:1; }
+  </style>
 </head>
 <body>
 
-<div class="site-shell">
-  <div class="shell-pad">
-    <div class="hero">
-      <div class="topbar">
-        <a class="cart-link" href="cart.html"><img src="assets/images/cart-3-svgrepo-com.svg"/><span class="cart-count" id="cartCount">0</span></a>
+  <!-- ===== Overlay Banner Header ===== -->
+  <div class="site-shell">
+    <div class="shell-pad">
+      <div class="hero">
+        <div class="topbar">
+          <a class="cart-link" href="cart.html" aria-label="Cart">
+            <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
+            <span class="cart-count" id="cartCount">0</span>
+          </a>
+        </div>
+        <div class="brand-center">
+          <div>
+            <h1 class="brand-title">BreezyEzyTCG</h1>
+            <p class="brand-subtitle">Collectibles Store</p>
+          </div>
+        </div>
       </div>
-      <div class="brand-center"><div><h1 class="brand-title">BreezyEzyTCG</h1><p class="brand-subtitle"><strong>Collectibles Store</strong></p></div></div>
+    </div>
+
+    <!-- Filter bar inside blue header -->
+    <div class="filter-bar">
+      <div class="filter-grid">
+        <!-- Search: full-width row above the four selects -->
+        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+
+        <!-- Row below: four dropdowns in one line on desktop; 2x2 on mobile/tablet -->
+        <select id="category-filter" onchange="onCategoryChange()">
+          <option value="all">All Categories</option>
+        </select>
+        <select id="subcategory-filter" onchange="applyFilters()">
+          <option value="all">All Subcategories</option>
+        </select>
+        <select id="rarity-filter" onchange="applyFilters()">
+          <option value="all">All Rarity</option>
+        </select>
+        <select id="condition-filter" onchange="applyFilters()">
+          <option value="all">All Conditions</option>
+        </select>
+      </div>
     </div>
   </div>
-  <div class="filter-bar">
-    <div class="filter-grid">
-      <input type="text" id="search" placeholder="Search..." oninput="applyFilters()"/>
-      <select id="category-filter" onchange="onCategoryChange()"><option value="all">All Categories</option></select>
-      <select id="subcategory-filter" onchange="applyFilters()"><option value="all">All Subcategories</option></select>
-      <select id="rarity-filter" onchange="applyFilters()"><option value="all">All Rarity</option></select>
-      <select id="condition-filter" onchange="applyFilters()"><option value="all">All Conditions</option></select>
+
+  <!-- Controls: just the view toggle now -->
+  <div class="container-panel">
+    <div class="controls">
+      <div class="grid-toggle">
+        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
+        </button>
+        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
     </div>
+
+    <div class="card-container grid-2"></div>
   </div>
-</div>
 
-<div class="container-panel">
-  <div class="controls">
-    <div class="grid-toggle">
-      <button class="layout-button single" type="button" onclick="setGridView(1)">1</button>
-      <button class="layout-button double active" type="button" onclick="setGridView(2)">2</button>
-      <button class="layout-button triple" type="button" onclick="setGridView(3)">3</button>
-    </div>
-  </div>
-  <div class="card-container grid-2"></div>
-</div>
+  <div id="toast"></div>
 
-<div id="toast"></div>
+  <script>
+    let allProducts = [];
 
-<script>
-let allProducts = [];
-const SHEET_CSV = "YOUR_SHEET_CSV_LINK";
+    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
 
-function safeNumber(v,f=0){ return Number.isFinite(+v)?+v:f; }
-function getCart(){ try{return JSON.parse(localStorage.getItem("cart")||"[]");}catch{return[];} }
-function getCartCount(){ return getCart().reduce((s,i)=>s+safeNumber(i.quantity,0),0); }
-function updateCartCount(){ document.getElementById("cartCount").textContent=getCartCount(); }
-function showToast(msg,duration=3000){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),duration); }
+    function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
-function addToCart(name, price, image_url){
-  const cart = getCart();
-  const found = cart.find(i => i.name === name);
-  if(found) found.quantity++; else cart.push({ name, price, quantity:1, image:image_url });
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount(); showToast(`${name} added to cart!`);
-}
+    let toastHideTimer = null;
+    function showToast(msg, duration = 3000) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      toast.classList.remove("show");
+      void toast.offsetWidth;
+      toast.classList.add("show");
+      if (toastHideTimer) clearTimeout(toastHideTimer);
+      toastHideTimer = setTimeout(() => {
+        toast.classList.remove("show");
+        const done = (e) => {
+          if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
+            toast.style.display = "none";
+            toast.removeEventListener("transitionend", done);
+          }
+        };
+        toast.addEventListener("transitionend", done);
+      }, duration);
+    }
 
-async function fetchInventoryFromSheet(){
-  const res = await fetch(SHEET_CSV);
-  const csv = await res.text();
-  const rows = csv.trim().split("\n").map(r => r.split(","));
-  rows.shift(); // remove header
-  allProducts = rows.map(r => ({
-    name: r[0],
-    price: safeNumber(r[1]),
-    stock: safeNumber(r[2]),
-    image_url: r[3],
-    category: r[4],
-    subcategory: r[5],
-    rarity: r[6],
-    condition: r[7],
-    badge: r[8],
-    series: r[9] || ""
-  }));
-  renderStore(allProducts);
-}
+    const safeNumber = (v,f=0)=>{
+      if (v==null) return f;
+      const cleaned = String(v).replace(/[$,]/g,"").trim();
+      const n = +cleaned;
+      return Number.isFinite(n) ? n : f;
+    };
 
-function getBadgeInfo(raw){
-  if(!raw) return null;
-  const t=raw.toLowerCase();
-  if(["sale","sales"].includes(t)) return {cls:"sale",label:"SALE"};
-  if(t==="new") return {cls:"new",label:"NEW"};
-  if(["popular","hot"].includes(t)) return {cls:"popular",label:"POPULAR"};
-  return null;
-}
+    /* Cart helpers */
+    const getCart=()=>{ try{return JSON.parse(localStorage.getItem("cart")||"[]");}catch{return[];} };
+    const getCartCount=()=>getCart().reduce((s,i)=>s+safeNumber(i.quantity,0),0);
+    function updateCartCount(){ const el=document.getElementById("cartCount"); if(el) el.textContent=String(getCartCount()); }
 
-function renderStore(list){
-  const c = document.querySelector(".card-container");
-  c.innerHTML = "";
-  list.forEach(p=>{
-    const stock = p.stock;
-    const price = p.price;
-    const badge = getBadgeInfo(p.badge);
-    const card = document.createElement("div");
-    card.className="card";
-    card.innerHTML = `
-      ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
-      <img src="${p.image_url}" alt="${p.name}"/>
-      <h3>${p.name}</h3>
-      <p><em>${p.series}</em></p>
-      <p>$${price.toFixed(2)}</p>
-      <p>Rarity: ${p.rarity||""}</p>
-      <p>Condition: ${p.condition||""}</p>
-      <p>Stock: ${stock}</p>
-      <button ${stock<=0?'disabled':''} onclick="addToCart('${p.name}',${price},'${p.image_url}')">${stock<=0?'Out of Stock':'Add to Cart'}</button>
-    `;
-    c.appendChild(card);
-  });
-}
+    function addToCart(name, price, image_url){
+      const cart = getCart();
+      const found = cart.find(i => i.name === name);
+      if(found) found.quantity += 1; else cart.push({ name, price, quantity:1, image:image_url });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateCartCount(); showToast(`${name} added to cart!`);
+    }
 
-fetchInventoryFromSheet();
-updateCartCount();
-</script>
+    /* --- Robust CSV parser (handles quoted commas) --- */
+    function parseCSV(text){
+      const rows = [];
+      let row = [], cell = "", inQuotes = false;
+      for (let i=0; i<text.length; i++){
+        const ch = text[i], next = text[i+1];
+        if (ch === '"'){
+          if (inQuotes && next === '"'){ cell += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (ch === ',' && !inQuotes){
+          row.push(cell); cell="";
+        } else if ((ch === '\n' || ch === '\r') && !inQuotes){
+          if (cell!=="" || row.length){ row.push(cell); rows.push(row); row=[]; cell=""; }
+          if (ch === '\r' && next === '\n'){ i++; }
+        } else {
+          cell += ch;
+        }
+      }
+      if (cell!=="" || row.length){ row.push(cell); rows.push(row); }
+      return rows;
+    }
 
-</body>
-</html>
+    function aliasKey(k){
+      const key = k.trim().toLowerCase();
+      if (["image url","image","image link","imagelink","img","img_url"].includes(key)) return "image_url";
+      if (["series","series name","seriesname"].includes(key)) return "series name";
+      if (["status","tag","ba]()
