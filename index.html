@@ -5,338 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pokémon Card Store</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background-color: #f0f4f8;
-    }
+    body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f4f8; }
+    header { background-color: #1a202c; color: white; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+    .cart-link { position: absolute; right: 1rem; top: 1rem; color: white; text-decoration: none; background: #2d3748; padding: 0.5rem 1rem; border-radius: 5px; }
 
-    header {
-      background-color: #1a202c;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    .container-panel { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; background-color: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+    .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.5rem; margin: 1.5rem auto 0; flex-direction: row; max-width: 100%; }
+    .controls input, .controls select { padding: 0.5rem; border-radius: 5px; border: 1px solid #ccc; }
 
-    .cart-link {
-      position: absolute;
-      right: 1rem;
-      top: 1rem;
-      color: white;
-      text-decoration: none;
-      background: #2d3748;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-    }
+    .grid-toggle { display: flex; justify-content: center; gap: 0.5rem; margin: 1rem auto; }
+    .layout-button { background: transparent; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; transition: background 0.2s ease; display: flex; align-items: center; justify-content: center; }
+    .layout-button svg { width: 24px; height: 24px; fill: #264b67; }
+    .layout-button.active { background-color: #cce4f6; }
 
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 1.5rem auto 0;
-      flex-direction: row;
-      max-width: 100%;
-    }
-
-    .controls input,
-    .controls select {
-      padding: 0.5rem;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-
-    .grid-toggle {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin: 1rem auto;
-    }
-
-    .layout-button {
-      background: transparent;
-      border: none;
-      padding: 0.5rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .layout-button svg {
-      width: 24px;
-      height: 24px;
-      fill: #264b67;
-    }
-
-    .layout-button.active {
-      background-color: #cce4f6;
-    }
-
-    .card-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      transition: all 0.3s ease;
-    }
-
+    .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; transition: all 0.3s ease; }
     .card-container.grid-1 { grid-template-columns: repeat(1, 1fr); }
     .card-container.grid-2 { grid-template-columns: repeat(2, 1fr); }
     .card-container.grid-3 { grid-template-columns: repeat(3, 1fr); }
 
-    .card {
-      position: relative;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-      text-align: center;
-    }
+    .card { position: relative; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; padding: 1rem; text-align: center; }
+    .card img { width: 100%; aspect-ratio: 4/3; object-fit: contain; margin-bottom: 0.5rem; border-radius: 5px; }
+    .card h3 { font-size: 1.25rem; margin: 0.25rem 0; }
+    .series-name { font-size: 0.7rem; color: #555; margin: 0.2rem 0 0.6rem; font-style: italic; white-space: normal; word-break: break-word; }
+    .condition, .price, .stock { font-size: 1rem; margin: 0.25rem 0; }
 
-    .card img {
-      width: 100%;
-      aspect-ratio: 4/3;
-      object-fit: contain;
-      margin-bottom: 0.5rem;
-      border-radius: 5px;
-    }
-
-    .card h3 {
-      font-size: 1.25rem;
-      margin: 0.25rem 0;
-    }
-
-    .series-name {
-      font-size: 0.7rem;
-      color: #555;
-      margin: 0.2rem 0 0.6rem;
-      font-style: italic;
-      white-space: normal;
-      word-break: break-word;
-    }
-
-    .condition, .price, .stock {
-      font-size: 1rem;
-      margin: 0.25rem 0;
-    }
-
-    .badge {
-      position: absolute;
-      top: 0.5rem;
-      left: 0.5rem;
-      padding: 5px 10px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      color: grey;
-      border-radius: 4px;
-      z-index: 2;
-      text-transform: uppercase;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
+    .badge { position: absolute; top: 0.5rem; left: 0.5rem; padding: 5px 10px; font-size: 0.75rem; font-weight: bold; color: grey; border-radius: 4px; z-index: 2; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     .badge.sale { background-color: #c21807; }
     .badge.popular { background-color: #ffcc00; color: black; }
     .badge.new { background-color: #4cbb17; }
 
     .product-actions { margin-top: auto; }
-
-    button {
-      margin-top: 0.5rem;
-      padding: 0.5rem 1rem;
-      background-color: #2b6cb0;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
+    button { margin-top: 0.5rem; padding: 0.5rem 1rem; background-color: #2b6cb0; color: white; border: none; border-radius: 5px; cursor: pointer; }
     button:hover { background-color: #2c5282; }
+    button:disabled { background-color: #aaa; cursor: not-allowed; opacity: 0.7; }
 
-    button:disabled {
-      background-color: #aaa;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-
-    .container-panel {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-    }
-
-    /* --- Toggle visibility rules --- */
-    /* Default: desktop first — show 2 & 3, hide single */
+    /* Toggle visibility rules: desktop -> 2/3, mobile -> 1/2 */
     .layout-button.single { display: none; }
     .layout-button.double { display: flex; }
     .layout-button.triple { display: flex; }
-
-    /* Mobile: show single & double, hide triple */
     @media (max-width: 768px) {
       .layout-button.single { display: flex; }
       .layout-button.double { display: flex; }
       .layout-button.triple { display: none; }
     }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>BreezyEzyTCG Collectibles Store</h1>
-    <a class="cart-link" href="cart.html">🛒 Cart</a>
-  </header>
 
-  <div class="container-panel">
-    <div class="controls">
-      <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-      <select id="category-filter" onchange="applyFilters()">
-        <option value="all">All Categories</option>
-      </select>
-      <div class="grid-toggle">
-        <!-- Single (mobile only) -->
-        <button class="layout-button single" onclick="setGridView(1)" aria-label="1-Grid View">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
-          </svg>
-        </button>
-        <!-- Double -->
-        <button class="layout-button double active" onclick="setGridView(2)" aria-label="2-Grid View">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Z"/>
-          </svg>
-        </button>
-        <!-- Triple (desktop only) -->
-        <button class="layout-button triple" onclick="setGridView(3)" aria-label="3-Grid View">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 4h5v5H4V4Zm0 7h5v5H4v-5Zm0 7h5v5H4v-5Zm7-14h9v5h-9V4Zm0 7h9v5h-9v-5Zm0 7h9v5h-9v-5Z"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div class="card-container grid-2"></div>
-  </div>
-
-  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
-
-  <script>
-    const MOBILE_MAX = 768;
-    let allProducts = [];
-
-    function isMobile() {
-      return window.innerWidth <= MOBILE_MAX;
-    }
-
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.style.display = "block";
-      setTimeout(() => toast.style.display = "none", 2000);
-    }
-
-    function addToCart(name, price, image_url) {
-      let cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const existing = cart.find(item => item.name === name);
-      if (existing) existing.quantity += 1;
-      else cart.push({ name, price, quantity: 1, image: image_url });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      showToast(`${name} added to cart!`);
-    }
-
-    async function fetchInventoryFromSheet() {
-      const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
-      try {
-        const response = await fetch(sheetURL);
-        const data = await response.text();
-        const rows = data.trim().split("\n").map(row => row.split(","));
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
-
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : cell.trim();
-          });
-          return obj;
-        });
-
-        populateCategoryDropdown();
-        renderStore(allProducts);
-        enforceResponsiveView(); // ensure correct grid after first render
-      } catch (error) {
-        console.error("Failed to load inventory:", error);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
-      }
-    }
-
-    function renderStore(products) {
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
-
-      products.forEach(product => {
-        const disabled = product.stock <= 0 ? "disabled" : "";
-        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
-
-        const card = document.createElement("div");
-        card.classList.add("card");
-
-        card.innerHTML = `
-          <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
-          <img src="${product.image_url}" alt="${product.name}" />
-          <h3>${product.name}</h3>
-          <p class="series-name">${product["series name"] || ""}</p>
-          <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-          <p class="price">$${Number(product.price || 0).toFixed(2)}</p>
-          <p class="stock"><strong>Stock:</strong> ${Number.isFinite(product.stock) ? product.stock : 0}</p>
-          <div class="product-actions">
-            <button ${disabled} onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${Number(product.price || 0)}, '${(product.image_url || '').replace(/'/g, "\\'")}')">${buttonText}</button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function populateCategoryDropdown() {
-      const select = document.getElementById("category-filter");
-      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-      categories.sort().forEach(cat => {
-        const option = document.createElement("option");
-        option.value = cat;
-        option.textContent = cat;
-        select.appendChild(option);
-      });
-    }
-
-    function applyFilters() {
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const selectedCategory = document.getElementById("category-filter").value;
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(keyword) &&
-        (selectedCategory === "all" || p.category === selectedCategory)
-      );
-      renderStore(filtered);
-    }
-
-    function currentGridType() {
-      const container = document.querySelector(".card-container");
-      if (container.classList.contains("grid-1")) return 1;
-      if (container.classList.contains("grid-2")) return 2;
-      if (container.classList.contains("grid-3")) return 3;
-      return 2; // default
-    }
-
-    function updateActiveButton(type) {
-      documen
+    .status { text-align:center; color:#264b67; padding:
