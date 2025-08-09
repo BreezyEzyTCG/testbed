@@ -89,17 +89,9 @@
       transition: all 0.3s ease;
     }
 
-    .card-container.grid-1 {
-      grid-template-columns: repeat(1, 1fr);
-    }
-
-    .card-container.grid-2 {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .card-container.grid-3 {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .card-container.grid-1 { grid-template-columns: repeat(1, 1fr); }
+    .card-container.grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .card-container.grid-3 { grid-template-columns: repeat(3, 1fr); }
 
     .card {
       position: relative;
@@ -121,18 +113,24 @@
       border-radius: 5px;
     }
 
+    /* ---- Standardized text sizes & even spacing ---- */
+    .card h3 {
+      font-size: 1.25rem;
+      margin: 0.25rem 0;
+    }
+
     .series-name {
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       color: #555;
-      margin-top: 0.3rem;
+      margin: 0.2rem 0 0.4rem;
       font-style: italic;
       white-space: normal;
       word-break: break-word;
     }
 
-    .condition, .stock {
-      font-size: 0.9rem;
-      margin-top: 0.2rem;
+    .price, .condition, .stock {
+      font-size: 1rem;          /* standardize font size */
+      margin: 0.35rem 0;        /* even vertical spacing to match reference */
     }
 
     .badge {
@@ -153,9 +151,7 @@
     .badge.popular { background-color: #ffcc00; color: black; }
     .badge.new { background-color: #4cbb17; }
 
-    .product-actions {
-      margin-top: auto; /* pushes button to the bottom */
-    }
+    .product-actions { margin-top: auto; }
 
     button {
       margin-top: 0.5rem;
@@ -270,13 +266,14 @@
         const card = document.createElement("div");
         card.classList.add("card");
 
+        /* Re-ordered to: Name -> Series -> Price -> Condition -> Stock (with standardized spacing) */
         card.innerHTML = `
           <div class="badge ${product.badge?.toLowerCase() || ''}">${product.badge || ''}</div>
           <img src="${product.image_url}" alt="${product.name}" />
           <h3>${product.name}</h3>
           <p class="series-name">${product["series name"] || ""}</p>
+          <p class="price"><strong>$${product.price.toFixed(2)}</strong></p>
           <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-          <p><strong>$${product.price.toFixed(2)}</strong></p>
           <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
           <div class="product-actions">
             <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
