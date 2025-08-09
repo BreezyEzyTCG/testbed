@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pokémon Card Store</title>
 
-  <!-- Google Font for brand title -->
+  <!-- Google Font: Poetsen One (for brand title) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
@@ -22,7 +22,6 @@
       --accent:#ef4444;          /* cart badge fill */
     }
 
-    /* General body font reverted */
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
 
     /* ================== HERO HEADER ================== */
@@ -88,42 +87,42 @@
       text-align:center; color:var(--fg); padding:0 12px;
       pointer-events:none;
     }
-
-    /* Brand title with Poetsen One, 34px */
     .brand-title{
-      margin:0; line-height:1.1; font-weight:400;
-      font-family:"Poetsen One", system-ui, sans-serif;
-      font-size:34px;
+      margin:0; line-height:1.1; font-weight:800;
+      /* Apply requested font + size */
+      font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size:34px;           /* as requested */
       text-shadow:0 2px 10px rgba(0,0,0,.35);
     }
-
     .brand-subtitle{
       margin:.35rem 0 0 0; opacity:.95;
       font-size:clamp(1.2rem, 3vw, 1.2rem);
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* ========= Filter/search bar under banner ========= */
+    /* ========= Filter/search bar under banner (inside the blue header) ========= */
     .filter-bar{
       background:var(--shell);
       padding:12px 12px 14px;
     }
 
+    /* NEW: search row centered above the dropdown grid */
     .search-row{
       max-width:1200px; margin:0 auto 10px;
       display:flex; justify-content:center;
     }
+    /* keep the same input styling/sizing as before */
     #search{
       padding:0.5rem;
       border-radius:5px;
       border:1px solid #ccc;
       background:#fff;
-      width:420px;
+      width:420px;             /* fixed width on desktop */
     }
     .filter-grid{
       max-width:1200px; margin:0 auto;
       display:grid; gap:0.5rem;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop: 4 in a row */
     }
     .filter-grid select{
       width:100%;
@@ -135,13 +134,14 @@
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
     @media (max-width:1023.98px){
-      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* tablet */
     }
     @media (max-width:767.98px){
+      /* keep the previous mobile width behavior for the search */
       #search{ width:100%; max-width:60vw; }
     }
 
-    /* ================== Controls ================== */
+    /* ================== Controls (grid toggle only now) ================== */
     .controls{
       display:flex; justify-content:flex-end; align-items:center;
       gap:0.75rem; margin:0.75rem auto 0; max-width:1200px; padding:0 1rem;
@@ -173,23 +173,28 @@
     }
     .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; }
 
-    .title-block{ min-height:calc(2 * 1.2em + 3 * 1.3em); }
+    /* --- Title block & title (updated) --- */
+    .title-block{ min-height:calc(2 * 1.2em + 3 * 1.3em); } /* room for 2 lines of title */
 
     .card-title{
+      /* desktop defaults */
       font-size:clamp(1.05rem, 1.2vw + .9rem, 1.20rem);
       margin:0.25rem 0;
       line-height:1.2;
       display:-webkit-box;
       -webkit-box-orient:vertical;
-      -webkit-line-clamp:1;
+      -webkit-line-clamp:1;         /* keep 1 line on desktop */
       overflow:hidden;
       min-height:1.2em;
+
+      /* prevent long words from trailing off */
       overflow-wrap:anywhere;
       word-break:break-word;
     }
+
     @media (max-width:767.98px){
       .card-title{
-        -webkit-line-clamp:2;
+        -webkit-line-clamp:2;                 /* up to two lines on mobile */
         font-size:clamp(.95rem, 4.6vw, 1.10rem);
       }
     }
@@ -200,6 +205,7 @@
       line-height:1.3; min-height:calc(3 * 1.3em);
     }
 
+    /* Fixed 4-line meta block */
     .card-info{
       min-height: calc(4 * (1.3em + 0.5rem));
       display:flex; flex-direction:column; justify-content:flex-start;
@@ -219,6 +225,7 @@
     .badge.new{ background:#2fbf71; color:#f8f9fb; }
 
     .product-actions{ margin-top:auto; }
+
     button{
       margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff;
       border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s;
@@ -235,7 +242,7 @@
       .grid-toggle{ gap:0.15rem !important; }
       .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
       .grid-toggle > .layout-button svg{ width:22px; height:22px; }
-      .layout-button.triple{ display:none; }
+      .layout-button.triple{ display:none; } /* no 3-grid on mobile */
     }
     @media (min-width:768px){ .layout-button.single{ display:none; } }
 
@@ -256,6 +263,7 @@
   </style>
 </head>
 <body>
+
   <!-- ===== Overlay Banner Header ===== -->
   <div class="site-shell">
     <div class="shell-pad">
@@ -266,6 +274,7 @@
             <span class="cart-count" id="cartCount">0</span>
           </a>
         </div>
+
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
@@ -274,11 +283,14 @@
         </div>
       </div>
     </div>
+
     <!-- Filter/search bar under the banner -->
     <div class="filter-bar">
+      <!-- NEW: centered search above the dropdowns -->
       <div class="search-row">
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
       </div>
+
       <div class="filter-grid">
         <select id="category-filter" onchange="onCategoryChange()">
           <option value="all">All Categories</option>
@@ -313,4 +325,301 @@
         <!-- 3-Grid -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 
+            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-container grid-2"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    let allProducts = [];
+
+    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+
+    function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
+
+    let toastHideTimer = null;
+    function showToast(msg, duration = 3000) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      toast.classList.remove("show");
+      void toast.offsetWidth;
+      toast.classList.add("show");
+      if (toastHideTimer) clearTimeout(toastHideTimer);
+      toastHideTimer = setTimeout(() => {
+        toast.classList.remove("show");
+        const done = (e) => {
+          if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
+            toast.style.display = "none";
+            toast.removeEventListener("transitionend", done);
+          }
+        };
+        toast.addEventListener("transitionend", done);
+      }, duration);
+    }
+
+    function safeNumber(val, fallback=0){
+      if (typeof val === "number" && Number.isFinite(val)) return val;
+      const n = parseFloat(val);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    /* ---- Cart helpers ---- */
+    function getCart(){
+      try{ return JSON.parse(localStorage.getItem("cart") || "[]"); }
+      catch{ return []; }
+    }
+    function getCartCount(){
+      return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
+    }
+    function updateCartCount(){
+      const el = document.getElementById("cartCount");
+      if (el) el.textContent = String(getCartCount());
+    }
+
+    function addToCart(name, price, image_url){
+      const cart = getCart();
+      const found = cart.find(i => i.name === name);
+      if(found) found.quantity += 1;
+      else cart.push({ name, price, quantity:1, image:image_url });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateCartCount();
+      showToast(`${name} added to cart!`);
+    }
+
+    async function fetchInventoryFromSheet(){
+      try{
+        const res = await fetch(SHEET_CSV);
+        const csv = await res.text();
+        const rows = csv.trim().split("\n").map(r => r.split(","));
+        const headers = rows.shift().map(h => h.trim().toLowerCase());
+
+        allProducts = rows.map(row => {
+          const obj = {};
+          row.forEach((cell, i) => {
+            const key = headers[i];
+            if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
+            else obj[key] = (cell || "").trim();
+          });
+
+          /* Explicit fallbacks by index (0-based) */
+          obj.category    = (row[4] || obj.category    || "").trim(); // Column E
+          obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
+          obj.rarity      = (row[6] || obj.rarity      || "").trim(); // Column G
+          obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
+          return obj;
+        });
+
+        populateAllDropdowns();
+        renderStore(allProducts);
+        enforceResponsiveGrid();
+      }catch(e){
+        console.error(e);
+        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+      }
+    }
+
+    function getBadgeInfo(raw){
+      if(!raw) return null;
+      const t = String(raw).trim().toLowerCase();
+      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
+      if(t === "new") return { cls:"new", label:"NEW" };
+      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
+      return null;
+    }
+
+    function renderStore(list){
+      const container = document.querySelector(".card-container");
+      container.innerHTML = "";
+
+      list.forEach(p => {
+        const stock = safeNumber(p.stock, 0);
+        const price = safeNumber(p.price, 0);
+        const out = stock <= 0;
+
+        const badge = getBadgeInfo(p.badge);
+        const safeName = String(p.name || "").replace(/'/g, "\\'");
+        const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
+
+        const btnAttrs = out
+          ? `disabled aria-disabled="true" tabindex="-1"`
+          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
+          <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
+          <div class="title-block">
+            <h3 class="card-title">${p.name || ""}</h3>
+            <p class="series-name">${p["series name"] || ""}</p>
+          </div>
+          <div class="card-info">
+            <p class="price">$${price.toFixed(2)}</p>
+            <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
+            <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
+            <p class="stock"><strong>Stock:</strong> ${stock}</p>
+          </div>
+          <div class="product-actions">
+            <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    /* ---------- Dropdown population ---------- */
+    const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
+    function populateAllDropdowns(){
+      // Category
+      const catSel = document.getElementById("category-filter");
+      catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; catSel.appendChild(opt);
+      });
+
+      // Rarity
+      const rarSel = document.getElementById("rarity-filter");
+      rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
+        const opt = document.createElement("option");
+        opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
+      });
+
+      // Condition
+      const conSel = document.getElementById("condition-filter");
+      conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; conSel.appendChild(opt);
+      });
+
+      // Subcategory depends on current category
+      updateSubcategoryOptions();
+    }
+
+    function updateSubcategoryOptions(){
+      const cat = document.getElementById("category-filter").value;
+      const subSel = document.getElementById("subcategory-filter");
+
+      const pool = (cat === "all")
+        ? allProducts
+        : allProducts.filter(p => p.category === cat);
+
+      const subs = byUniqueSorted(pool.map(p => p.subcategory));
+
+      const current = subSel.value;
+      subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      subs.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s; opt.textContent = s; subSel.appendChild(opt);
+      });
+
+      if (current !== "all" && subs.includes(current)) subSel.value = current;
+      else subSel.value = "all";
+    }
+
+    function onCategoryChange(){
+      updateSubcategoryOptions();
+      applyFilters();
+    }
+
+    /* ---------- Filtering ---------- */
+    function applyFilters(){
+      const kw   = document.getElementById("search").value.toLowerCase();
+      const cat  = document.getElementById("category-filter").value;
+      const sub  = document.getElementById("subcategory-filter").value;
+      const rar  = document.getElementById("rarity-filter").value;
+      const cond = document.getElementById("condition-filter").value;
+
+      const filtered = allProducts.filter(p =>
+        (p.name || "").toLowerCase().includes(kw) &&
+        (cat === "all" || p.category === cat) &&
+        (sub === "all" || p.subcategory === sub) &&
+        (rar === "all" || p.rarity === rar) &&
+        (cond === "all" || p.condition === cond)
+      );
+      renderStore(filtered);
+    }
+
+    function activateButton(type){
+      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
+      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
+      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
+      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
+    }
+
+    // Strict blocks: no 3-grid on mobile, no 1-grid on desktop
+    function setGridView(type){
+      if(isMobile() && type === 3) return;
+      if(!isMobile() && type === 1) return;
+
+      const cont = document.querySelector(".card-container");
+      cont.classList.remove("grid-1","grid-2","grid-3");
+      cont.classList.add(`grid-${type}`);
+
+      activateButton(type);
+      applyFilters();
+    }
+
+    function enforceResponsiveGrid(){
+      const cont = document.querySelector(".card-container");
+      if(isMobile() && cont.classList.contains("grid-3")) setGridView(2);
+      else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
+    }
+
+    /* === Title auto-fit (new) === */
+    function fitCardTitles(root = document){
+      const titles = root.querySelectorAll('.card-title');
+      titles.forEach(el => {
+        // reset
+        el.style.fontSize = '';
+        const style = getComputedStyle(el);
+        const clamp = parseInt(style.getPropertyValue('-webkit-line-clamp') || '2', 10);
+        const maxH = parseFloat(style.lineHeight) * clamp;
+        el.style.maxHeight = maxH + 'px';
+
+        let current = parseFloat(style.fontSize);   // px
+        const floor = 12;                           // don't go below 12px for readability
+        while ((el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && current > floor){
+          current -= 0.5;
+          el.style.fontSize = current + 'px';
+        }
+      });
+    }
+
+    /* Re-wrap renderStore to run fitter after DOM paint */
+    const _renderStore = renderStore;
+    renderStore = function(list){
+      _renderStore(list);
+      requestAnimationFrame(() => fitCardTitles(document));
+    };
+
+    /* Sync cart badge across tabs/windows */
+    window.addEventListener("storage", (e) => {
+      if (e.key === "cart") updateCartCount();
+    });
+
+    window.addEventListener("resize", () => {
+      enforceResponsiveGrid();
+      fitCardTitles(document);
+    });
+    window.addEventListener("orientationchange", () => {
+      enforceResponsiveGrid();
+      fitCardTitles(document);
+    });
+
+    /* Init */
+    updateCartCount();
+    fetchInventoryFromSheet();
+  </script>
+</body>
+</html>
