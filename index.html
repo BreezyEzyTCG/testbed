@@ -16,9 +16,6 @@
       --accent:#ef4444;          /* cart badge fill */
     }
 
-    /* Consistent sizing */
-    *,*::before,*::after{ box-sizing:border-box; }
-
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
 
     /* ================== HERO HEADER ================== */
@@ -27,7 +24,7 @@
       background:var(--shell);
       box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    .shell-pad{ padding:10px 12px 0; }
+    .shell-pad{ padding:10px 12px 0; } /* remove bottom padding; filter bar adds its own */
 
     .hero{
       position:relative;
@@ -43,92 +40,92 @@
       pointer-events:none;
     }
 
+    /* Cart chip on banner (top-right) */
     .topbar{
       position:absolute; top:10px; right:12px;
-      display:flex; align-items:center; gap:.5rem; z-index:5;
+      display:flex; align-items:center; gap:.5rem;
+      z-index:5;
     }
     .cart-link{
-      position:relative; display:inline-flex; align-items:center; gap:.5rem;
-      color:var(--chip-fg); text-decoration:none; background:var(--chip-bg);
-      padding:.55rem .85rem; border-radius:.7rem; font-weight:700; white-space:nowrap;
+      position:relative;
+      display:inline-flex; align-items:center; gap:.5rem;
+      color:var(--chip-fg); text-decoration:none;
+      background:var(--chip-bg);
+      padding:.55rem .85rem;
+      border-radius:.7rem; font-weight:700; white-space:nowrap;
     }
-    .cart-link img{ width:20px; height:20px; display:block;
-      filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%); }
+    .cart-link img{
+      width:20px; height:20px; display:block;
+      filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%);
+    }
     .cart-count{
-      position:absolute; top:-6px; right:-6px; min-width:10px; height:20px; padding:0 6px;
-      background:#1bb9df; color:#f5f5f5; border:2px solid #ffffff; border-radius:999px;
-      font-size:.75rem; line-height:16px; display:flex; align-items:center; justify-content:center;
-      font-weight:800; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.18);
+      position:absolute;
+      top:-6px; right:-6px;
+      min-width:10px; height:20px; padding:0 6px;
+      background:#1bb9df; color:#f5f5f5;
+      border:2px solid #ffffff; border-radius:999px;
+      font-size:.75rem; line-height:16px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; pointer-events:none;
+      box-shadow:0 2px 6px rgba(0,0,0,.18);
     }
     @media (min-width:768px){
       .cart-link img{ width:22px; height:22px; }
       .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
     }
 
+    /* Centered brand block */
     .brand-center{
-      position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
-      text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
+      position:absolute; inset:0; z-index:2;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center; color:var(--fg); padding:0 12px;
+      pointer-events:none;
     }
     .brand-title{
-      margin:0; line-height:1.1; font-weight:800; font-size:clamp(1.6rem, 5.2vw, 2.6rem);
+      margin:0; line-height:1.1; font-weight:800;
+      font-size:clamp(1.6rem, 5.2vw, 2.6rem);
       text-shadow:0 2px 10px rgba(0,0,0,.35);
     }
     .brand-subtitle{
-      margin:.35rem 0 0 0; opacity:.95; font-size:clamp(.95rem, 3vw, 1.2rem);
+      margin:.35rem 0 0 0; opacity:.95;
+      font-size:clamp(.95rem, 3vw, 1.2rem);
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* ========= Filter bar (inside blue header) ========= */
-    .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+    /* ========= NEW: Filter bar under banner (inside the blue header) ========= */
+    .filter-bar{
+      background:var(--shell);
+      padding:12px 12px 14px;   /* breathe */
+    }
     .filter-grid{
       max-width:1200px; margin:0 auto;
       display:grid; gap:0.5rem;
-      grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop */
-      align-items:center;
+      grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop: 4 in a row */
     }
-
-    .filter-grid select, .filter-grid input[type="text"]{
+    .filter-grid select{
       width:100%;
-      padding:0.6rem 0.7rem;
-      border-radius:10px;
+      padding:0.55rem 0.65rem;
+      border-radius:8px;
       border:1px solid rgba(255,255,255,.3);
       background:#ffffff;
       color:#111;
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
-
-    /* Search alignment:
-       - Desktop: own full-width row ABOVE all 4 dropdowns
-       - Tablet/Mobile: full row width, same inner bounds as selects (no edge-to-edge overflow) */
-    #search{
-      grid-column:1 / -1;        /* desktop: full width above the selects */
-      justify-self:stretch;
-    }
-
-    /* Dropdown placement: one row of four on desktop */
-    #category-filter   { grid-column:1; }
-    #subcategory-filter{ grid-column:2; }
-    #rarity-filter     { grid-column:3; }
-    #condition-filter  { grid-column:4; }
-
     @media (max-width:1023.98px){
-      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      /* search spans both cols; selects in 2x2 */
-      #search{ grid-column:1 / -1; }
-      #category-filter   { grid-column:auto; }
-      #subcategory-filter{ grid-column:auto; }
-      #rarity-filter     { grid-column:auto; }
-      #condition-filter  { grid-column:auto; }
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* tablet */
     }
     @media (max-width:767.98px){
-      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      #search{ grid-column:1 / -1; }
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* mobile: 2×2 */
     }
 
-    /* ================== Controls (grid toggle only) ================== */
+    /* ================== Controls (search + grid toggle) ================== */
     .controls{
-      display:flex; justify-content:flex-end; align-items:center; gap:0.75rem;
-      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem;
+      display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
+      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
+    }
+    .controls-left{ display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .controls input{
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
     }
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
     .layout-button{
@@ -167,31 +164,66 @@
       line-height:1.3; min-height:calc(3 * 1.3em);
     }
 
-    .card-info{ min-height: calc(4 * (1.3em + 0.5rem)); display:flex; flex-direction:column; }
-    .price,.rarity,.condition,.stock{ font-size:1rem; line-height:1.3; margin:0.25rem 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* Fixed 4-line meta block */
+    .card-info{
+      min-height: calc(4 * (1.3em + 0.5rem));
+      display:flex; flex-direction:column; justify-content:flex-start;
+    }
+    .price,.rarity,.condition,.stock{
+      font-size:1rem; line-height:1.3; margin:0.25rem 0;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
 
-    .badge{ position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold; border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1; }
+    /* Badges */
+    .badge{
+      position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold;
+      border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1;
+    }
     .badge.sale{ background:#e02424; color:#fff; }
     .badge.popular{ background:#ffcc00; color:#000; }
     .badge.new{ background:#2fbf71; color:#f8f9fb; }
 
     .product-actions{ margin-top:auto; }
-    button{ margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff; border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s; }
 
-    .container-panel{ max-width:1200px; margin:0 auto 2rem; padding:0 0 1rem; background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05); }
+    button{
+      margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff;
+      border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s;
+    }
 
-    /* Mobile: keep no single on desktop, no triple on mobile */
-    @media (max-width:767.98px){ .layout-button.triple{ display:none; } }
+    .container-panel{
+      max-width:1200px; margin:0 auto 2rem; padding:0 0 1rem;
+      background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
+    }
+
+    /* ================== Mobile overrides ================== */
+    @media (max-width:767.98px){
+      .controls{
+        display:grid; grid-template-columns:minmax(0,1fr) auto;
+        column-gap:0.75rem; row-gap:0.75rem; align-items:center;
+      }
+      .controls-left{ display:contents; }
+      #search{ grid-column:1 / 2; grid-row:1; width:100%; max-width:60vw; }
+      .grid-toggle{ grid-column:2 / 3; grid-row:1; justify-self:end; gap:0.15rem !important; }
+      .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
+      .grid-toggle > .layout-button svg{ width:22px; height:22px; }
+      .layout-button.triple{ display:none; } /* no 3-grid on mobile */
+    }
     @media (min-width:768px){ .layout-button.single{ display:none; } }
 
+    /* Robust disabled */
     .product-actions button[disabled], button[disabled]{
-      background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !important;
-      pointer-events:none; box-shadow:none !important; transform:none !important; opacity:1 !important;
+      background:#cbd5e1 !important; color:#6b7280 !important;
+      cursor:not-allowed !important; pointer-events:none; box-shadow:none !important;
+      transform:none !important; opacity:1 !important;
     }
 
     /* Toast */
-    #toast{ display:none; position:fixed; bottom:10px; right:10px; background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px; z-index:1000; opacity:0; transition:opacity .5s ease; }
-    #toast.show{ display:block; opacity:1; }
+    #toast {
+      display:none; position:fixed; bottom:10px; right:10px;
+      background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px;
+      z-index:1000; opacity:0; transition:opacity 0.5s ease;
+    }
+    #toast.show { display:block; opacity:1; }
   </style>
 </head>
 <body>
@@ -206,6 +238,7 @@
             <span class="cart-count" id="cartCount">0</span>
           </a>
         </div>
+
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
@@ -215,13 +248,9 @@
       </div>
     </div>
 
-    <!-- Filter bar inside blue header -->
+    <!-- NEW: filter bar under the banner (inside blue area) -->
     <div class="filter-bar">
       <div class="filter-grid">
-        <!-- Search: full-width row above the four selects -->
-        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-
-        <!-- Row below: four dropdowns in one line on desktop; 2x2 on mobile/tablet -->
         <select id="category-filter" onchange="onCategoryChange()">
           <option value="all">All Categories</option>
         </select>
@@ -238,18 +267,25 @@
     </div>
   </div>
 
-  <!-- Controls: just the view toggle now -->
+  <!-- ===== Content Panel (search + grid toggle + cards) ===== -->
   <div class="container-panel">
     <div class="controls">
+      <div class="controls-left">
+        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+      </div>
+
       <div class="grid-toggle">
+        <!-- Single Pane (mobile only) -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
         </button>
+        <!-- 2-Grid -->
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
           </svg>
         </button>
+        <!-- 3-Grid -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
@@ -291,19 +327,33 @@
       }, duration);
     }
 
-    const safeNumber = (v,f=0)=>Number.isFinite(+v)?+v:f;
+    function safeNumber(val, fallback=0){
+      if (typeof val === "number" && Number.isFinite(val)) return val;
+      const n = parseFloat(val);
+      return Number.isFinite(n) ? n : fallback;
+    }
 
-    /* Cart helpers */
-    const getCart=()=>{ try{return JSON.parse(localStorage.getItem("cart")||"[]");}catch{return[];} };
-    const getCartCount=()=>getCart().reduce((s,i)=>s+safeNumber(i.quantity,0),0);
-    function updateCartCount(){ const el=document.getElementById("cartCount"); if(el) el.textContent=String(getCartCount()); }
+    /* ---- Cart helpers ---- */
+    function getCart(){
+      try{ return JSON.parse(localStorage.getItem("cart") || "[]"); }
+      catch{ return []; }
+    }
+    function getCartCount(){
+      return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
+    }
+    function updateCartCount(){
+      const el = document.getElementById("cartCount");
+      if (el) el.textContent = String(getCartCount());
+    }
 
     function addToCart(name, price, image_url){
       const cart = getCart();
       const found = cart.find(i => i.name === name);
-      if(found) found.quantity += 1; else cart.push({ name, price, quantity:1, image:image_url });
+      if(found) found.quantity += 1;
+      else cart.push({ name, price, quantity:1, image:image_url });
       localStorage.setItem("cart", JSON.stringify(cart));
-      updateCartCount(); showToast(${name} added to cart!);
+      updateCartCount();
+      showToast(`${name} added to cart!`);
     }
 
     async function fetchInventoryFromSheet(){
@@ -320,6 +370,8 @@
             if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
             else obj[key] = (cell || "").trim();
           });
+
+          /* Explicit fallbacks by index (0-based) */
           obj.category    = (row[4] || obj.category    || "").trim(); // Column E
           obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
           obj.rarity      = (row[6] || obj.rarity      || "").trim(); // Column G
@@ -359,13 +411,13 @@
         const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
 
         const btnAttrs = out
-          ? disabled aria-disabled="true" tabindex="-1"
-          : onclick="addToCart('${safeName}', ${price}, '${safeImg}')";
+          ? `disabled aria-disabled="true" tabindex="-1"`
+          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
 
         const card = document.createElement("div");
         card.className = "card";
-        card.innerHTML = 
-          ${badge ? <div class="badge ${badge.cls}">${badge.label}</div> : `}
+        card.innerHTML = `
+          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
           <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
           <div class="title-block">
             <h3 class="card-title">${p.name || ""}</h3>
@@ -380,49 +432,70 @@
           <div class="product-actions">
             <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
           </div>
-        ;
+        `;
         container.appendChild(card);
       });
     }
 
+    /* ---------- Dropdown population ---------- */
     const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
     function populateAllDropdowns(){
+      // Category
       const catSel = document.getElementById("category-filter");
       catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
-        const opt = document.createElement("option"); opt.value=c; opt.textContent=c; catSel.appendChild(opt);
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; catSel.appendChild(opt);
       });
 
+      // Rarity
       const rarSel = document.getElementById("rarity-filter");
       rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
-        const opt = document.createElement("option"); opt.value=r; opt.textContent=r; rarSel.appendChild(opt);
+        const opt = document.createElement("option");
+        opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
       });
 
+      // Condition
       const conSel = document.getElementById("condition-filter");
       conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
-        const opt = document.createElement("option"); opt.value=c; opt.textContent=c; conSel.appendChild(opt);
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; conSel.appendChild(opt);
       });
 
+      // Subcategory depends on current category
       updateSubcategoryOptions();
     }
 
     function updateSubcategoryOptions(){
       const cat = document.getElementById("category-filter").value;
       const subSel = document.getElementById("subcategory-filter");
-      const pool = (cat === "all") ? allProducts : allProducts.filter(p => p.category === cat);
+
+      const pool = (cat === "all")
+        ? allProducts
+        : allProducts.filter(p => p.category === cat);
+
       const subs = byUniqueSorted(pool.map(p => p.subcategory));
 
       const current = subSel.value;
       subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      subs.forEach(s => { const opt=document.createElement("option"); opt.value=s; opt.textContent=s; subSel.appendChild(opt); });
-      if (current !== "all" && subs.includes(current)) subSel.value = current; else subSel.value = "all";
+      subs.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s; opt.textContent = s; subSel.appendChild(opt);
+      });
+
+      if (current !== "all" && subs.includes(current)) subSel.value = current;
+      else subSel.value = "all";
     }
 
-    function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
+    function onCategoryChange(){
+      updateSubcategoryOptions();
+      applyFilters();
+    }
 
+    /* ---------- Filtering ---------- */
     function applyFilters(){
       const kw   = document.getElementById("search").value.toLowerCase();
       const cat  = document.getElementById("category-filter").value;
@@ -447,12 +520,15 @@
       if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
     }
 
+    // Strict blocks: no 3-grid on mobile, no 1-grid on desktop
     function setGridView(type){
       if(isMobile() && type === 3) return;
       if(!isMobile() && type === 1) return;
+
       const cont = document.querySelector(".card-container");
       cont.classList.remove("grid-1","grid-2","grid-3");
-      cont.classList.add(grid-${type});
+      cont.classList.add(`grid-${type}`);
+
       activateButton(type);
       applyFilters();
     }
@@ -463,10 +539,15 @@
       else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
     }
 
-    window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
+    /* Sync cart badge across tabs/windows */
+    window.addEventListener("storage", (e) => {
+      if (e.key === "cart") updateCartCount();
+    });
+
     window.addEventListener("resize", enforceResponsiveGrid);
     window.addEventListener("orientationchange", enforceResponsiveGrid);
 
+    /* Init */
     updateCartCount();
     fetchInventoryFromSheet();
   </script>
