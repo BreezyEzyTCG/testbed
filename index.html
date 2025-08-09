@@ -16,6 +16,9 @@
       --accent:#ef4444;          /* cart badge fill */
     }
 
+    /* Consistent sizing */
+    *,*::before,*::after{ box-sizing:border-box; }
+
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
 
     /* ================== HERO HEADER ================== */
@@ -83,26 +86,46 @@
       grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop */
       align-items:center;
     }
+
     .filter-grid select, .filter-grid input[type="text"]{
-      width:100%; padding:0.55rem 0.65rem; border-radius:8px;
-      border:1px solid rgba(255,255,255,.3); background:#ffffff; color:#111;
+      width:100%;
+      padding:0.6rem 0.7rem;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.3);
+      background:#ffffff;
+      color:#111;
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
-    /* Search alignment: span first two columns on desktop, full row on mobile/tablet */
+
+    /* Search alignment:
+       - Desktop: own full-width row ABOVE all 4 dropdowns
+       - Tablet/Mobile: full row width, same inner bounds as selects (no edge-to-edge overflow) */
     #search{
-      grid-column:1 / span 2;    /* desktop: centered above first two selects */
+      grid-column:1 / -1;        /* desktop: full width above the selects */
       justify-self:stretch;
     }
+
+    /* Dropdown placement: one row of four on desktop */
+    #category-filter   { grid-column:1; }
+    #subcategory-filter{ grid-column:2; }
+    #rarity-filter     { grid-column:3; }
+    #condition-filter  { grid-column:4; }
+
     @media (max-width:1023.98px){
       .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      #search{ grid-column:1 / -1; } /* full width on tablet */
+      /* search spans both cols; selects in 2x2 */
+      #search{ grid-column:1 / -1; }
+      #category-filter   { grid-column:auto; }
+      #subcategory-filter{ grid-column:auto; }
+      #rarity-filter     { grid-column:auto; }
+      #condition-filter  { grid-column:auto; }
     }
     @media (max-width:767.98px){
       .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      #search{ grid-column:1 / -1; } /* full width on mobile */
+      #search{ grid-column:1 / -1; }
     }
 
-    /* ================== Controls (grid toggle only now) ================== */
+    /* ================== Controls (grid toggle only) ================== */
     .controls{
       display:flex; justify-content:flex-end; align-items:center; gap:0.75rem;
       margin:0.75rem auto 0; max-width:1200px; padding:0 1rem;
@@ -186,7 +209,7 @@
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
-            <p class="brand-subtitle">COLLECTIBLES STORE</p>
+            <p class="brand-subtitle"><strong>Collectibles Store</strong> </p>
           </div>
         </div>
       </div>
@@ -195,10 +218,10 @@
     <!-- Filter bar inside blue header -->
     <div class="filter-bar">
       <div class="filter-grid">
-        <!-- Search centered above first two selects on desktop; full width on mobile -->
+        <!-- Search: full-width row above the four selects -->
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
 
-        <!-- Row 2 -->
+        <!-- Row below: four dropdowns in one line on desktop; 2x2 on mobile/tablet -->
         <select id="category-filter" onchange="onCategoryChange()">
           <option value="all">All Categories</option>
         </select>
@@ -351,101 +374,3 @@
           <div class="card-info">
             <p class="price">$${price.toFixed(2)}</p>
             <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
-            <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
-            <p class="stock"><strong>Stock:</strong> ${stock}</p>
-          </div>
-          <div class="product-actions">
-            <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-
-    function populateAllDropdowns(){
-      const catSel = document.getElementById("category-filter");
-      catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
-        const opt = document.createElement("option"); opt.value=c; opt.textContent=c; catSel.appendChild(opt);
-      });
-
-      const rarSel = document.getElementById("rarity-filter");
-      rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
-        const opt = document.createElement("option"); opt.value=r; opt.textContent=r; rarSel.appendChild(opt);
-      });
-
-      const conSel = document.getElementById("condition-filter");
-      conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
-        const opt = document.createElement("option"); opt.value=c; opt.textContent=c; conSel.appendChild(opt);
-      });
-
-      updateSubcategoryOptions();
-    }
-
-    function updateSubcategoryOptions(){
-      const cat = document.getElementById("category-filter").value;
-      const subSel = document.getElementById("subcategory-filter");
-      const pool = (cat === "all") ? allProducts : allProducts.filter(p => p.category === cat);
-      const subs = byUniqueSorted(pool.map(p => p.subcategory));
-
-      const current = subSel.value;
-      subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      subs.forEach(s => { const opt=document.createElement("option"); opt.value=s; opt.textContent=s; subSel.appendChild(opt); });
-      if (current !== "all" && subs.includes(current)) subSel.value = current; else subSel.value = "all";
-    }
-
-    function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
-
-    function applyFilters(){
-      const kw   = document.getElementById("search").value.toLowerCase();
-      const cat  = document.getElementById("category-filter").value;
-      const sub  = document.getElementById("subcategory-filter").value;
-      const rar  = document.getElementById("rarity-filter").value;
-      const cond = document.getElementById("condition-filter").value;
-
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(kw) &&
-        (cat === "all" || p.category === cat) &&
-        (sub === "all" || p.subcategory === sub) &&
-        (rar === "all" || p.rarity === rar) &&
-        (cond === "all" || p.condition === cond)
-      );
-      renderStore(filtered);
-    }
-
-    function activateButton(type){
-      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
-      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
-      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
-      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-    }
-
-    function setGridView(type){
-      if(isMobile() && type === 3) return;
-      if(!isMobile() && type === 1) return;
-      const cont = document.querySelector(".card-container");
-      cont.classList.remove("grid-1","grid-2","grid-3");
-      cont.classList.add(`grid-${type}`);
-      activateButton(type);
-      applyFilters();
-    }
-
-    function enforceResponsiveGrid(){
-      const cont = document.querySelector(".card-container");
-      if(isMobile() && cont.classList.contains("grid-3")) setGridView(2);
-      else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
-    }
-
-    window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
-    window.addEventListener("resize", enforceResponsiveGrid);
-    window.addEventListener("orientationchange", enforceResponsiveGrid);
-
-    updateCartCount();
-    fetchInventoryFromSheet();
-  </script>
-</body>
-</html>
