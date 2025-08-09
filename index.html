@@ -5,306 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pokémon Card Store</title>
   <style>
-    :root{
-      --icon-color-default:#ddeaef; /* inactive icon color */
-      --icon-color-active:#789cac;  /* active icon color */
-    }
+    :root{ --icon-color-default:#ddeaef; --icon-color-active:#789cac; }
 
-    body{
-      font-family:Arial, sans-serif;
-      margin:0;
-      background-color:#f0f4f8;
-    }
+    body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
 
     header{
-      background-color:#1a202c;
-      color:white;
-      padding:1rem;
-      text-align:center;
-      position:sticky;
-      top:0;
-      z-index:10;
+      background:#1a202c; color:#fff; padding:1rem; text-align:center;
+      position:sticky; top:0; z-index:10;
     }
-
     .cart-link{
-      position:absolute;
-      right:1rem;
-      top:1rem;
-      color:white;
-      text-decoration:none;
-      background:#2d3748;
-      padding:0.5rem 1rem;
-      border-radius:5px;
+      position:absolute; right:1rem; top:1rem; color:#fff; text-decoration:none;
+      background:#2d3748; padding:0.5rem 1rem; border-radius:5px;
     }
 
-    /* --- CONTROLS ROW (desktop behavior unchanged) --- */
+    /* Controls */
     .controls{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:0.75rem;
-      margin:1.5rem auto 0;
-      max-width:1200px;
-      padding:0 1rem;
-      flex-wrap:wrap;
+      display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
+      margin:1.5rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
     }
-
-    .controls-left{
-      display:flex;
-      gap:0.5rem;
-      flex-wrap:wrap;
-      align-items:center;
+    .controls-left{ display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .controls input, .controls select{
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
     }
-
-    .controls input,
-    .controls select{
-      padding:0.5rem;
-      border-radius:5px;
-      border:1px solid #ccc;
-      background:#fff;
-    }
-
-    .grid-toggle{
-      display:flex;
-      justify-content:flex-end;
-      gap:0.5rem;
-      margin:0;
-    }
-
+    .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
     .layout-button{
-      background:transparent;
-      border:none;
-      padding:0.5rem;
-      border-radius:6px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      background:transparent; border:none; padding:0.5rem; border-radius:6px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
       transition:transform .15s ease;
     }
     .layout-button:active{ transform:scale(0.96); }
-
-    .layout-button svg{
-      width:24px; height:24px;
-      fill:var(--icon-color-default);
-      transition:fill .2s ease;
-    }
-    .layout-button.single svg{ width:30px; height:30px; }
-    .layout-button.active svg{ fill:var(--icon-color-active); }
-
-    .card-container{
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
-      gap:1.5rem;
-      max-width:1200px;
-      margin:2rem auto;
-      padding:0 1rem;
-      transition:all .3s ease;
-    }
-    .card-container.grid-1{ grid-template-columns:repeat(1, 1fr); }
-    .card-container.grid-2{ grid-template-columns:repeat(2, 1fr); }
-    .card-container.grid-3{ grid-template-columns:repeat(3, 1fr); }
-
-    .card{
-      position:relative;
-      background:#fff;
-      border-radius:10px;
-      box-shadow:0 4px 10px rgba(0,0,0,.08);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      padding:1rem;
-      text-align:center;
-    }
-
-    .card img{
-      width:100%;
-      aspect-ratio:4/3;
-      object-fit:contain;
-      margin-bottom:0.5rem;
-      border-radius:5px;
-    }
-
-    .title-block{ min-height:calc(1 * 1.2em + 3 * 1.3em); }
-
-    .card-title{
-      font-size:1.25rem;
-      margin:0.25rem 0;
-      line-height:1.2;
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:1;
-      overflow:hidden;
-      min-height:1.2em;
-    }
-
-    .series-name{
-      font-size:0.7rem;
-      color:#555;
-      margin:0.2rem 0 0.6rem;
-      font-style:italic;
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:3;
-      overflow:hidden;
-      line-height:1.3;
-      min-height:calc(3 * 1.3em);
-    }
-
-    .card-info{
-      min-height:90px;
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
-    }
-
-    .condition,.price,.stock{
-      font-size:1rem;
-      margin:0.35rem 0;
-    }
-
-    /* BADGES */
-    .badge{
-      position:absolute;
-      top:0.5rem;
-      left:0.5rem;
-      padding:5px 10px;
-      font-size:0.75rem;
-      font-weight:bold;
-      border-radius:4px;
-      z-index:2;
-      text-transform:uppercase;
-      box-shadow:0 2px 5px rgba(0,0,0,.2);
-      line-height:1;
-    }
-    .badge.sale{ background:#e02424; color:#fff; }
-    .badge.popular{ background:#ffcc00; color:#000; }
-    .badge.new{ background:#2fbf71; color:#f8f9fb; }
-
-    .product-actions{ margin-top:auto; }
-
-    button{
-      margin-top:0.5rem;
-      padding:0.5rem 1rem;
-      background-color:#2b6cb0;
-      color:#fff;
-      border:none;
-      border-radius:5px;
-      cursor:pointer;
-      transition:opacity .2s ease, transform .15s ease;
-    }
-
-    /* FIX: visual style for disabled buttons */
-    .product-actions button:disabled,
-    button:disabled{
-      background-color:#cbd5e1; /* slate-300 */
-      color:#6b7280;            /* gray-500 */
-      cursor:not-allowed;
-      opacity:1;                /* keep solid grey */
-      box-shadow:none;
-      transform:none;
-    }
-
-    .container-panel{
-      max-width:1200px;
-      margin:2rem auto;
-      padding:0 1rem;
-      background:#fff;
-      border-radius:12px;
-      box-shadow:0 8px 20px rgba(0,0,0,.05);
-    }
-
-    /* ---------- Mobile-only overrides (desktop untouched) ---------- */
-    @media (max-width:767.98px){
-      .controls{
-        display:grid;
-        grid-template-columns:minmax(0,1fr) auto;
-        column-gap:0.75rem;
-        row-gap:0.75rem;
-        align-items:center;
-      }
-
-      .controls-left{ display:contents; }
-
-      /* Row 1: Categories centered across full width */
-      #category-filter{
-        grid-column: 1 / -1;
-        grid-row: 1;
-        justify-self: center;
-        margin-top: 1rem;
-      }
-
-      /* Row 2: Search left */
-      #search{
-        grid-column:1 / 2;
-        grid-row:2;
-        width:100%;
-        max-width:60vw;
-      }
-
-      /* Row 2: Toggle right + tighter spacing + smaller padding/icons */
-      .grid-toggle{
-        grid-column:2 / 3;
-        grid-row:2;
-        justify-self:end;
-        gap:0.15rem !important;
-      }
-      .grid-toggle > .layout-button{
-        padding:0.25rem !important;
-        margin:0 !important;
-      }
-      .grid-toggle > .layout-button svg{
-        width:22px; height:22px;
-      }
-
-      /* Keep: no 3‑grid on mobile */
-      .layout-button.triple{ display:none; }
-    }
-
-    /* Hide single-pane on desktop only */
-    @media (min-width:768px){
-      .layout-button.single{ display:none; }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>BreezyEzyTCG Collectibles Store</h1>
-    <a class="cart-link" href="cart.html">🛒 Cart</a>
-  </header>
-
-  <div class="container-panel">
-    <div class="controls">
-      <div class="controls-left">
-        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-        <select id="category-filter" onchange="applyFilters()">
-          <option value="all">All Categories</option>
-        </select>
-      </div>
-
-      <div class="grid-toggle">
-        <!-- Single Pane -->
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
-        </button>
-
-        <!-- 2-Grid -->
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-
-        <!-- 3-Grid -->
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="card-container grid-2"></div>
-  </div>
-
-  <div id="
+    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); t
