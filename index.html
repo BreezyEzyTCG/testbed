@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pokémon Card Store</title>
   <style>
+    :root{
+      /* Change these to recolor the single-pane icon */
+      --icon-color:#264b67;
+      --icon-color-active:#0f3150;
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -69,6 +75,18 @@
       justify-content: center;
     }
 
+    /* Default color for inline SVG (single-pane) */
+    .layout-button.single svg {
+      width: 30px;
+      height: 30px;
+      fill: var(--icon-color);
+    }
+    /* Optional: darker when active */
+    .layout-button.single.active svg {
+      fill: var(--icon-color-active);
+    }
+
+    /* Existing rule for the other SVG buttons */
     .layout-button svg {
       width: 24px;
       height: 24px;
@@ -221,19 +239,21 @@
       </select>
 
       <div class="grid-toggle">
-        <!-- Single Pane View -->
+        <!-- Single Pane View (now inline SVG, color via CSS variable) -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <img width="30" height="30" src="https://img.icons8.com/ios-glyphs/30/rounded-square.png" alt="rounded-square"/>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="3" ry="3"></rect>
+          </svg>
         </button>
 
-        <!-- 2-Grid View -->
+        <!-- 2-Grid View (as provided) -->
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="fill: rgb(38, 75, 103);">
             <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"></path>
           </svg>
         </button>
 
-        <!-- 3-Grid View -->
+        <!-- 3-Grid View (as provided) -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="fill: rgb(38, 75, 103);">
             <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"></path>
