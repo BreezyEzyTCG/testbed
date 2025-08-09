@@ -6,47 +6,84 @@
   <title>Pokémon Card Store</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f4f8; }
-    header { background-color: #1a202c; color: white; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
-    .cart-link { position: absolute; right: 1rem; top: 1rem; color: white; text-decoration: none; background: #2d3748; padding: 0.5rem 1rem; border-radius: 5px; }
 
-    .container-panel { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; background-color: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-    .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.5rem; margin: 1.5rem auto 0; flex-direction: row; max-width: 100%; }
-    .controls input, .controls select { padding: 0.5rem; border-radius: 5px; border: 1px solid #ccc; }
+    header {
+      background-color: #1a202c;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
 
-    .grid-toggle { display: flex; justify-content: center; gap: 0.5rem; margin: 1rem auto; }
-    .layout-button { background: transparent; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; transition: background 0.2s ease; display: flex; align-items: center; justify-content: center; }
+    .cart-link {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      color: white;
+      text-decoration: none;
+      background: #2d3748;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1.5rem auto 0;
+      flex-direction: row;
+      max-width: 100%;
+    }
+
+    .controls input,
+    .controls select {
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .grid-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1rem auto;
+    }
+
+    .layout-button {
+      background: transparent;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .layout-button svg { width: 24px; height: 24px; fill: #264b67; }
     .layout-button.active { background-color: #cce4f6; }
 
-    .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; transition: all 0.3s ease; }
+    .card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      transition: all 0.3s ease;
+    }
+
     .card-container.grid-1 { grid-template-columns: repeat(1, 1fr); }
     .card-container.grid-2 { grid-template-columns: repeat(2, 1fr); }
     .card-container.grid-3 { grid-template-columns: repeat(3, 1fr); }
 
-    .card { position: relative; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; padding: 1rem; text-align: center; }
-    .card img { width: 100%; aspect-ratio: 4/3; object-fit: contain; margin-bottom: 0.5rem; border-radius: 5px; }
-    .card h3 { font-size: 1.25rem; margin: 0.25rem 0; }
-    .series-name { font-size: 0.7rem; color: #555; margin: 0.2rem 0 0.6rem; font-style: italic; white-space: normal; word-break: break-word; }
-    .condition, .price, .stock { font-size: 1rem; margin: 0.25rem 0; }
-
-    .badge { position: absolute; top: 0.5rem; left: 0.5rem; padding: 5px 10px; font-size: 0.75rem; font-weight: bold; color: grey; border-radius: 4px; z-index: 2; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .badge.sale { background-color: #c21807; }
-    .badge.popular { background-color: #ffcc00; color: black; }
-    .badge.new { background-color: #4cbb17; }
-
-    .product-actions { margin-top: auto; }
-    button { margin-top: 0.5rem; padding: 0.5rem 1rem; background-color: #2b6cb0; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background-color: #2c5282; }
-    button:disabled { background-color: #aaa; cursor: not-allowed; opacity: 0.7; }
-
-    /* Toggle visibility rules: desktop -> 2/3, mobile -> 1/2 */
-    .layout-button.single { display: none; }
-    .layout-button.double { display: flex; }
-    .layout-button.triple { display: flex; }
-    @media (max-width: 768px) {
-      .layout-button.single { display: flex; }
-      .layout-button.double { display: flex; }
-      .layout-button.triple { display: none; }
-    }
-
-    .status { text-align:center; color:#264b67; padding:
+    .card {
+      position: relative;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
