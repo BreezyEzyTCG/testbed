@@ -143,7 +143,7 @@
       min-height: calc(4 * (1.3em + 0.5rem));
       display:flex; flex-direction:column; justify-content:flex-start;
     }
-    .rarity,.condition,.price,.stock{
+    .price,.rarity,.condition,.stock{
       font-size:1rem;
       line-height:1.3;
       margin:0.25rem 0;
@@ -316,8 +316,8 @@
 
           // Optional: map guaranteed columns if needed
           obj.category  = (row[4] || obj.category  || "").trim(); // Column E
-          obj.condition = (row[8] || obj.condition || "").trim(); // Column H
-          obj.rarity    = (row[7] || obj.rarity    || "").trim(); // Column G
+          obj.condition = (row[7] || obj.condition || "").trim(); // Column H
+          obj.rarity    = (row[8] || obj.rarity    || "").trim(); // Column G
           return obj;
         });
 
