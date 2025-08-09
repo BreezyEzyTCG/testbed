@@ -113,7 +113,6 @@
       border-radius: 5px;
     }
 
-    /* Fixed-height block for title + series */
     .title-block {
       min-height: calc(1 * 1.2em + 3 * 1.3em);
     }
@@ -168,21 +167,9 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       line-height: 1;
     }
-    /* Sale: red bg + white text */
-    .badge.sale {
-      background-color: #e02424;   /* strong red */
-      color: #ffffff;               /* white text */
-    }
-    /* Popular: yellow bg + black text */
-    .badge.popular {
-      background-color: #ffcc00;
-      color: #000000;
-    }
-    /* New: green bg + near‑white text */
-    .badge.new {
-      background-color: #2fbf71;
-      color: #f8f9fb;               /* close to white */
-    }
+    .badge.sale { background-color: #e02424; color: #ffffff; }
+    .badge.popular { background-color: #ffcc00; color: #000000; }
+    .badge.new { background-color: #2fbf71; color: #f8f9fb; }
 
     .product-actions { margin-top: auto; }
 
@@ -195,9 +182,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
     button:hover { background-color: #2c5282; }
-
     button:disabled {
       background-color: #aaa;
       cursor: not-allowed;
@@ -236,14 +221,23 @@
       </select>
 
       <div class="grid-toggle">
+        <!-- Single Pane View -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v14h14V5H5z"/></svg>
+          <img width="30" height="30" src="https://img.icons8.com/ios-glyphs/30/rounded-square.png" alt="rounded-square"/>
         </button>
+
+        <!-- 2-Grid View -->
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM5 6v12h6V6H5zm8 0v12h6V6h-6z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="fill: rgb(38, 75, 103);">
+            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"></path>
+          </svg>
         </button>
+
+        <!-- 3-Grid View -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM5 6v12h4V6H5zm6 0v12h4V6h-4zm6 0v12h4V6h-4z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="fill: rgb(38, 75, 103);">
+            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"></path>
+          </svg>
         </button>
       </div>
     </div>
@@ -301,14 +295,13 @@
       }
     }
 
-    // Normalize badge text to CSS class names and display labels
     function getBadgeInfo(raw) {
       if (!raw) return null;
       const t = String(raw).trim().toLowerCase();
       if (["sale", "sales"].includes(t)) return { cls: "sale", label: "SALE" };
       if (["new"].includes(t)) return { cls: "new", label: "NEW" };
       if (["popular", "hot"].includes(t)) return { cls: "popular", label: "POPULAR" };
-      return null; // unknown -> no badge
+      return null;
     }
 
     function renderStore(products) {
@@ -318,7 +311,6 @@
       products.forEach(product => {
         const disabled = product.stock <= 0 ? "disabled" : "";
         const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
-
         const badgeInfo = getBadgeInfo(product.badge);
 
         const card = document.createElement("div");
