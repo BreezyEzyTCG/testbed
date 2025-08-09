@@ -13,89 +13,82 @@
     body{
       font-family:Arial, sans-serif;
       margin:0;
-      background-color:#f0f4f8;
+      background:#f0f4f8;
     }
 
     header{
-      background-color:#1a202c;
-      color:white;
+      background:#1a202c;
+      color:#fff;
       padding:1rem;
       text-align:center;
-      position:sticky;
-      top:0;
-      z-index:10;
+      position:sticky; top:0; z-index:10;
     }
 
     .cart-link{
-      position:absolute;
-      right:1rem;
-      top:1rem;
-      color:white;
-      text-decoration:none;
-      background:#2d3748;
-      padding:0.5rem 1rem;
-      border-radius:5px;
+      position:absolute; right:1rem; top:1rem;
+      color:#fff; text-decoration:none;
+      background:#2d3748; padding:0.5rem 1rem; border-radius:5px;
     }
 
-    /* --- CONTROLS ROW: left cluster + right-aligned toggle --- */
+    /* ---------- Controls layout ---------- */
     .controls{
+      max-width:1200px;
+      margin:1.5rem auto 0;
+      padding:0 1rem;                 /* align with card container */
       display:flex;
-      justify-content:space-between;   /* push toggle to right edge */
+      align-items:center;
+      justify-content:space-between;
+      gap:0.75rem;
+      flex-wrap:wrap;
+    }
+
+    /* Row 1 on mobile (centered category). On desktop it just sits to the left. */
+    .controls-top{
+      display:flex;
+      width:auto;
+      align-items:center;
+    }
+
+    .controls-bottom{
+      display:flex;
       align-items:center;
       gap:0.75rem;
-      margin:1.5rem auto 0;
-      max-width:1200px;                /* match card container */
-      padding:0 1rem;                  /* match card container */
-      flex-wrap:wrap;                  /* allow wrapping on small screens */
+      flex:1;                         /* lets the search stretch */
+      justify-content:space-between;  /* search left, toggle right */
+      min-width:0;
     }
 
-    .controls-left{
-      display:flex;
-      gap:0.5rem;
-      flex-wrap:wrap;
-      align-items:center;
+    .search-wrap{
+      flex:1; min-width:0;
     }
 
-    .controls input,
-    .controls select{
+    .controls select,
+    .controls input{
       padding:0.5rem;
       border-radius:5px;
       border:1px solid #ccc;
       background:#fff;
     }
+    #search{ width:100%; }
 
+    /* Grid toggle */
     .grid-toggle{
       display:flex;
-      justify-content:flex-end;        /* right align icons */
       gap:0.5rem;
-      margin:0;                        /* remove extra vertical spacing */
+      margin:0;                       /* no extra vertical space */
     }
-
     .layout-button{
-      background:transparent;          /* no bg change */
-      border:none;
-      padding:0.5rem;
-      border-radius:6px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      background:transparent; border:none;
+      padding:0.5rem; border-radius:6px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
       transition:transform .15s ease;
     }
     .layout-button:active{ transform:scale(0.96); }
-
-    /* Icon colors via CSS variables */
-    .layout-button svg{
-      width:24px;
-      height:24px;
-      fill:var(--icon-color-default);
-      transition:fill .2s ease;
-    }
+    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s ease; }
     .layout-button.single svg{ width:30px; height:30px; }
-
-    /* Active state: only icon color changes */
     .layout-button.active svg{ fill:var(--icon-color-active); }
 
+    /* Card grid */
     .card-container{
       display:grid;
       grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
@@ -110,107 +103,62 @@
     .card-container.grid-3{ grid-template-columns:repeat(3, 1fr); }
 
     .card{
-      position:relative;
-      background:#fff;
-      border-radius:10px;
+      position:relative; background:#fff; border-radius:10px;
       box-shadow:0 4px 10px rgba(0,0,0,.08);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      padding:1rem;
-      text-align:center;
+      overflow:hidden; display:flex; flex-direction:column;
+      padding:1rem; text-align:center;
     }
-
-    .card img{
-      width:100%;
-      aspect-ratio:4/3;
-      object-fit:contain;
-      margin-bottom:0.5rem;
-      border-radius:5px;
-    }
-
+    .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:.5rem; border-radius:5px; }
     .title-block{ min-height:calc(1 * 1.2em + 3 * 1.3em); }
-
     .card-title{
-      font-size:1.25rem;
-      margin:0.25rem 0;
-      line-height:1.2;
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:1;
-      overflow:hidden;
-      min-height:1.2em;
+      font-size:1.25rem; margin:.25rem 0; line-height:1.2;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
     }
-
     .series-name{
-      font-size:0.7rem;
-      color:#555;
-      margin:0.2rem 0 0.6rem;
-      font-style:italic;
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:3;
-      overflow:hidden;
-      line-height:1.3;
-      min-height:calc(3 * 1.3em);
+      font-size:.7rem; color:#555; margin:.2rem 0 .6rem; font-style:italic;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; line-height:1.3; min-height:calc(3 * 1.3em);
     }
+    .card-info{ min-height:90px; display:flex; flex-direction:column; justify-content:flex-start; }
+    .condition,.price,.stock{ font-size:1rem; margin:.35rem 0; }
 
-    .card-info{
-      min-height:90px;
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
-    }
-
-    .condition,.price,.stock{
-      font-size:1rem;
-      margin:0.35rem 0;
-    }
-
-    /* BADGES */
+    /* Badges */
     .badge{
-      position:absolute;
-      top:0.5rem;
-      left:0.5rem;
-      padding:5px 10px;
-      font-size:0.75rem;
-      font-weight:bold;
-      border-radius:4px;
-      z-index:2;
-      text-transform:uppercase;
-      box-shadow:0 2px 5px rgba(0,0,0,.2);
-      line-height:1;
+      position:absolute; top:.5rem; left:.5rem;
+      padding:5px 10px; font-size:.75rem; font-weight:bold; border-radius:4px; z-index:2;
+      text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1;
     }
     .badge.sale{ background:#e02424; color:#fff; }
     .badge.popular{ background:#ffcc00; color:#000; }
     .badge.new{ background:#2fbf71; color:#f8f9fb; }
 
     .product-actions{ margin-top:auto; }
-
-    button{
-      margin-top:0.5rem;
-      padding:0.5rem 1rem;
-      background-color:#2b6cb0;
-      color:#fff;
-      border:none;
-      border-radius:5px;
-      cursor:pointer;
-    }
+    button{ margin-top:.5rem; padding:.5rem 1rem; background:#2b6cb0; color:#fff; border:none; border-radius:5px; cursor:pointer; }
 
     .container-panel{
-      max-width:1200px;
-      margin:2rem auto;
-      padding:0 1rem;
-      background:#fff;
-      border-radius:12px;
-      box-shadow:0 8px 20px rgba(0,0,0,.05);
+      max-width:1200px; margin:2rem auto; padding:0 1rem;
+      background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
     }
 
-    /* Hide 3-grid on mobile */
+    /* --- Mobile tweaks: center Categories above, row with Search (left) + Toggle (right) --- */
     @media (max-width:767.98px){
+      .controls{
+        flex-direction:column;         /* stack rows */
+        align-items:stretch;
+      }
+      .controls-top{
+        width:100%;
+        justify-content:center;        /* centered dropdown */
+        order:0;
+      }
+      .controls-bottom{
+        width:100%;
+        order:1;
+      }
+      /* Hide 3-grid on mobile */
       .layout-button.triple{ display:none; }
     }
-    /* Hide single-pane on desktop */
+
+    /* Desktop: hide single-pane icon */
     @media (min-width:768px){
       .layout-button.single{ display:none; }
     }
@@ -224,32 +172,39 @@
 
   <div class="container-panel">
     <div class="controls">
-      <div class="controls-left">
-        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+      <!-- Row 1 on mobile (centered); sits left on desktop -->
+      <div class="controls-top">
         <select id="category-filter" onchange="applyFilters()">
           <option value="all">All Categories</option>
         </select>
       </div>
 
-      <div class="grid-toggle">
-        <!-- Single Pane -->
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
-        </button>
+      <!-- Row 2: search left, toggle right (both desktop & mobile) -->
+      <div class="controls-bottom">
+        <div class="search-wrap">
+          <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+        </div>
 
-        <!-- 2-Grid -->
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
+        <div class="grid-toggle">
+          <!-- Single Pane -->
+          <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
+          </button>
 
-        <!-- 3-Grid -->
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
+          <!-- 2-Grid -->
+          <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+
+          <!-- 3-Grid -->
+          <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -261,9 +216,7 @@
   <script>
     let allProducts = [];
 
-    function isMobile(){
-      return window.matchMedia("(max-width: 767.98px)").matches;
-    }
+    function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
     function showToast(message){
       const toast = document.getElementById("toast");
@@ -274,7 +227,7 @@
 
     function addToCart(name, price, image_url){
       let cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const existing = cart.find(item => item.name === name);
+      const existing = cart.find(i => i.name === name);
       if(existing) existing.quantity += 1;
       else cart.push({ name, price, quantity: 1, image: image_url });
       localStorage.setItem("cart", JSON.stringify(cart));
@@ -284,11 +237,10 @@
     async function fetchInventoryFromSheet(){
       const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
       try{
-        const response = await fetch(sheetURL);
-        const data = await response.text();
-        const rows = data.trim().split("\n").map(r => r.split(","));
+        const res = await fetch(sheetURL);
+        const text = await res.text();
+        const rows = text.trim().split("\n").map(r => r.split(","));
         const headers = rows.shift().map(h => h.trim().toLowerCase());
-
         allProducts = rows.map(row => {
           const obj = {};
           row.forEach((cell, i) => {
@@ -297,11 +249,10 @@
           });
           return obj;
         });
-
         populateCategoryDropdown();
         renderStore(allProducts);
-      }catch(err){
-        console.error("Failed to load inventory:", err);
+      }catch(e){
+        console.error("Failed to load inventory:", e);
         document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
       }
     }
@@ -309,99 +260,4 @@
     function getBadgeInfo(raw){
       if(!raw) return null;
       const t = String(raw).trim().toLowerCase();
-      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
-      if(["new"].includes(t)) return { cls:"new", label:"NEW" };
-      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
-      return null;
-    }
-
-    function renderStore(products){
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
-
-      products.forEach(product => {
-        const disabled = product.stock <= 0 ? "disabled" : "";
-        const thePrice = Number.isFinite(product.price) ? product.price : 0;
-        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
-        const badgeInfo = getBadgeInfo(product.badge);
-
-        const card = document.createElement("div");
-        card.classList.add("card");
-
-        card.innerHTML = `
-          ${badgeInfo ? `<div class="badge ${badgeInfo.cls}">${badgeInfo.label}</div>` : ``}
-          <img src="${product.image_url}" alt="${product.name}" />
-
-          <div class="title-block">
-            <h3 class="card-title">${product.name}</h3>
-            <p class="series-name">${product["series name"] || ""}</p>
-          </div>
-
-          <div class="card-info">
-            <p class="price">$${thePrice.toFixed(2)}</p>
-            <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-            <p class="stock"><strong>Stock:</strong> ${Number.isFinite(product.stock) ? product.stock : 0}</p>
-          </div>
-
-          <div class="product-actions">
-            <button ${disabled} onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${thePrice || 0}, '${(product.image_url || "").replace(/'/g, "\\'")}')">${buttonText}</button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function populateCategoryDropdown(){
-      const select = document.getElementById("category-filter");
-      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-      categories.sort().forEach(cat => {
-        const opt = document.createElement("option");
-        opt.value = cat;
-        opt.textContent = cat;
-        select.appendChild(opt);
-      });
-    }
-
-    function applyFilters(){
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const selectedCategory = document.getElementById("category-filter").value;
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(keyword) &&
-        (selectedCategory === "all" || p.category === selectedCategory)
-      );
-      renderStore(filtered);
-    }
-
-    function activateButton(type){
-      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
-      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
-      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
-      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-    }
-
-    function setGridView(type){
-      if(isMobile() && type === 3) return;  // no 3-grid on mobile
-      if(!isMobile() && type === 1) return; // no single pane on desktop
-
-      const container = document.querySelector(".card-container");
-      container.classList.remove("grid-1","grid-2","grid-3");
-      container.classList.add(`grid-${type}`);
-
-      activateButton(type);
-      applyFilters();
-    }
-
-    function enforceResponsiveGrid(){
-      const container = document.querySelector(".card-container");
-      if(isMobile() && container.classList.contains("grid-3")) setGridView(2);
-      else if(!isMobile() && container.classList.contains("grid-1")) setGridView(2);
-    }
-
-    window.addEventListener("resize", enforceResponsiveGrid);
-    window.addEventListener("orientationchange", enforceResponsiveGrid);
-
-    fetchInventoryFromSheet().then(() => enforceResponsiveGrid());
-  </script>
-</body>
-</html>
+      if(["sale","sales"].includes(t)) return { cls:"sale", label:"S
