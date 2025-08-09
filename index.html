@@ -103,14 +103,14 @@
       max-width:1200px; margin:0 auto 10px;
       display:flex; justify-content:center;
     }
-   /* keep the same input styling/sizing as before */
-#search{
-  padding:0.5rem;
-  border-radius:5px;
-  border:1px solid #ccc;
-  background:#fff;
-  width:420px;             /* fixed width on desktop */
-}
+    /* keep the same input styling/sizing as before */
+    #search{
+      padding:0.5rem;
+      border-radius:5px;
+      border:1px solid #ccc;
+      background:#fff;
+      width:420px;             /* fixed width on desktop */
+    }
     .filter-grid{
       max-width:1200px; margin:0 auto;
       display:grid; gap:0.5rem;
@@ -128,10 +128,10 @@
     @media (max-width:1023.98px){
       .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* tablet */
     }
-  @media (max-width:767.98px){
-  /* keep the previous mobile width behavior for the search */
-  #search{ width:100%; max-width:60vw; }
-}
+    @media (max-width:767.98px){
+      /* keep the previous mobile width behavior for the search */
+      #search{ width:100%; max-width:60vw; }
+    }
 
     /* ================== Controls (grid toggle only now) ================== */
     .controls{
@@ -165,11 +165,32 @@
     }
     .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; }
 
-    .title-block{ min-height:calc(1 * 1.2em + 3 * 1.3em); }
+    /* --- Title block & title (updated) --- */
+    .title-block{ min-height:calc(2 * 1.2em + 3 * 1.3em); } /* room for 2 lines of title */
+
     .card-title{
-      font-size:1.20rem; margin:0.25rem 0; line-height:1.2; display:-webkit-box;
-      -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
+      /* desktop defaults */
+      font-size:clamp(1.05rem, 1.2vw + .9rem, 1.20rem);
+      margin:0.25rem 0;
+      line-height:1.2;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:1;         /* keep 1 line on desktop */
+      overflow:hidden;
+      min-height:1.2em;
+
+      /* prevent long words from trailing off */
+      overflow-wrap:anywhere;
+      word-break:break-word;
     }
+
+    @media (max-width:767.98px){
+      .card-title{
+        -webkit-line-clamp:2;                 /* up to two lines on mobile */
+        font-size:clamp(.95rem, 4.6vw, 1.10rem);
+      }
+    }
+
     .series-name{
       font-size:0.75rem; color:#555; margin:0.2rem 0 0.6rem; font-style:italic;
       display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
@@ -249,7 +270,7 @@
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
-           <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
+            <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
           </div>
         </div>
       </div>
@@ -547,13 +568,46 @@
       else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
     }
 
+    /* === Title auto-fit (new) === */
+    function fitCardTitles(root = document){
+      const titles = root.querySelectorAll('.card-title');
+      titles.forEach(el => {
+        // reset
+        el.style.fontSize = '';
+        const style = getComputedStyle(el);
+        const clamp = parseInt(style.getPropertyValue('-webkit-line-clamp') || '2', 10);
+        const maxH = parseFloat(style.lineHeight) * clamp;
+        el.style.maxHeight = maxH + 'px';
+
+        let current = parseFloat(style.fontSize);   // px
+        const floor = 12;                           // don't go below 12px for readability
+        while ((el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && current > floor){
+          current -= 0.5;
+          el.style.fontSize = current + 'px';
+        }
+      });
+    }
+
+    /* Re-wrap renderStore to run fitter after DOM paint */
+    const _renderStore = renderStore;
+    renderStore = function(list){
+      _renderStore(list);
+      requestAnimationFrame(() => fitCardTitles(document));
+    };
+
     /* Sync cart badge across tabs/windows */
     window.addEventListener("storage", (e) => {
       if (e.key === "cart") updateCartCount();
     });
 
-    window.addEventListener("resize", enforceResponsiveGrid);
-    window.addEventListener("orientationchange", enforceResponsiveGrid);
+    window.addEventListener("resize", () => {
+      enforceResponsiveGrid();
+      fitCardTitles(document);
+    });
+    window.addEventListener("orientationchange", () => {
+      enforceResponsiveGrid();
+      fitCardTitles(document);
+    });
 
     /* Init */
     updateCartCount();
