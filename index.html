@@ -217,11 +217,12 @@
       .controls-left{ display:contents; }
 
       /* Row 1: Categories centered across full width */
-      #category-filter{
-        grid-column:1 / -1;
-        grid-row:1;
-        justify-self:center;
-      }
+#category-filter{
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: center;
+  margin-top: 1rem; /* ← adjust to your liking */
+}
 
       /* Row 2: Search left, slightly narrower to share row with toggle */
       #search{
