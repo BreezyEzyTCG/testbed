@@ -286,16 +286,26 @@ let toastHideTimer = null;
 function showToast(msg, duration = 3000) {
   const toast = document.getElementById("toast");
   toast.textContent = msg;
-  toast.classList.add("show"); // Trigger fade-in
+
+  // 💡 override the inline display:none
+  toast.style.display = "block";
+
+  // ensure fade-in runs cleanly
+  toast.classList.remove("show");
+  void toast.offsetWidth; // force reflow
+  toast.classList.add("show");
 
   if (toastHideTimer) clearTimeout(toastHideTimer);
   toastHideTimer = setTimeout(() => {
-    toast.style.opacity = "0"; // Start fade-out
-    setTimeout(() => {
-      toast.classList.remove("show");
-      toast.style.display = "none";
-      toast.style.opacity = "1"; // Reset for next show
-    }, 500); // Match fade duration
+    toast.classList.remove("show"); // starts fade-out
+    // hide after transition ends
+    const done = (e) => {
+      if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
+        toast.style.display = "none";
+        toast.removeEventListener("transitionend", done);
+      }
+    };
+    toast.addEventListener("transitionend", done);
   }, duration);
 }
 
