@@ -67,14 +67,14 @@
     .grid-toggle{
       display:flex;
       justify-content:flex-end;
-      gap:0.1rem;                     /* tighter spacing between icons */
+      gap:0.5rem;                      /* desktop spacing unchanged */
       margin:0;
     }
 
     .layout-button{
       background:transparent;
       border:none;
-      padding:0.5rem;
+      padding:0.5rem;                  /* desktop padding unchanged */
       border-radius:6px;
       cursor:pointer;
       display:flex;
@@ -85,7 +85,7 @@
     .layout-button:active{ transform:scale(0.96); }
 
     .layout-button svg{
-      width:24px; height:24px;
+      width:24px; height:24px;         /* desktop icon size unchanged */
       fill:var(--icon-color-default);
       transition:fill .2s ease;
     }
@@ -202,52 +202,48 @@
       box-shadow:0 8px 20px rgba(0,0,0,.05);
     }
 
-   /* ---------- Mobile-only layout (desktop untouched) ---------- */
-@media (max-width:767.98px){
-  /* Turn controls into a two-column grid: [ search | toggle ] */
-  .controls{
-    display:grid;                                  /* override flex only on mobile */
-    grid-template-columns:minmax(0,1fr) auto;      /* search flexes, toggle hugs right */
-    column-gap:0.5rem;                             /* tighten space between search & toggle */
-    row-gap:0.75rem;
-    align-items:center;
-  } 
+    /* ---------- Mobile-only overrides (desktop untouched) ---------- */
+    @media (max-width:767.98px){
+      /* Two-column grid on mobile: [ search | toggle ], with Categories on its own row */
+      .controls{
+        display:grid;                                  /* override flex only on mobile */
+        grid-template-columns:minmax(0,1fr) auto;      /* search flexes, toggle hugs right */
+        column-gap:0.75rem;
+        row-gap:0.75rem;
+        align-items:center;
+      }
 
-  /* Shorter search bar */
-  #search {
-    max-width: 180px;                              /* reduce width on mobile */
-  }
-
-  /* Push grid buttons to the right inside padding */
-  .grid-toggle {
-    justify-self: end;
-    gap: 0.35rem;                                  /* tighten space between buttons */
-  }
-}
-
-      /* Flatten wrapper so its children can be placed on the grid */
+      /* Let children of .controls-left participate in grid placement */
       .controls-left{ display:contents; }
 
-      /* Row 1: Categories centered across the full width */
+      /* Row 1: Categories centered across full width */
       #category-filter{
         grid-column:1 / -1;
         grid-row:1;
         justify-self:center;
       }
 
-      /* Row 2: Search left (fixed smaller width so it shares the row) */
+      /* Row 2: Search left, slightly narrower to share row with toggle */
       #search{
         grid-column:1 / 2;
         grid-row:2;
         width:100%;
-        max-width:60vw;                                /* ↓ adjust if you want shorter/longer */
+        max-width:60vw;                                /* adjust if needed */
       }
 
-      /* Row 2: Toggle right */
+      /* Row 2: Toggle right + tighter spacing + smaller padding/icons */
       .grid-toggle{
         grid-column:2 / 3;
         grid-row:2;
         justify-self:end;
+        gap:0.15rem !important;                        /* tighter than desktop */
+      }
+      .grid-toggle > .layout-button{
+        padding:0.25rem !important;                    /* was 0.5rem */
+        margin:0 !important;
+      }
+      .grid-toggle > .layout-button svg{
+        width:22px; height:22px;                       /* was 24px */
       }
 
       /* Keep: no 3‑grid on mobile */
