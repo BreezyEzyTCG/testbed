@@ -291,12 +291,7 @@
       }, duration);
     }
 
-    const safeNumber = (v,f=0)=>{
-      if (v==null) return f;
-      const cleaned = String(v).replace(/[$,]/g,"").trim();
-      const n = +cleaned;
-      return Number.isFinite(n) ? n : f;
-    };
+    const safeNumber = (v,f=0)=>Number.isFinite(+v)?+v:f;
 
     /* Cart helpers */
     const getCart=()=>{ try{return JSON.parse(localStorage.getItem("cart")||"[]");}catch{return[];} };
@@ -308,33 +303,172 @@
       const found = cart.find(i => i.name === name);
       if(found) found.quantity += 1; else cart.push({ name, price, quantity:1, image:image_url });
       localStorage.setItem("cart", JSON.stringify(cart));
-      updateCartCount(); showToast(`${name} added to cart!`);
+      updateCartCount(); showToast(${name} added to cart!);
     }
 
-    /* --- Robust CSV parser (handles quoted commas) --- */
-    function parseCSV(text){
-      const rows = [];
-      let row = [], cell = "", inQuotes = false;
-      for (let i=0; i<text.length; i++){
-        const ch = text[i], next = text[i+1];
-        if (ch === '"'){
-          if (inQuotes && next === '"'){ cell += '"'; i++; }
-          else { inQuotes = !inQuotes; }
-        } else if (ch === ',' && !inQuotes){
-          row.push(cell); cell="";
-        } else if ((ch === '\n' || ch === '\r') && !inQuotes){
-          if (cell!=="" || row.length){ row.push(cell); rows.push(row); row=[]; cell=""; }
-          if (ch === '\r' && next === '\n'){ i++; }
-        } else {
-          cell += ch;
-        }
+    async function fetchInventoryFromSheet(){
+      try{
+        const res = await fetch(SHEET_CSV);
+        const csv = await res.text();
+        const rows = csv.trim().split("\n").map(r => r.split(","));
+        const headers = rows.shift().map(h => h.trim().toLowerCase());
+
+        allProducts = rows.map(row => {
+          const obj = {};
+          row.forEach((cell, i) => {
+            const key = headers[i];
+            if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
+            else obj[key] = (cell || "").trim();
+          });
+          obj.category    = (row[4] || obj.category    || "").trim(); // Column E
+          obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
+          obj.rarity      = (row[6] || obj.rarity      || "").trim(); // Column G
+          obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
+          return obj;
+        });
+
+        populateAllDropdowns();
+        renderStore(allProducts);
+        enforceResponsiveGrid();
+      }catch(e){
+        console.error(e);
+        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
       }
-      if (cell!=="" || row.length){ row.push(cell); rows.push(row); }
-      return rows;
     }
 
-    function aliasKey(k){
-      const key = k.trim().toLowerCase();
-      if (["image url","image","image link","imagelink","img","img_url"].includes(key)) return "image_url";
-      if (["series","series name","seriesname"].includes(key)) return "series name";
-      if (["status","tag","ba]()
+    function getBadgeInfo(raw){
+      if(!raw) return null;
+      const t = String(raw).trim().toLowerCase();
+      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
+      if(t === "new") return { cls:"new", label:"NEW" };
+      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
+      return null;
+    }
+
+    function renderStore(list){
+      const container = document.querySelector(".card-container");
+      container.innerHTML = "";
+
+      list.forEach(p => {
+        const stock = safeNumber(p.stock, 0);
+        const price = safeNumber(p.price, 0);
+        const out = stock <= 0;
+
+        const badge = getBadgeInfo(p.badge);
+        const safeName = String(p.name || "").replace(/'/g, "\\'");
+        const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
+
+        const btnAttrs = out
+          ? disabled aria-disabled="true" tabindex="-1"
+          : onclick="addToCart('${safeName}', ${price}, '${safeImg}')";
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = 
+          ${badge ? <div class="badge ${badge.cls}">${badge.label}</div> : `}
+          <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
+          <div class="title-block">
+            <h3 class="card-title">${p.name || ""}</h3>
+            <p class="series-name">${p["series name"] || ""}</p>
+          </div>
+          <div class="card-info">
+            <p class="price">$${price.toFixed(2)}</p>
+            <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
+            <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
+            <p class="stock"><strong>Stock:</strong> ${stock}</p>
+          </div>
+          <div class="product-actions">
+            <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
+          </div>
+        ;
+        container.appendChild(card);
+      });
+    }
+
+    const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
+    function populateAllDropdowns(){
+      const catSel = document.getElementById("category-filter");
+      catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
+        const opt = document.createElement("option"); opt.value=c; opt.textContent=c; catSel.appendChild(opt);
+      });
+
+      const rarSel = document.getElementById("rarity-filter");
+      rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
+        const opt = document.createElement("option"); opt.value=r; opt.textContent=r; rarSel.appendChild(opt);
+      });
+
+      const conSel = document.getElementById("condition-filter");
+      conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
+        const opt = document.createElement("option"); opt.value=c; opt.textContent=c; conSel.appendChild(opt);
+      });
+
+      updateSubcategoryOptions();
+    }
+
+    function updateSubcategoryOptions(){
+      const cat = document.getElementById("category-filter").value;
+      const subSel = document.getElementById("subcategory-filter");
+      const pool = (cat === "all") ? allProducts : allProducts.filter(p => p.category === cat);
+      const subs = byUniqueSorted(pool.map(p => p.subcategory));
+
+      const current = subSel.value;
+      subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      subs.forEach(s => { const opt=document.createElement("option"); opt.value=s; opt.textContent=s; subSel.appendChild(opt); });
+      if (current !== "all" && subs.includes(current)) subSel.value = current; else subSel.value = "all";
+    }
+
+    function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
+
+    function applyFilters(){
+      const kw   = document.getElementById("search").value.toLowerCase();
+      const cat  = document.getElementById("category-filter").value;
+      const sub  = document.getElementById("subcategory-filter").value;
+      const rar  = document.getElementById("rarity-filter").value;
+      const cond = document.getElementById("condition-filter").value;
+
+      const filtered = allProducts.filter(p =>
+        (p.name || "").toLowerCase().includes(kw) &&
+        (cat === "all" || p.category === cat) &&
+        (sub === "all" || p.subcategory === sub) &&
+        (rar === "all" || p.rarity === rar) &&
+        (cond === "all" || p.condition === cond)
+      );
+      renderStore(filtered);
+    }
+
+    function activateButton(type){
+      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
+      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
+      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
+      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
+    }
+
+    function setGridView(type){
+      if(isMobile() && type === 3) return;
+      if(!isMobile() && type === 1) return;
+      const cont = document.querySelector(".card-container");
+      cont.classList.remove("grid-1","grid-2","grid-3");
+      cont.classList.add(grid-${type});
+      activateButton(type);
+      applyFilters();
+    }
+
+    function enforceResponsiveGrid(){
+      const cont = document.querySelector(".card-container");
+      if(isMobile() && cont.classList.contains("grid-3")) setGridView(2);
+      else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
+    }
+
+    window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
+    window.addEventListener("resize", enforceResponsiveGrid);
+    window.addEventListener("orientationchange", enforceResponsiveGrid);
+
+    updateCartCount();
+    fetchInventoryFromSheet();
+  </script>
+</body>
+</html>
