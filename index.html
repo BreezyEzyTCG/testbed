@@ -9,11 +9,11 @@
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#58747c;
+      --shell:#58747c;           /* header rim behind banner */
       --fg:#ffffff;
-      --chip-bg:#072a54;
+      --chip-bg:#072a54;         /* cart button background */
       --chip-fg:#fff;
-      --accent:#ef4444;
+      --accent:#ef4444;          /* cart badge fill */
     }
 
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
@@ -24,7 +24,7 @@
       background:var(--shell);
       box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    .shell-pad{ padding:10px 12px; }
+    .shell-pad{ padding:10px 12px; } /* slim rim */
 
     .hero{
       position:relative;
@@ -40,13 +40,14 @@
       pointer-events:none;
     }
 
+    /* Cart chip on banner (top-right) */
     .topbar{
       position:absolute; top:10px; right:12px;
       display:flex; align-items:center; gap:.5rem;
-      z-index:5;
+      z-index:5; /* above brand overlay */
     }
     .cart-link{
-      position:relative;
+      position:relative; /* anchor the bubble */
       display:inline-flex; align-items:center; gap:.5rem;
       color:var(--chip-fg); text-decoration:none;
       background:var(--chip-bg);
@@ -69,4 +70,362 @@
       box-shadow:0 2px 6px rgba(0,0,0,.18);
     }
     @media (min-width:768px){
-      .cart-link im
+      .cart-link img{ width:22px; height:22px; }
+      .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
+    }
+
+    /* Centered brand block (doesn't block clicks) */
+    .brand-center{
+      position:absolute; inset:0; z-index:2;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center; color:var(--fg); padding:0 12px;
+      pointer-events:none; /* allow clicks to pass through */
+    }
+    .brand-title{
+      margin:0; line-height:1.1; font-weight:800;
+      font-size:clamp(1.6rem, 5.2vw, 2.6rem);
+      text-shadow:0 2px 10px rgba(0,0,0,.35);
+    }
+    .brand-subtitle{
+      margin:.35rem 0 0 0; opacity:.95;
+      font-size:clamp(.95rem, 3vw, 1.2rem);
+      text-shadow:0 1px 6px rgba(0,0,0,.35);
+    }
+
+    /* ================== Controls ================== */
+    .controls{
+      display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
+      margin:1rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
+    }
+    .controls-left{ display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .controls input, .controls select{
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
+    }
+    .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
+    .layout-button{
+      background:transparent; border:none; padding:0.5rem; border-radius:6px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:transform .15s ease;
+    }
+    .layout-button:active{ transform:scale(0.96); }
+    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
+    .layout-button.single svg{ width:30px; height:30px; }
+    .layout-button.active svg{ fill:var(--icon-color-active); }
+
+    /* ================== Cards ================== */
+    .card-container{
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:1.5rem; max-width:1200px; margin:1.25rem auto 2rem; padding:0 1rem; transition:all .3s ease;
+    }
+    .card-container.grid-1{ grid-template-columns:repeat(1,1fr); }
+    .card-container.grid-2{ grid-template-columns:repeat(2,1fr); }
+    .card-container.grid-3{ grid-template-columns:repeat(3,1fr); }
+
+    .card{
+      position:relative; background:#fff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,.08);
+      overflow:hidden; display:flex; flex-direction:column; padding:1rem; text-align:center;
+    }
+    .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; }
+
+    .title-block{ min-height:calc(1 * 1.2em + 3 * 1.3em); }
+    .card-title{
+      font-size:1.25rem; margin:0.25rem 0; line-height:1.2; display:-webkit-box;
+      -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
+    }
+    .series-name{
+      font-size:0.7rem; color:#555; margin:0.2rem 0 0.6rem; font-style:italic;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+      line-height:1.3; min-height:calc(3 * 1.3em);
+    }
+
+    .card-info{ min-height:115px; display:flex; flex-direction:column; justify-content:flex-start; }
+    .rarity,.condition,.price,.stock{ font-size:1rem; margin:0.35rem 0; }
+
+    /* Badges */
+    .badge{
+      position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold;
+      border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1;
+    }
+    .badge.sale{ background:#e02424; color:#fff; }
+    .badge.popular{ background:#ffcc00; color:#000; }
+    .badge.new{ background:#2fbf71; color:#f8f9fb; }
+
+    .product-actions{ margin-top:auto; }
+
+    button{
+      margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff;
+      border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s;
+    }
+
+    .container-panel{
+      max-width:1200px; margin:0 auto 2rem; padding:0 0 1rem;
+      background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
+    }
+
+    /* ================== Mobile overrides ================== */
+    @media (max-width:767.98px){
+      .controls{
+        display:grid; grid-template-columns:minmax(0,1fr) auto;
+        column-gap:0.75rem; row-gap:0.75rem; align-items:center;
+      }
+      .controls-left{ display:contents; }
+      #category-filter{ grid-column:1 / -1; grid-row:1; justify-self:center; margin-top:0.5rem; }
+      #search{ grid-column:1 / 2; grid-row:2; width:100%; max-width:60vw; }
+      .grid-toggle{ grid-column:2 / 3; grid-row:2; justify-self:end; gap:0.15rem !important; }
+      .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
+      .grid-toggle > .layout-button svg{ width:22px; height:22px; }
+      .layout-button.triple{ display:none; } /* no 3-grid on mobile */
+    }
+    @media (min-width:768px){ .layout-button.single{ display:none; } }
+
+    /* Robust disabled */
+    .product-actions button[disabled], button[disabled]{
+      background:#cbd5e1 !important; color:#6b7280 !important;
+      cursor:not-allowed !important; pointer-events:none; box-shadow:none !important;
+      transform:none !important; opacity:1 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Overlay Banner Header ===== -->
+  <div class="site-shell">
+    <div class="shell-pad">
+      <div class="hero">
+        <div class="topbar">
+          <a class="cart-link" href="cart.html" aria-label="Cart">
+            <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
+            <span class="cart-count" id="cartCount">0</span>
+          </a>
+        </div>
+
+        <div class="brand-center">
+          <div>
+            <h1 class="brand-title">BreezyEzyTCG</h1>
+            <p class="brand-subtitle">Collectibles Store</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Content Panel ===== -->
+  <div class="container-panel">
+    <div class="controls">
+      <div class="controls-left">
+        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+        <select id="category-filter" onchange="applyFilters()">
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+
+      <div class="grid-toggle">
+        <!-- Single Pane (mobile only) -->
+        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
+        </button>
+        <!-- 2-Grid -->
+        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <!-- 3-Grid -->
+        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-container grid-2"></div>
+  </div>
+
+  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
+
+  <script>
+    let allProducts = [];
+
+    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+
+    function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
+
+    function showToast(msg){
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(()=> toast.style.display = "none", 2000);
+    }
+
+    function safeNumber(val, fallback=0){
+      if (typeof val === "number" && Number.isFinite(val)) return val;
+      const n = parseFloat(val);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    /* ---- Cart helpers ---- */
+    function getCart(){
+      try{ return JSON.parse(localStorage.getItem("cart") || "[]"); }
+      catch{ return []; }
+    }
+    function getCartCount(){
+      return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
+    }
+    function updateCartCount(){
+      const el = document.getElementById("cartCount");
+      if (el) el.textContent = String(getCartCount());
+    }
+
+    function addToCart(name, price, image_url){
+      const cart = getCart();
+      const found = cart.find(i => i.name === name);
+      if(found) found.quantity += 1;
+      else cart.push({ name, price, quantity:1, image:image_url });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateCartCount();
+      showToast(`${name} added to cart!`);
+    }
+
+    async function fetchInventoryFromSheet(){
+      try{
+        const res = await fetch(SHEET_CSV);
+        const csv = await res.text();
+        const rows = csv.trim().split("\n").map(r => r.split(","));
+        const headers = rows.shift().map(h => h.trim().toLowerCase());
+
+        allProducts = rows.map(row => {
+          const obj = {};
+          // 1) Build by headers (keeps it resilient to column order)
+          row.forEach((cell, i) => {
+            const key = headers[i];
+            if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
+            else obj[key] = (cell || "").trim();
+          });
+
+          // 2) Force the three fields to the requested fixed columns
+          //    A=0 B=1 C=2 D=3 E=4 F=5 G=6 H=7 ...
+          obj.category  = (row[4] || obj.category  || "").trim(); // Column E
+          obj.condition = (row[6] || obj.condition || "").trim(); // Column G
+          obj.rarity    = (row[7] || obj.rarity    || "").trim(); // Column H
+
+          return obj;
+        });
+
+        populateCategoryDropdown();
+        renderStore(allProducts);
+        enforceResponsiveGrid();
+      }catch(e){
+        console.error(e);
+        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+      }
+    }
+
+    function getBadgeInfo(raw){
+      if(!raw) return null;
+      const t = String(raw).trim().toLowerCase();
+      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
+      if(t === "new") return { cls:"new", label:"NEW" };
+      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
+      return null;
+    }
+
+    function renderStore(list){
+      const container = document.querySelector(".card-container");
+      container.innerHTML = "";
+
+      list.forEach(p => {
+        const stock = safeNumber(p.stock, 0);
+        const price = safeNumber(p.price, 0);
+        const out = stock <= 0;
+
+        const badge = getBadgeInfo(p.badge);
+        const safeName = String(p.name || "").replace(/'/g, "\\'");
+        const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
+
+        const btnAttrs = out
+          ? `disabled aria-disabled="true" tabindex="-1"`
+          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
+          <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
+          <div class="title-block">
+            <h3 class="card-title">${p.name || ""}</h3>
+            <p class="series-name">${p["series name"] || ""}</p>
+          </div>
+          <div class="card-info">
+            <p class="price">$${price.toFixed(2)}</p>
+            <p class="rarity"><strong>Rarity:</strong> ${p.rarity || "—"}</p>
+            <p class="condition"><strong>Condition:</strong> ${p.condition || "N/A"}</p>
+            <p class="stock"><strong>Stock:</strong> ${stock}</p>
+          </div>
+          <div class="product-actions">
+            <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function populateCategoryDropdown(){
+      const sel = document.getElementById("category-filter");
+      // clear previous (keep "all")
+      sel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      // 3) Use Category (Column E) which we already forced into p.category
+      const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
+      cats.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; sel.appendChild(opt);
+      });
+    }
+
+    function applyFilters(){
+      const kw = document.getElementById("search").value.toLowerCase();
+      const cat = document.getElementById("category-filter").value;
+      const filtered = allProducts.filter(p =>
+        (p.name || "").toLowerCase().includes(kw) &&
+        (cat === "all" || p.category === cat)
+      );
+      renderStore(filtered);
+    }
+
+    function activateButton(type){
+      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
+      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
+      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
+      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
+    }
+
+    function setGridView(type){
+      if(isMobile() && type === 3) return;  // block 3-col on mobile
+      if(!isMobile() && type === 1) return; // block single on desktop
+      const cont = document.querySelector(".card-container");
+      cont.classList.remove("grid-1","grid-2","grid-3");
+      cont.classList.add(`grid-${type}`);
+      activateButton(type);
+      applyFilters();
+    }
+
+    function enforceResponsiveGrid(){
+      const cont = document.querySelector(".card-container");
+      if(isMobile() && cont.classList.contains("grid-3")) setGridView(2);
+      else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
+    }
+
+    /* Sync cart badge across tabs/windows */
+    window.addEventListener("storage", (e) => {
+      if (e.key === "cart") updateCartCount();
+    });
+
+    window.addEventListener("resize", enforceResponsiveGrid);
+    window.addEventListener("orientationchange", enforceResponsiveGrid);
+
+    /* Init */
+    updateCartCount();
+    fetchInventoryFromSheet();
+  </script>
+</body>
+</html>
