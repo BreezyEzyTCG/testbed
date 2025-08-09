@@ -44,10 +44,10 @@
     .topbar{
       position:absolute; top:10px; right:12px;
       display:flex; align-items:center; gap:.5rem;
-      z-index:5; /* above brand overlay */
+      z-index:5;
     }
     .cart-link{
-      position:relative; /* anchor the bubble */
+      position:relative;
       display:inline-flex; align-items:center; gap:.5rem;
       color:var(--chip-fg); text-decoration:none;
       background:var(--chip-bg);
@@ -59,8 +59,7 @@
       filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%);
     }
     .cart-count{
-      position:absolute;
-      top:-6px; right:-6px;
+      position:absolute; top:-6px; right:-6px;
       min-width:10px; height:20px; padding:0 6px;
       background:#1bb9df; color:#f5f5f5;
       border:2px solid #ffffff; border-radius:999px;
@@ -74,12 +73,12 @@
       .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
     }
 
-    /* Centered brand block (doesn't block clicks) */
+    /* Centered brand block */
     .brand-center{
       position:absolute; inset:0; z-index:2;
       display:flex; align-items:center; justify-content:center;
       text-align:center; color:var(--fg); padding:0 12px;
-      pointer-events:none; /* allow clicks to pass through */
+      pointer-events:none;
     }
     .brand-title{
       margin:0; line-height:1.1; font-weight:800;
@@ -138,18 +137,14 @@
       line-height:1.3; min-height:calc(3 * 1.3em);
     }
 
-    /* Fixed 4-line meta block: Price, Rarity, Condition, Stock */
+    /* Fixed 4-line meta block */
     .card-info{
       min-height: calc(4 * (1.3em + 0.5rem));
       display:flex; flex-direction:column; justify-content:flex-start;
     }
     .price,.rarity,.condition,.stock{
-      font-size:1rem;
-      line-height:1.3;
-      margin:0.25rem 0;
-      white-space:nowrap;     /* prevent wrapping differences */
-      overflow:hidden;
-      text-overflow:ellipsis; /* trim long values, keep uniform height */
+      font-size:1rem; line-height:1.3; margin:0.25rem 0;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
     /* Badges */
@@ -195,25 +190,14 @@
       cursor:not-allowed !important; pointer-events:none; box-shadow:none !important;
       transform:none !important; opacity:1 !important;
     }
-    
-    #toast {
-  display: none;
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
-  background: #e31996;
-  color: #f5f5f5;
-  padding: 10px 15px;
-  border-radius: 5px;
-  z-index: 1000;
-  opacity: 0;                  /* Start transparent */
-  transition: opacity 0.5s ease; /* Fade duration */
-}
-#toast.show {
-  display: block;
-  opacity: 1;                  /* Fully visible */
-}
 
+    /* Toast */
+    #toast {
+      display:none; position:fixed; bottom:10px; right:10px;
+      background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px;
+      z-index:1000; opacity:0; transition:opacity 0.5s ease;
+    }
+    #toast.show { display:block; opacity:1; }
   </style>
 </head>
 <body>
@@ -244,8 +228,25 @@
     <div class="controls">
       <div class="controls-left">
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-        <select id="category-filter" onchange="applyFilters()">
+
+        <!-- Category -->
+        <select id="category-filter" onchange="onCategoryChange()">
           <option value="all">All Categories</option>
+        </select>
+
+        <!-- Subcategory (Column F / index 5) -->
+        <select id="subcategory-filter" onchange="applyFilters()">
+          <option value="all">All Subcategories</option>
+        </select>
+
+        <!-- Rarity -->
+        <select id="rarity-filter" onchange="applyFilters()">
+          <option value="all">All Rarity</option>
+        </select>
+
+        <!-- Condition -->
+        <select id="condition-filter" onchange="applyFilters()">
+          <option value="all">All Conditions</option>
         </select>
       </div>
 
@@ -272,7 +273,7 @@
     <div class="card-container grid-2"></div>
   </div>
 
-<div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
+  <div id="toast"></div>
 
   <script>
     let allProducts = [];
@@ -281,33 +282,26 @@
 
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
-let toastHideTimer = null;
-
-function showToast(msg, duration = 3000) {
-  const toast = document.getElementById("toast");
-  toast.textContent = msg;
-
-  // 💡 override the inline display:none
-  toast.style.display = "block";
-
-  // ensure fade-in runs cleanly
-  toast.classList.remove("show");
-  void toast.offsetWidth; // force reflow
-  toast.classList.add("show");
-
-  if (toastHideTimer) clearTimeout(toastHideTimer);
-  toastHideTimer = setTimeout(() => {
-    toast.classList.remove("show"); // starts fade-out
-    // hide after transition ends
-    const done = (e) => {
-      if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
-        toast.style.display = "none";
-        toast.removeEventListener("transitionend", done);
-      }
-    };
-    toast.addEventListener("transitionend", done);
-  }, duration);
-}
+    let toastHideTimer = null;
+    function showToast(msg, duration = 3000) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      toast.classList.remove("show");
+      void toast.offsetWidth;
+      toast.classList.add("show");
+      if (toastHideTimer) clearTimeout(toastHideTimer);
+      toastHideTimer = setTimeout(() => {
+        toast.classList.remove("show");
+        const done = (e) => {
+          if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
+            toast.style.display = "none";
+            toast.removeEventListener("transitionend", done);
+          }
+        };
+        toast.addEventListener("transitionend", done);
+      }, duration);
+    }
 
     function safeNumber(val, fallback=0){
       if (typeof val === "number" && Number.isFinite(val)) return val;
@@ -354,14 +348,15 @@ function showToast(msg, duration = 3000) {
             else obj[key] = (cell || "").trim();
           });
 
-          // Optional: map guaranteed columns if needed
-          obj.category  = (row[4] || obj.category  || "").trim(); // Column E
-          obj.rarity    = (row[6] || obj.rarity    || "").trim(); // Column G
-          obj.condition = (row[7] || obj.condition || "").trim(); // Column H
+          // Explicit fallbacks by guaranteed index (0-based)
+          obj.category     = (row[4] || obj.category     || "").trim(); // Column E
+          obj.subcategory  = (row[5] || obj.subcategory  || "").trim(); // Column F  ✅
+          obj.rarity       = (row[6] || obj.rarity       || "").trim(); // Column G
+          obj.condition    = (row[7] || obj.condition    || "").trim(); // Column H
           return obj;
         });
 
-        populateCategoryDropdown();
+        populateAllDropdowns();
         renderStore(allProducts);
         enforceResponsiveGrid();
       }catch(e){
@@ -419,23 +414,81 @@ function showToast(msg, duration = 3000) {
       });
     }
 
-    function populateCategoryDropdown(){
-      const sel = document.getElementById("category-filter");
-      // clear previous (keep "all")
-      sel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
-      cats.forEach(c => {
+    /* ---------- Dropdown population ---------- */
+    const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
+    function populateAllDropdowns(){
+      // Category
+      const catSel = document.getElementById("category-filter");
+      catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
         const opt = document.createElement("option");
-        opt.value = c; opt.textContent = c; sel.appendChild(opt);
+        opt.value = c; opt.textContent = c; catSel.appendChild(opt);
       });
+
+      // Rarity
+      const rarSel = document.getElementById("rarity-filter");
+      rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
+        const opt = document.createElement("option");
+        opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
+      });
+
+      // Condition
+      const conSel = document.getElementById("condition-filter");
+      conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; conSel.appendChild(opt);
+      });
+
+      // Subcategory depends on current category
+      updateSubcategoryOptions();
     }
 
-    function applyFilters(){
-      const kw = document.getElementById("search").value.toLowerCase();
+    function updateSubcategoryOptions(){
       const cat = document.getElementById("category-filter").value;
+      const subSel = document.getElementById("subcategory-filter");
+
+      // Get allowed subs based on chosen category (or all if 'all')
+      const pool = (cat === "all")
+        ? allProducts
+        : allProducts.filter(p => p.category === cat);
+
+      const subs = byUniqueSorted(pool.map(p => p.subcategory));
+
+      // Rebuild sub options (keep All at top)
+      const current = subSel.value;
+      subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+      subs.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s; opt.textContent = s; subSel.appendChild(opt);
+      });
+
+      // If previous selection still valid, keep it; else reset to 'all'
+      if (current !== "all" && subs.includes(current)) subSel.value = current;
+      else subSel.value = "all";
+    }
+
+    function onCategoryChange(){
+      updateSubcategoryOptions();
+      applyFilters();
+    }
+
+    /* ---------- Filtering ---------- */
+    function applyFilters(){
+      const kw   = document.getElementById("search").value.toLowerCase();
+      const cat  = document.getElementById("category-filter").value;
+      const sub  = document.getElementById("subcategory-filter").value;
+      const rar  = document.getElementById("rarity-filter").value;
+      const cond = document.getElementById("condition-filter").value;
+
       const filtered = allProducts.filter(p =>
         (p.name || "").toLowerCase().includes(kw) &&
-        (cat === "all" || p.category === cat)
+        (cat === "all" || p.category === cat) &&
+        (sub === "all" || p.subcategory === sub) &&
+        (rar === "all" || p.rarity === rar) &&
+        (cond === "all" || p.condition === cond)
       );
       renderStore(filtered);
     }
