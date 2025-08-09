@@ -40,13 +40,13 @@
     /* --- CONTROLS ROW (desktop behavior unchanged) --- */
     .controls{
       display:flex;
-      justify-content:space-between;   /* push toggle to right edge */
+      justify-content:space-between;
       align-items:center;
       gap:0.75rem;
       margin:1.5rem auto 0;
-      max-width:1200px;                /* match card container */
-      padding:0 1rem;                  /* match card container */
-      flex-wrap:wrap;                  /* allow wrapping if needed */
+      max-width:1200px;
+      padding:0 1rem;
+      flex-wrap:wrap;
     }
 
     .controls-left{
@@ -67,14 +67,14 @@
     .grid-toggle{
       display:flex;
       justify-content:flex-end;
-      gap:0.5rem;                      /* desktop spacing unchanged */
+      gap:0.5rem;
       margin:0;
     }
 
     .layout-button{
       background:transparent;
       border:none;
-      padding:0.5rem;                  /* desktop padding unchanged */
+      padding:0.5rem;
       border-radius:6px;
       cursor:pointer;
       display:flex;
@@ -85,7 +85,7 @@
     .layout-button:active{ transform:scale(0.96); }
 
     .layout-button svg{
-      width:24px; height:24px;         /* desktop icon size unchanged */
+      width:24px; height:24px;
       fill:var(--icon-color-default);
       transition:fill .2s ease;
     }
@@ -191,6 +191,18 @@
       border:none;
       border-radius:5px;
       cursor:pointer;
+      transition:opacity .2s ease, transform .15s ease;
+    }
+
+    /* FIX: visual style for disabled buttons */
+    .product-actions button:disabled,
+    button:disabled{
+      background-color:#cbd5e1; /* slate-300 */
+      color:#6b7280;            /* gray-500 */
+      cursor:not-allowed;
+      opacity:1;                /* keep solid grey */
+      box-shadow:none;
+      transform:none;
     }
 
     .container-panel{
@@ -204,32 +216,30 @@
 
     /* ---------- Mobile-only overrides (desktop untouched) ---------- */
     @media (max-width:767.98px){
-      /* Two-column grid on mobile: [ search | toggle ], with Categories on its own row */
       .controls{
-        display:grid;                                  /* override flex only on mobile */
-        grid-template-columns:minmax(0,1fr) auto;      /* search flexes, toggle hugs right */
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
         column-gap:0.75rem;
         row-gap:0.75rem;
         align-items:center;
       }
 
-      /* Let children of .controls-left participate in grid placement */
       .controls-left{ display:contents; }
 
       /* Row 1: Categories centered across full width */
-#category-filter{
-  grid-column: 1 / -1;
-  grid-row: 1;
-  justify-self: center;
-  margin-top: 1rem; /* ← adjust to your liking */
-}
+      #category-filter{
+        grid-column: 1 / -1;
+        grid-row: 1;
+        justify-self: center;
+        margin-top: 1rem;
+      }
 
-      /* Row 2: Search left, slightly narrower to share row with toggle */
+      /* Row 2: Search left */
       #search{
         grid-column:1 / 2;
         grid-row:2;
         width:100%;
-        max-width:60vw;                                /* adjust if needed */
+        max-width:60vw;
       }
 
       /* Row 2: Toggle right + tighter spacing + smaller padding/icons */
@@ -237,21 +247,21 @@
         grid-column:2 / 3;
         grid-row:2;
         justify-self:end;
-        gap:0.15rem !important;                        /* tighter than desktop */
+        gap:0.15rem !important;
       }
       .grid-toggle > .layout-button{
-        padding:0.25rem !important;                    /* was 0.5rem */
+        padding:0.25rem !important;
         margin:0 !important;
       }
       .grid-toggle > .layout-button svg{
-        width:22px; height:22px;                       /* was 24px */
+        width:22px; height:22px;
       }
 
       /* Keep: no 3‑grid on mobile */
       .layout-button.triple{ display:none; }
     }
 
-    /* Hide single-pane on desktop only (unchanged) */
+    /* Hide single-pane on desktop only */
     @media (min-width:768px){
       .layout-button.single{ display:none; }
     }
@@ -297,152 +307,4 @@
     <div class="card-container grid-2"></div>
   </div>
 
-  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
-
-  <script>
-    let allProducts = [];
-
-    function isMobile(){
-      return window.matchMedia("(max-width: 767.98px)").matches;
-    }
-
-    function showToast(message){
-      const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.style.display = "block";
-      setTimeout(()=> toast.style.display = "none", 2000);
-    }
-
-    function addToCart(name, price, image_url){
-      let cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const existing = cart.find(item => item.name === name);
-      if(existing) existing.quantity += 1;
-      else cart.push({ name, price, quantity: 1, image: image_url });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      showToast(`${name} added to cart!`);
-    }
-
-    async function fetchInventoryFromSheet(){
-      const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
-      try{
-        const response = await fetch(sheetURL);
-        const data = await response.text();
-        const rows = data.trim().split("\n").map(r => r.split(","));
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
-
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            obj[key] = (key === "price" || key === "stock") ? parseFloat(cell) : (cell || "").trim();
-          });
-          return obj;
-        });
-
-        populateCategoryDropdown();
-        renderStore(allProducts);
-      }catch(err){
-        console.error("Failed to load inventory:", err);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
-      }
-    }
-
-    function getBadgeInfo(raw){
-      if(!raw) return null;
-      const t = String(raw).trim().toLowerCase();
-      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
-      if(["new"].includes(t)) return { cls:"new", label:"NEW" };
-      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
-      return null;
-    }
-
-    function renderStore(products){
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
-
-      products.forEach(product => {
-        const disabled = product.stock <= 0 ? "disabled" : "";
-        const thePrice = Number.isFinite(product.price) ? product.price : 0;
-        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
-        const badgeInfo = getBadgeInfo(product.badge);
-
-        const card = document.createElement("div");
-        card.classList.add("card");
-
-        card.innerHTML = `
-          ${badgeInfo ? `<div class="badge ${badgeInfo.cls}">${badgeInfo.label}</div>` : ``}
-          <img src="${product.image_url}" alt="${product.name}" />
-
-          <div class="title-block">
-            <h3 class="card-title">${product.name}</h3>
-            <p class="series-name">${product["series name"] || ""}</p>
-          </div>
-
-          <div class="card-info">
-            <p class="price">$${thePrice.toFixed(2)}</p>
-            <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-            <p class="stock"><strong>Stock:</strong> ${Number.isFinite(product.stock) ? product.stock : 0}</p>
-          </div>
-
-          <div class="product-actions">
-            <button ${disabled} onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${thePrice || 0}, '${(product.image_url || "").replace(/'/g, "\\'")}')">${buttonText}</button>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function populateCategoryDropdown(){
-      const select = document.getElementById("category-filter");
-      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-      categories.sort().forEach(cat => {
-        const opt = document.createElement("option");
-        opt.value = cat;
-        opt.textContent = cat;
-        select.appendChild(opt);
-      });
-    }
-
-    function applyFilters(){
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const selectedCategory = document.getElementById("category-filter").value;
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(keyword) &&
-        (selectedCategory === "all" || p.category === selectedCategory)
-      );
-      renderStore(filtered);
-    }
-
-    function activateButton(type){
-      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
-      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
-      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
-      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-    }
-
-    function setGridView(type){
-      if(isMobile() && type === 3) return;  // no 3-grid on mobile
-      if(!isMobile() && type === 1) return; // no single pane on desktop
-
-      const container = document.querySelector(".card-container");
-      container.classList.remove("grid-1","grid-2","grid-3");
-      container.classList.add(`grid-${type}`);
-
-      activateButton(type);
-      applyFilters();
-    }
-
-    function enforceResponsiveGrid(){
-      const container = document.querySelector(".card-container");
-      if(isMobile() && container.classList.contains("grid-3")) setGridView(2);
-      else if(!isMobile() && container.classList.contains("grid-1")) setGridView(2);
-    }
-
-    window.addEventListener("resize", enforceResponsiveGrid);
-    window.addEventListener("orientationchange", enforceResponsiveGrid);
-
-    fetchInventoryFromSheet().then(() => enforceResponsiveGrid());
-  </script>
-</body>
-</html>
+  <div id="
