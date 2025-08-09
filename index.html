@@ -120,9 +120,9 @@
     }
 
     .series-name {
-      font-size: 0.95rem;
+      font-size: 0.7rem;
       color: #555;
-      margin: 0.2rem 0 0.4rem;
+      margin: 0.2rem 0 0.6rem;
       font-style: italic;
       white-space: normal;
       word-break: break-word;
@@ -140,7 +140,7 @@
       padding: 5px 10px;
       font-size: 0.75rem;
       font-weight: bold;
-      color: white;
+      color: grey;
       border-radius: 4px;
       z-index: 2;
       text-transform: uppercase;
@@ -273,7 +273,7 @@
           <h3>${product.name}</h3>
           <p class="series-name">${product["series name"] || ""}</p>
           <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
-          <p class="price"><strong>$${product.price.toFixed(2)}</strong></p>
+          <p class="price">$${product.price.toFixed(2)}</p>
           <p class="stock"><strong>Stock:</strong> ${product.stock}</p>
           <div class="product-actions">
             <button ${disabled} onclick="addToCart('${product.name}', ${product.price}, '${product.image_url}')">${buttonText}</button>
