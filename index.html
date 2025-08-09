@@ -154,6 +154,7 @@
       margin: 0.35rem 0;
     }
 
+    /* BADGES */
     .badge {
       position: absolute;
       top: 0.5rem;
@@ -161,16 +162,27 @@
       padding: 5px 10px;
       font-size: 0.75rem;
       font-weight: bold;
-      color: grey;
       border-radius: 4px;
       z-index: 2;
       text-transform: uppercase;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      line-height: 1;
     }
-
-    .badge.sale { background-color: #c21807; }
-    .badge.popular { background-color: #ffcc00; color: black; }
-    .badge.new { background-color: #4cbb17; }
+    /* Sale: red bg + white text */
+    .badge.sale {
+      background-color: #e02424;   /* strong red */
+      color: #ffffff;               /* white text */
+    }
+    /* Popular: yellow bg + black text */
+    .badge.popular {
+      background-color: #ffcc00;
+      color: #000000;
+    }
+    /* New: green bg + near‑white text */
+    .badge.new {
+      background-color: #2fbf71;
+      color: #f8f9fb;               /* close to white */
+    }
 
     .product-actions { margin-top: auto; }
 
@@ -289,6 +301,16 @@
       }
     }
 
+    // Normalize badge text to CSS class names and display labels
+    function getBadgeInfo(raw) {
+      if (!raw) return null;
+      const t = String(raw).trim().toLowerCase();
+      if (["sale", "sales"].includes(t)) return { cls: "sale", label: "SALE" };
+      if (["new"].includes(t)) return { cls: "new", label: "NEW" };
+      if (["popular", "hot"].includes(t)) return { cls: "popular", label: "POPULAR" };
+      return null; // unknown -> no badge
+    }
+
     function renderStore(products) {
       const container = document.querySelector(".card-container");
       container.innerHTML = "";
@@ -297,11 +319,13 @@
         const disabled = product.stock <= 0 ? "disabled" : "";
         const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
 
+        const badgeInfo = getBadgeInfo(product.badge);
+
         const card = document.createElement("div");
         card.classList.add("card");
 
         card.innerHTML = `
-          <div class="badge ${product.badge ? (product.badge.toLowerCase()) : ''}">${product.badge || ''}</div>
+          ${badgeInfo ? `<div class="badge ${badgeInfo.cls}">${badgeInfo.label}</div>` : ``}
           <img src="${product.image_url}" alt="${product.name}" />
 
           <div class="title-block">
