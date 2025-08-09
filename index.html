@@ -1,308 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pokémon Card Store</title>
-  <style>
-    :root{ --icon-color-default:#ddeaef; --icon-color-active:#789cac; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pokémon Card Store</title>
+<style>
+:root{
+  --header-bg:#1a202c;
+  --header-fg:#fff;
+  --chip-bg:#2d3748;
+  --chip-fg:#fff;
+  --badge-bg:#ef4444;
+  --badge-fg:#fff;
+}
 
-    body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
+/* ===== Header layout ===== */
+.site-header{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--header-bg);
+  color: var(--header-fg);
+  padding: 1rem 1rem 0.75rem;    /* extra breathing room */
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
 
-    header{
-      background:#1a202c; color:#fff; padding:1rem; text-align:center;
-      position:sticky; top:0; z-index:10;
-    }
-    .cart-link{
-      position:absolute; right:1rem; top:1rem; color:#fff; text-decoration:none;
-      background:#2d3748; padding:0.5rem 1rem; border-radius:5px;
-    }
+.header-top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
 
-    /* Controls */
-    .controls{
-      display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
-      margin:1.5rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
-    }
-    .controls-left{ display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
-    .controls input, .controls select{
-      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
-    }
-    .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
-    .layout-button{
-      background:transparent; border:none; padding:0.5rem; border-radius:6px;
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:transform .15s ease;
-    }
-    .layout-button:active{ transform:scale(0.96); }
-    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
-    .layout-button.single svg{ width:30px; height:30px; }
-    .layout-button.active svg{ fill:var(--icon-color-active); }
+.brand-title{
+  margin: 0;
+  line-height: 1.1;
+  font-weight: 800;
+  font-size: clamp(1.25rem, 5.5vw, 2.25rem);
+}
+.brand-subtitle{
+  margin: 0.25rem 0 0 0;
+  opacity: .95;
+  font-size: clamp(0.9rem, 3.6vw, 1.25rem);
+}
 
-    /* Cards */
-    .card-container{
-      display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:1.5rem; max-width:1200px; margin:2rem auto; padding:0 1rem; transition:all .3s ease;
-    }
-    .card-container.grid-1{ grid-template-columns:repeat(1,1fr); }
-    .card-container.grid-2{ grid-template-columns:repeat(2,1fr); }
-    .card-container.grid-3{ grid-template-columns:repeat(3,1fr); }
+.cart-link{
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  text-decoration: none;
+  padding: .6rem .9rem;
+  border-radius: .65rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cart-icon{ font-size: 1.05rem; line-height: 1; }
+.cart-count{
+  display: inline-block;
+  min-width: 1.25rem;
+  padding: .1rem .35rem;
+  margin-left: .25rem;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: .8rem;
+  text-align: center;
+}
 
-    .card{
-      position:relative; background:#fff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,.08);
-      overflow:hidden; display:flex; flex-direction:column; padding:1rem; text-align:center;
-    }
-    .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; }
+.header-nav{
+  max-width: 1100px;
+  margin: .5rem auto 0 auto;
+  min-height: 0.5rem;
+}
 
-    .title-block{ min-height:calc(1 * 1.2em + 3 * 1.3em); }
-    .card-title{
-      font-size:1.25rem; margin:0.25rem 0; line-height:1.2; display:-webkit-box;
-      -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
-    }
-    .series-name{
-      font-size:0.7rem; color:#555; margin:0.2rem 0 0.6rem; font-style:italic;
-      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
-      line-height:1.3; min-height:calc(3 * 1.3em);
-    }
+/* Banner image under the text */
+.header-banner{
+  max-width: 1100px;
+  margin: .75rem auto 0.5rem auto;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.header-banner img{
+  width: 100%;
+  height: clamp(120px, 24vw, 220px);
+  object-fit: cover;
+  object-position: center 30%; /* adjust crop focus */
+  display: block;
+}
 
-    .card-info{ min-height:90px; display:flex; flex-direction:column; justify-content:flex-start; }
-    .condition,.price,.stock{ font-size:1rem; margin:0.35rem 0; }
+@media (max-width: 767.98px){
+  .site-header{
+    padding: 1rem 1rem .75rem;
+  }
+  .cart-link{
+    padding: .55rem .75rem;
+  }
+}
 
-    /* Badges */
-    .badge{
-      position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold;
-      border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1;
-    }
-    .badge.sale{ background:#e02424; color:#fff; }
-    .badge.popular{ background:#ffcc00; color:#000; }
-    .badge.new{ background:#2fbf71; color:#f8f9fb; }
-
-    .product-actions{ margin-top:auto; }
-
-    button{
-      margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff;
-      border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s;
-    }
-
-    .container-panel{
-      max-width:1200px; margin:2rem auto; padding:0 1rem; background:#fff;
-      border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
-    }
-
-    /* Mobile overrides */
-    @media (max-width:767.98px){
-      .controls{
-        display:grid; grid-template-columns:minmax(0,1fr) auto;
-        column-gap:0.75rem; row-gap:0.75rem; align-items:center;
-      }
-      .controls-left{ display:contents; }
-      #category-filter{ grid-column:1 / -1; grid-row:1; justify-self:center; margin-top:1rem; }
-      #search{ grid-column:1 / 2; grid-row:2; width:100%; max-width:60vw; }
-      .grid-toggle{ grid-column:2 / 3; grid-row:2; justify-self:end; gap:0.15rem !important; }
-      .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
-      .grid-toggle > .layout-button svg{ width:22px; height:22px; }
-      .layout-button.triple{ display:none; } /* no 3-grid on mobile */
-    }
-    /* Hide single-pane on desktop */
-    @media (min-width:768px){ .layout-button.single{ display:none; } }
-
-    /* Final: robust disabled style */
-    .product-actions button[disabled], button[disabled]{
-      background:#cbd5e1 !important; color:#6b7280 !important;
-      cursor:not-allowed !important; pointer-events:none; box-shadow:none !important;
-      transform:none !important; opacity:1 !important;
-    }
-  </style>
+main, .content, .controls{
+  max-width: 1100px;
+  margin-inline: auto;
+}
+</style>
 </head>
 <body>
-  <header>
-    <h1>BreezyEzyTCG Collectibles Store</h1>
-    <a class="cart-link" href="cart.html">🛒 Cart</a>
-  </header>
 
-  <div class="container-panel">
-    <div class="controls">
-      <div class="controls-left">
-        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-        <select id="category-filter" onchange="applyFilters()">
-          <option value="all">All Categories</option>
-        </select>
-      </div>
-
-      <div class="grid-toggle">
-        <!-- Single Pane (mobile only) -->
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
-        </button>
-        <!-- 2-Grid -->
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-        <!-- 3-Grid -->
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-      </div>
+<header class="site-header">
+  <div class="header-top">
+    <div class="brand">
+      <h1 class="brand-title">BreezyEzyTCG</h1>
+      <p class="brand-subtitle">Collectibles Store</p>
     </div>
 
-    <div class="card-container grid-2"></div>
+    <a class="cart-link" href="cart.html" aria-label="Cart">
+      <span class="cart-icon" aria-hidden="true">🛒</span>
+      <span>Cart</span>
+      <span class="cart-count" id="cartCount">0</span>
+    </a>
   </div>
 
-  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
+  <nav class="header-nav">
+    <!-- Future navigation here -->
+  </nav>
 
-  <script>
-    let allProducts = [];
+  <div class="header-banner">
+    <img src="assets/images/Breezy%20Banner.png" alt="Store banner" loading="eager">
+  </div>
+</header>
 
-    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+<main>
+  <!-- Your store content here -->
+</main>
 
-    function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
-
-    function showToast(msg){
-      const toast = document.getElementById("toast");
-      toast.textContent = msg;
-      toast.style.display = "block";
-      setTimeout(()=> toast.style.display = "none", 2000);
-    }
-
-    function safeNumber(val, fallback=0){
-      if (typeof val === "number" && Number.isFinite(val)) return val;
-      const n = parseFloat(val);
-      return Number.isFinite(n) ? n : fallback;
-    }
-
-    function addToCart(name, price, image_url){
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      const found = cart.find(i => i.name === name);
-      if(found) found.quantity += 1;
-      else cart.push({ name, price, quantity:1, image:image_url });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      showToast(`${name} added to cart!`);
-    }
-
-    async function fetchInventoryFromSheet(){
-      try{
-        const res = await fetch(SHEET_CSV);
-        const csv = await res.text();
-        const rows = csv.trim().split("\n").map(r => r.split(","));
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
-
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
-            else obj[key] = (cell || "").trim();
-          });
-          return obj;
-        });
-
-        populateCategoryDropdown();
-        renderStore(allProducts);
-        enforceResponsiveGrid();
-      }catch(e){
-        console.error(e);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
-      }
-    }
-
-    function getBadgeInfo(raw){
-      if(!raw) return null;
-      const t = String(raw).trim().toLowerCase();
-      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
-      if(t === "new") return { cls:"new", label:"NEW" };
-      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
-      return null;
-    }
-
-    function renderStore(list){
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
-
-      list.forEach(p => {
-        const stock = safeNumber(p.stock, 0);
-        const price = safeNumber(p.price, 0);
-        const out = stock <= 0;
-
-        const badge = getBadgeInfo(p.badge);
-        const safeName = String(p.name || "").replace(/'/g, "\\'");
-        const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
-
-        const btnAttrs = out
-          ? `disabled aria-disabled="true" tabindex="-1"`
-          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
-
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
-          <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
-          <div class="title-block">
-            <h3 class="card-title">${p.name || ""}</h3>
-            <p class="series-name">${p["series name"] || ""}</p>
-          </div>
-          <div class="card-info">
-            <p class="price">$${price.toFixed(2)}</p>
-            <p class="condition"><strong>Condition:</strong> ${p.condition || "N/A"}</p>
-            <p class="stock"><strong>Stock:</strong> ${stock}</p>
-          </div>
-          <div class="product-actions">
-            <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function populateCategoryDropdown(){
-      const sel = document.getElementById("category-filter");
-      const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
-      cats.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c; opt.textContent = c; sel.appendChild(opt);
-      });
-    }
-
-    function applyFilters(){
-      const kw = document.getElementById("search").value.toLowerCase();
-      const cat = document.getElementById("category-filter").value;
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(kw) &&
-        (cat === "all" || p.category === cat)
-      );
-      renderStore(filtered);
-    }
-
-    function activateButton(type){
-      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
-      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
-      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
-      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-    }
-
-    function setGridView(type){
-      if(isMobile() && type === 3) return;  // block 3-col on mobile
-      if(!isMobile() && type === 1) return; // block single on desktop
-      const cont = document.querySelector(".card-container");
-      cont.classList.remove("grid-1","grid-2","grid-3");
-      cont.classList.add(`grid-${type}`);
-      activateButton(type);
-      // keep current filter result visible
-      applyFilters();
-    }
-
-    function enforceResponsiveGrid(){
-      const cont = document.querySelector(".card-container");
-      if(isMobile() && cont.classList.contains("grid-3")) setGridView(2);
-      else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
-    }
-
-    window.addEventListener("resize", enforceResponsiveGrid);
-    window.addEventListener("orientationchange", enforceResponsiveGrid);
-
-    fetchInventoryFromSheet();
-  </script>
 </body>
 </html>
