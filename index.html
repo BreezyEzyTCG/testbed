@@ -113,7 +113,6 @@
       border-radius: 5px;
     }
 
-    /* ---- Standardized text sizes & even spacing ---- */
     .card h3 {
       font-size: 1.25rem;
       margin: 0.25rem 0;
@@ -131,11 +130,11 @@
       -webkit-line-clamp: 2;
       overflow: hidden;
       line-height: 1.3;
-      min-height: calc(2 * 1.3em); /* exact space for 2 lines */
+      min-height: calc(2 * 1.3em);
     }
 
     .card-info {
-      min-height: 90px; /* adjust until tall enough for condition/price/stock */
+      min-height: 90px;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -193,12 +192,10 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
     }
 
-    /* ---- Mobile: hide 3-grid ---- */
     @media (max-width: 767.98px) {
       .layout-button.triple { display: none; }
     }
 
-    /* ---- Desktop: hide single-pane ---- */
     @media (min-width: 768px) {
       .layout-button.single { display: none; }
     }
@@ -207,3 +204,165 @@
 <body>
   <header>
     <h1>BreezyEzyTCG Collectibles Store</h1>
+    <a class="cart-link" href="cart.html">🛒 Cart</a>
+  </header>
+
+  <div class="container-panel">
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+      <select id="category-filter" onchange="applyFilters()">
+        <option value="all">All Categories</option>
+      </select>
+
+      <div class="grid-toggle">
+        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v14h14V5H5z"/></svg>
+        </button>
+        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM5 6v12h6V6H5zm8 0v12h6V6h-6z"/></svg>
+        </button>
+        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM5 6v12h4V6H5zm6 0v12h4V6h-4zm6 0v12h4V6h-4z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-container grid-2"></div>
+  </div>
+
+  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
+
+  <script>
+    let allProducts = [];
+
+    function isMobile() {
+      return window.matchMedia("(max-width: 767.98px)").matches;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.style.display = "block";
+      setTimeout(() => (toast.style.display = "none"), 2000);
+    }
+
+    function addToCart(name, price, image_url) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const existing = cart.find(item => item.name === name);
+      if (existing) existing.quantity += 1;
+      else cart.push({ name, price, quantity: 1, image: image_url });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      showToast(`${name} added to cart!`);
+    }
+
+    async function fetchInventoryFromSheet() {
+      const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+      try {
+        const response = await fetch(sheetURL);
+        const data = await response.text();
+        const rows = data.trim().split("\n").map(row => row.split(","));
+        const headers = rows.shift().map(h => h.trim().toLowerCase());
+
+        allProducts = rows.map(row => {
+          const obj = {};
+          row.forEach((cell, i) => {
+            const key = headers[i];
+            obj[key] = key === 'price' || key === 'stock' ? parseFloat(cell) : (cell || "").trim();
+          });
+          return obj;
+        });
+
+        populateCategoryDropdown();
+        renderStore(allProducts);
+      } catch (error) {
+        console.error("Failed to load inventory:", error);
+        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+      }
+    }
+
+    function renderStore(products) {
+      const container = document.querySelector(".card-container");
+      container.innerHTML = "";
+
+      products.forEach(product => {
+        const disabled = product.stock <= 0 ? "disabled" : "";
+        const buttonText = product.stock <= 0 ? "Out of Stock" : "Add to Cart";
+
+        const card = document.createElement("div");
+        card.classList.add("card");
+
+        card.innerHTML = `
+          <div class="badge ${product.badge ? (product.badge.toLowerCase()) : ''}">${product.badge || ''}</div>
+          <img src="${product.image_url}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p class="series-name">${product["series name"] || ""}</p>
+          <div class="card-info">
+            <p class="price">$${(Number.isFinite(product.price) ? product.price : 0).toFixed(2)}</p>
+            <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
+            <p class="stock"><strong>Stock:</strong> ${Number.isFinite(product.stock) ? product.stock : 0}</p>
+          </div>
+          <div class="product-actions">
+            <button ${disabled} onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${Number(product.price) || 0}, '${(product.image_url || '').replace(/'/g, "\\'")}')">${buttonText}</button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function populateCategoryDropdown() {
+      const select = document.getElementById("category-filter");
+      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+      categories.sort().forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const keyword = document.getElementById("search").value.toLowerCase();
+      const selectedCategory = document.getElementById("category-filter").value;
+      const filtered = allProducts.filter(p =>
+        (p.name || "").toLowerCase().includes(keyword) &&
+        (selectedCategory === "all" || p.category === selectedCategory)
+      );
+      renderStore(filtered);
+    }
+
+    function activateButton(type) {
+      document.querySelectorAll(".layout-button").forEach(btn => btn.classList.remove("active"));
+      if (type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
+      if (type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
+      if (type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
+    }
+
+    function setGridView(type) {
+      if (isMobile() && type === 3) return;
+      if (!isMobile() && type === 1) return;
+
+      const container = document.querySelector(".card-container");
+      container.classList.remove("grid-1", "grid-2", "grid-3");
+      container.classList.add(`grid-${type}`);
+
+      activateButton(type);
+      applyFilters();
+    }
+
+    function enforceResponsiveGrid() {
+      const container = document.querySelector(".card-container");
+      if (isMobile() && container.classList.contains("grid-3")) {
+        setGridView(2);
+      } else if (!isMobile() && container.classList.contains("grid-1")) {
+        setGridView(2);
+      }
+    }
+
+    window.addEventListener("resize", enforceResponsiveGrid);
+    window.addEventListener("orientationchange", enforceResponsiveGrid);
+
+    fetchInventoryFromSheet().then(() => enforceResponsiveGrid());
+  </script>
+</body>
+</html>
