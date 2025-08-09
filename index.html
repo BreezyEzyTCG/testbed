@@ -9,7 +9,7 @@
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#58747c;           /* header rim behind banner */
+      --shell:#58747c;           /* header rim + blue area */
       --fg:#ffffff;
       --chip-bg:#072a54;         /* cart button background */
       --chip-fg:#fff;
@@ -24,7 +24,7 @@
       background:var(--shell);
       box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    .shell-pad{ padding:10px 12px; } /* slim rim */
+    .shell-pad{ padding:10px 12px 0; } /* remove bottom padding; filter bar adds its own */
 
     .hero{
       position:relative;
@@ -59,7 +59,8 @@
       filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%);
     }
     .cart-count{
-      position:absolute; top:-6px; right:-6px;
+      position:absolute;
+      top:-6px; right:-6px;
       min-width:10px; height:20px; padding:0 6px;
       background:#1bb9df; color:#f5f5f5;
       border:2px solid #ffffff; border-radius:999px;
@@ -91,13 +92,39 @@
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* ================== Controls ================== */
+    /* ========= NEW: Filter bar under banner (inside the blue header) ========= */
+    .filter-bar{
+      background:var(--shell);
+      padding:12px 12px 14px;   /* breathe */
+    }
+    .filter-grid{
+      max-width:1200px; margin:0 auto;
+      display:grid; gap:0.5rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop: 4 in a row */
+    }
+    .filter-grid select{
+      width:100%;
+      padding:0.55rem 0.65rem;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.3);
+      background:#ffffff;
+      color:#111;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
+    @media (max-width:1023.98px){
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* tablet */
+    }
+    @media (max-width:767.98px){
+      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* mobile: 2×2 */
+    }
+
+    /* ================== Controls (search + grid toggle) ================== */
     .controls{
       display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
-      margin:1rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
+      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
     }
     .controls-left{ display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
-    .controls input, .controls select{
+    .controls input{
       padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
     }
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
@@ -175,9 +202,8 @@
         column-gap:0.75rem; row-gap:0.75rem; align-items:center;
       }
       .controls-left{ display:contents; }
-      #category-filter{ grid-column:1 / -1; grid-row:1; justify-self:center; margin-top:0.5rem; }
-      #search{ grid-column:1 / 2; grid-row:2; width:100%; max-width:60vw; }
-      .grid-toggle{ grid-column:2 / 3; grid-row:2; justify-self:end; gap:0.15rem !important; }
+      #search{ grid-column:1 / 2; grid-row:1; width:100%; max-width:60vw; }
+      .grid-toggle{ grid-column:2 / 3; grid-row:1; justify-self:end; gap:0.15rem !important; }
       .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
       .grid-toggle > .layout-button svg{ width:22px; height:22px; }
       .layout-button.triple{ display:none; } /* no 3-grid on mobile */
@@ -221,33 +247,31 @@
         </div>
       </div>
     </div>
+
+    <!-- NEW: filter bar under the banner (inside blue area) -->
+    <div class="filter-bar">
+      <div class="filter-grid">
+        <select id="category-filter" onchange="onCategoryChange()">
+          <option value="all">All Categories</option>
+        </select>
+        <select id="subcategory-filter" onchange="applyFilters()">
+          <option value="all">All Subcategories</option>
+        </select>
+        <select id="rarity-filter" onchange="applyFilters()">
+          <option value="all">All Rarity</option>
+        </select>
+        <select id="condition-filter" onchange="applyFilters()">
+          <option value="all">All Conditions</option>
+        </select>
+      </div>
+    </div>
   </div>
 
-  <!-- ===== Content Panel ===== -->
+  <!-- ===== Content Panel (search + grid toggle + cards) ===== -->
   <div class="container-panel">
     <div class="controls">
       <div class="controls-left">
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-
-        <!-- Category -->
-        <select id="category-filter" onchange="onCategoryChange()">
-          <option value="all">All Categories</option>
-        </select>
-
-        <!-- Subcategory (Column F / index 5) -->
-        <select id="subcategory-filter" onchange="applyFilters()">
-          <option value="all">All Subcategories</option>
-        </select>
-
-        <!-- Rarity -->
-        <select id="rarity-filter" onchange="applyFilters()">
-          <option value="all">All Rarity</option>
-        </select>
-
-        <!-- Condition -->
-        <select id="condition-filter" onchange="applyFilters()">
-          <option value="all">All Conditions</option>
-        </select>
       </div>
 
       <div class="grid-toggle">
@@ -341,18 +365,17 @@
 
         allProducts = rows.map(row => {
           const obj = {};
-          // Build by headers (resilient to column order)
           row.forEach((cell, i) => {
             const key = headers[i];
             if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
             else obj[key] = (cell || "").trim();
           });
 
-          // Explicit fallbacks by guaranteed index (0-based)
-          obj.category     = (row[4] || obj.category     || "").trim(); // Column E
-          obj.subcategory  = (row[5] || obj.subcategory  || "").trim(); // Column F  ✅
-          obj.rarity       = (row[6] || obj.rarity       || "").trim(); // Column G
-          obj.condition    = (row[7] || obj.condition    || "").trim(); // Column H
+          /* Explicit fallbacks by index (0-based) */
+          obj.category    = (row[4] || obj.category    || "").trim(); // Column E
+          obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
+          obj.rarity      = (row[6] || obj.rarity      || "").trim(); // Column G
+          obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
           return obj;
         });
 
@@ -450,14 +473,12 @@
       const cat = document.getElementById("category-filter").value;
       const subSel = document.getElementById("subcategory-filter");
 
-      // Get allowed subs based on chosen category (or all if 'all')
       const pool = (cat === "all")
         ? allProducts
         : allProducts.filter(p => p.category === cat);
 
       const subs = byUniqueSorted(pool.map(p => p.subcategory));
 
-      // Rebuild sub options (keep All at top)
       const current = subSel.value;
       subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       subs.forEach(s => {
@@ -465,7 +486,6 @@
         opt.value = s; opt.textContent = s; subSel.appendChild(opt);
       });
 
-      // If previous selection still valid, keep it; else reset to 'all'
       if (current !== "all" && subs.includes(current)) subSel.value = current;
       else subSel.value = "all";
     }
@@ -502,8 +522,8 @@
 
     // Strict blocks: no 3-grid on mobile, no 1-grid on desktop
     function setGridView(type){
-      if(isMobile() && type === 3) return;  // block 3 on mobile
-      if(!isMobile() && type === 1) return; // block single on desktop
+      if(isMobile() && type === 3) return;
+      if(!isMobile() && type === 1) return;
 
       const cont = document.querySelector(".card-container");
       cont.classList.remove("grid-1","grid-2","grid-3");
