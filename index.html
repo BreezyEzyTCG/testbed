@@ -262,12 +262,21 @@
 
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
-    function showToast(msg){
-      const toast = document.getElementById("toast");
-      toast.textContent = msg;
-      toast.style.display = "block";
-      setTimeout(()=> toast.style.display = "none"), 5000;
-    }
+ let toastHideTimer = null;
+
+function showToast(msg, duration = 5000){
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.style.background = "#e31996";
+  toast.style.color = "#f5f5f5";
+  toast.style.display = "block";
+
+  if (toastHideTimer) clearTimeout(toastHideTimer);
+  toastHideTimer = setTimeout(() => {
+    toast.style.display = "none";
+    toastHideTimer = null;
+  }, duration);
+}
 
     function safeNumber(val, fallback=0){
       if (typeof val === "number" && Number.isFinite(val)) return val;
