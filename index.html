@@ -92,11 +92,22 @@
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* ========= NEW: Filter bar under banner (inside the blue header) ========= */
+    /* ========= Filter/search bar under banner (inside the blue header) ========= */
     .filter-bar{
       background:var(--shell);
-      padding:12px 12px 14px;   /* breathe */
+      padding:12px 12px 14px;
     }
+
+    /* NEW: search row centered above the dropdown grid */
+    .search-row{
+      max-width:1200px; margin:0 auto 10px;
+      display:flex; justify-content:center;
+    }
+    /* keep the same input styling/sizing as before */
+    #search{
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
+    }
+
     .filter-grid{
       max-width:1200px; margin:0 auto;
       display:grid; gap:0.5rem;
@@ -116,16 +127,15 @@
     }
     @media (max-width:767.98px){
       .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* mobile: 2×2 */
+      /* keep the previous mobile width behavior for the search */
+      #search{ width:100%; max-width:60vw; }
     }
 
-    /* ================== Controls (search + grid toggle) ================== */
+    /* ================== Controls (grid toggle only now) ================== */
     .controls{
-      display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
-      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
-    }
-    .controls-left{ display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
-    .controls input{
-      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
+      display:flex; justify-content:flex-end; align-items:center;
+      gap:0.75rem; margin:0.75rem auto 0; max-width:1200px; padding:0 1rem;
+      flex-wrap:wrap;
     }
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
     .layout-button{
@@ -195,15 +205,10 @@
       background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
     }
 
-    /* ================== Mobile overrides ================== */
+    /* ================== Mobile tweaks ================== */
     @media (max-width:767.98px){
-      .controls{
-        display:grid; grid-template-columns:minmax(0,1fr) auto;
-        column-gap:0.75rem; row-gap:0.75rem; align-items:center;
-      }
-      .controls-left{ display:contents; }
-      #search{ grid-column:1 / 2; grid-row:1; width:100%; max-width:60vw; }
-      .grid-toggle{ grid-column:2 / 3; grid-row:1; justify-self:end; gap:0.15rem !important; }
+      .controls{ justify-content:flex-end; }
+      .grid-toggle{ gap:0.15rem !important; }
       .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
       .grid-toggle > .layout-button svg{ width:22px; height:22px; }
       .layout-button.triple{ display:none; } /* no 3-grid on mobile */
@@ -248,8 +253,13 @@
       </div>
     </div>
 
-    <!-- NEW: filter bar under the banner (inside blue area) -->
+    <!-- Filter/search bar under the banner -->
     <div class="filter-bar">
+      <!-- NEW: centered search above the dropdowns -->
+      <div class="search-row">
+        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+      </div>
+
       <div class="filter-grid">
         <select id="category-filter" onchange="onCategoryChange()">
           <option value="all">All Categories</option>
@@ -267,13 +277,9 @@
     </div>
   </div>
 
-  <!-- ===== Content Panel (search + grid toggle + cards) ===== -->
+  <!-- ===== Content Panel (grid toggle + cards) ===== -->
   <div class="container-panel">
     <div class="controls">
-      <div class="controls-left">
-        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-      </div>
-
       <div class="grid-toggle">
         <!-- Single Pane (mobile only) -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
