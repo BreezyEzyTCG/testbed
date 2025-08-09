@@ -119,13 +119,20 @@
       margin: 0.25rem 0;
     }
 
-    .series-name {
-      font-size: 0.7rem;
-      color: #555;
-      margin: 0.2rem 0 0.6rem;
-      font-style: italic;
-      white-space: normal;
-      word-break: break-word;
+   .series-name {
+  font-size: 0.7rem;
+  color: #555;
+  margin: 0.2rem 0 0.6rem;
+  font-style: italic;
+
+  /* lock to 2 lines so height is consistent */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.3;
+  min-height: calc(2 * 1.3em); /* exact space for 2 lines */
+}
     }
 
     .card-info {
@@ -297,12 +304,17 @@
           <div class="badge ${product.badge ? (product.badge.toLowerCase()) : ''}">${product.badge || ''}</div>
           <img src="${product.image_url}" alt="${product.name}" />
           <h3>${product.name}</h3>
+
+          <!-- series name OUTSIDE of card-info -->
+  <p class="series-name">${product["series name"] || ""}</p>
+  
           <div class="card-info">
             <p class="series-name">${product["series name"] || ""}</p>
               <p class="condition"><strong>Condition:</strong> ${product.condition || "N/A"}</p>
             <p class="price">$${(Number.isFinite(product.price) ? product.price : 0).toFixed(2)}</p>
             <p class="stock"><strong>Stock:</strong> ${Number.isFinite(product.stock) ? product.stock : 0}</p>
           </div>
+          
           <div class="product-actions">
             <button ${disabled} onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${Number(product.price) || 0}, '${(product.image_url || '').replace(/'/g, "\\'")}')">${buttonText}</button>
           </div>
