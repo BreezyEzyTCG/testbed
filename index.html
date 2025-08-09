@@ -253,7 +253,7 @@
     <div class="card-container grid-2"></div>
   </div>
 
-  <div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#333; color:#fff; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
+<div id="toast" style="display:none; position:fixed; bottom:10px; right:10px; background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px; z-index:1000;"></div>
 
   <script>
     let allProducts = [];
@@ -266,7 +266,7 @@
       const toast = document.getElementById("toast");
       toast.textContent = msg;
       toast.style.display = "block";
-      setTimeout(()=> toast.style.display = "none"), 2000;
+      setTimeout(()=> toast.style.display = "none"), 5000;
     }
 
     function safeNumber(val, fallback=0){
