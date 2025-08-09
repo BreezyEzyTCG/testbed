@@ -316,8 +316,8 @@
 
           // Optional: map guaranteed columns if needed
           obj.category  = (row[4] || obj.category  || "").trim(); // Column E
+          obj.rarity    = (row[6] || obj.rarity    || "").trim(); // Column G
           obj.condition = (row[7] || obj.condition || "").trim(); // Column H
-          obj.rarity    = (row[8] || obj.rarity    || "").trim(); // Column G
           return obj;
         });
 
