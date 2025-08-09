@@ -9,11 +9,11 @@
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#58747c;
+      --shell:#58747c;           /* header rim behind banner */
       --fg:#ffffff;
-      --chip-bg:#072a54;
+      --chip-bg:#072a54;         /* cart button background */
       --chip-fg:#fff;
-      --accent:#ef4444;
+      --accent:#ef4444;          /* cart badge fill */
     }
 
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
@@ -24,7 +24,7 @@
       background:var(--shell);
       box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    .shell-pad{ padding:10px 12px; }
+    .shell-pad{ padding:10px 12px; } /* slim rim */
 
     .hero{
       position:relative;
@@ -40,13 +40,14 @@
       pointer-events:none;
     }
 
+    /* Cart chip on banner (top-right) */
     .topbar{
       position:absolute; top:10px; right:12px;
       display:flex; align-items:center; gap:.5rem;
-      z-index:5;
+      z-index:5; /* above brand overlay */
     }
     .cart-link{
-      position:relative;
+      position:relative; /* anchor the bubble */
       display:inline-flex; align-items:center; gap:.5rem;
       color:var(--chip-fg); text-decoration:none;
       background:var(--chip-bg);
@@ -73,11 +74,12 @@
       .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
     }
 
+    /* Centered brand block (doesn't block clicks) */
     .brand-center{
       position:absolute; inset:0; z-index:2;
       display:flex; align-items:center; justify-content:center;
       text-align:center; color:var(--fg); padding:0 12px;
-      pointer-events:none;
+      pointer-events:none; /* allow clicks to pass through */
     }
     .brand-title{
       margin:0; line-height:1.1; font-weight:800;
@@ -136,19 +138,18 @@
       line-height:1.3; min-height:calc(3 * 1.3em);
     }
 
-    /* >>> UPDATED: lock 4 lines uniformly & keep each line single-line */
+    /* Fixed 4-line meta block: Price, Rarity, Condition, Stock */
     .card-info{
-      /* 4 lines × (line box + margins) = fixed block so cards align */
       min-height: calc(4 * (1.3em + 0.5rem));
       display:flex; flex-direction:column; justify-content:flex-start;
     }
-    .price,.rarity,.condition,.stock{
-      font-size:0.8rem;
+    .rarity,.condition,.price,.stock{
+      font-size:1rem;
       line-height:1.3;
-      margin:0.25rem 0;               /* tighter, consistent gaps */
-      white-space:nowrap;              /* prevent wrapping differences */
+      margin:0.25rem 0;
+      white-space:nowrap;     /* prevent wrapping differences */
       overflow:hidden;
-      text-overflow:ellipsis;          /* trim long values, keep height */
+      text-overflow:ellipsis; /* trim long values, keep uniform height */
     }
 
     /* Badges */
@@ -184,10 +185,11 @@
       .grid-toggle{ grid-column:2 / 3; grid-row:2; justify-self:end; gap:0.15rem !important; }
       .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
       .grid-toggle > .layout-button svg{ width:22px; height:22px; }
-      .layout-button.triple{ display:none; }
+      .layout-button.triple{ display:none; } /* no 3-grid on mobile */
     }
     @media (min-width:768px){ .layout-button.single{ display:none; } }
 
+    /* Robust disabled */
     .product-actions button[disabled], button[disabled]{
       background:#cbd5e1 !important; color:#6b7280 !important;
       cursor:not-allowed !important; pointer-events:none; box-shadow:none !important;
@@ -229,14 +231,17 @@
       </div>
 
       <div class="grid-toggle">
+        <!-- Single Pane (mobile only) -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
         </button>
+        <!-- 2-Grid -->
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
+            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
           </svg>
         </button>
+        <!-- 3-Grid -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
@@ -261,7 +266,7 @@
       const toast = document.getElementById("toast");
       toast.textContent = msg;
       toast.style.display = "block";
-      setTimeout(()=> toast.style.display = "none", 2000);
+      setTimeout(()=> toast.style.display = "none"), 2000;
     }
 
     function safeNumber(val, fallback=0){
@@ -302,12 +307,14 @@
 
         allProducts = rows.map(row => {
           const obj = {};
+          // Build by headers (resilient to column order)
           row.forEach((cell, i) => {
             const key = headers[i];
             if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
             else obj[key] = (cell || "").trim();
           });
 
+          // Optional: map guaranteed columns if needed
           obj.category  = (row[4] || obj.category  || "").trim(); // Column E
           obj.condition = (row[6] || obj.condition || "").trim(); // Column G
           obj.rarity    = (row[7] || obj.rarity    || "").trim(); // Column H
@@ -360,8 +367,8 @@
           </div>
           <div class="card-info">
             <p class="price">$${price.toFixed(2)}</p>
-            <p class="rarity"><strong>Rarity:</strong> ${p.rarity || "—"}</p>
-            <p class="condition"><strong>Condition:</strong> ${p.condition || "N/A"}</p>
+            <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
+            <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
             <p class="stock"><strong>Stock:</strong> ${stock}</p>
           </div>
           <div class="product-actions">
@@ -374,6 +381,7 @@
 
     function populateCategoryDropdown(){
       const sel = document.getElementById("category-filter");
+      // clear previous (keep "all")
       sel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
       cats.forEach(c => {
@@ -399,12 +407,15 @@
       if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
     }
 
+    // Strict blocks: no 3-grid on mobile, no 1-grid on desktop
     function setGridView(type){
-      if(isMobile() && type === 3) return;
-      if(!isMobile() && type === 1) return;
+      if(isMobile() && type === 3) return;  // block 3 on mobile
+      if(!isMobile() && type === 1) return; // block single on desktop
+
       const cont = document.querySelector(".card-container");
       cont.classList.remove("grid-1","grid-2","grid-3");
       cont.classList.add(`grid-${type}`);
+
       activateButton(type);
       applyFilters();
     }
@@ -415,6 +426,7 @@
       else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
     }
 
+    /* Sync cart badge across tabs/windows */
     window.addEventListener("storage", (e) => {
       if (e.key === "cart") updateCartCount();
     });
@@ -422,6 +434,7 @@
     window.addEventListener("resize", enforceResponsiveGrid);
     window.addEventListener("orientationchange", enforceResponsiveGrid);
 
+    /* Init */
     updateCartCount();
     fetchInventoryFromSheet();
   </script>
