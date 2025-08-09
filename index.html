@@ -67,7 +67,7 @@
     .grid-toggle{
       display:flex;
       justify-content:flex-end;
-      gap:0.5rem;
+      gap:0.25rem;                     /* tighter spacing between icons */
       margin:0;
     }
 
@@ -204,7 +204,7 @@
 
     /* ---------- Mobile-only layout (desktop untouched) ---------- */
     @media (max-width:767.98px){
-      /* Turn the controls into a 2‑column grid: [ search | toggle ] */
+      /* Turn controls into a two-column grid: [ search | toggle ] */
       .controls{
         display:grid;                                  /* override flex only on mobile */
         grid-template-columns:minmax(0,1fr) auto;      /* search flexes, toggle hugs right */
@@ -213,7 +213,7 @@
         align-items:center;
       }
 
-      /* Let children of .controls-left be placed directly on the grid */
+      /* Flatten wrapper so its children can be placed on the grid */
       .controls-left{ display:contents; }
 
       /* Row 1: Categories centered across the full width */
@@ -223,15 +223,15 @@
         justify-self:center;
       }
 
-      /* Row 2: Search left (won't push toggle down) */
+      /* Row 2: Search left (fixed smaller width so it shares the row) */
       #search{
         grid-column:1 / 2;
         grid-row:2;
         width:100%;
-        max-width:72vw;                                /* keep room for the toggle */
+        max-width:60vw;                                /* ↓ adjust if you want shorter/longer */
       }
 
-      /* Row 2: Toggle right (aligned with container edge) */
+      /* Row 2: Toggle right */
       .grid-toggle{
         grid-column:2 / 3;
         grid-row:2;
