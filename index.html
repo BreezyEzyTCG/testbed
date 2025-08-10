@@ -286,14 +286,18 @@
       display:grid; place-items:center; margin:0 8px; pointer-events:auto; cursor:pointer;
       box-shadow:0 2px 8px rgba(0,0,0,.15);
       color:var(--qv-ctl);
-      font-size:20px;
     }
+    .qv-arrow svg{ width:18px; height:18px; display:block; }
 
     /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
     .qv-meta p{ margin:.35rem 0; }
+    .qv-descwrap{ margin-top:.75rem; }
+    .qv-desclabel{ display:block; font-weight:700; margin-bottom:.25rem; }
     .qv-desc{
-      margin-top:.5rem; line-height:1.35; color:inherit;
+      font-style:italic;
+      margin:0;
+      line-height:1.35; color:inherit;
       display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden;
     }
     .qv-cta{ margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
@@ -387,8 +391,12 @@
           <div class="qv-main" id="qvMain">
             <img id="qvImage" alt="Product image" />
             <div class="qv-nav">
-              <button type="button" class="qv-arrow" id="qvPrev" aria-label="Previous">&#10094;</button>
-              <button type="button" class="qv-arrow" id="qvNext" aria-label="Next">&#10095;</button>
+              <button type="button" class="qv-arrow" id="qvPrev" aria-label="Previous">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5L8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button type="button" class="qv-arrow" id="qvNext" aria-label="Next">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4.5L16 12l-7.5 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
             </div>
           </div>
           <div class="qv-thumbs" id="qvThumbs"></div>
@@ -400,7 +408,10 @@
             <p id="qvRarity"></p>
             <p id="qvCondition"></p>
             <p id="qvStock"></p>
-            <p class="qv-desc" id="qvDesc"></p>
+            <div class="qv-descwrap">
+              <strong class="qv-desclabel">Description:</strong>
+              <p class="qv-desc" id="qvDesc"></p>
+            </div>
           </div>
           <div class="qv-cta">
             <button id="qvAdd" type="button">Add to Cart</button>
@@ -766,6 +777,7 @@
       }
 
       function startPan(e){
+        if (e.target.closest('.qv-arrow')) return; // don't hijack arrow taps
         if(qv.zoom.scale < PREFERRED_ZOOM) return;
         isPanning = true;
         const p = getPoint(e);
@@ -794,6 +806,12 @@
       qv.main.addEventListener('touchstart', startPan, {passive:false});
       qv.main.addEventListener('touchmove', doPan, {passive:false});
       qv.main.addEventListener('touchend', endPan);
+
+      // Prev/Next (stop propagation so clicks don't trigger zoom)
+      const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
+      const onNext = (e)=>{ e.stopPropagation(); showSlide(qv.index + 1); };
+      qv.prev.addEventListener('click', onPrev);
+      qv.next.addEventListener('click', onNext);
 
       // expose helper for slide/open/close
       qv._resetToPreferred = resetToPreferred;
@@ -829,12 +847,9 @@
         t.type = 'button';
         t.className = 'qv-thumb' + (i===0 ? ' active':'');
         t.innerHTML = `<img src="${src}" alt="thumbnail ${i+1}">`;
-        t.addEventListener('click', ()=>showSlide(i));
+        t.addEventListener('click', (e)=>{ e.stopPropagation(); showSlide(i); });
         qv.thumbs.appendChild(t);
       });
-
-      qv.prev.onclick = ()=>showSlide(qv.index - 1);
-      qv.next.onclick = ()=>showSlide(qv.index + 1);
 
       showSlide(0);
       if(qv._resetToPreferred) qv._resetToPreferred();
