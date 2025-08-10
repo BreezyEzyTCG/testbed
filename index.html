@@ -525,11 +525,11 @@
       });
     }
 
-    async function fetchInventoryFromSheet(){
-      try{
+       async function fetchInventoryFromSheet(){
+        try {
         const res = await fetch(SHEET_CSV);
         const csv = await res.text();
-
+    
         const rows = parseCSV(csv);
         const headers = rows.shift().map(h => h.trim().toLowerCase());
 
@@ -993,8 +993,10 @@ function endPan(){ isPanning = false; }
       qv.stock.textContent = Number.isFinite(product.stock) ? `Stock: ${product.stock}` : '';
 
       // Description with fallback + line breaks
+      // Description: show "-" if Column G is empty
       const desc = (product.description || "").trim();
-      document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g,"<br>") : "No description yet.";
+      document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
+
 
       // CTA + stock state (already matches main page)
       const out = safeNumber(product.stock, 0) <= 0;
