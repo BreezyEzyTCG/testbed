@@ -833,41 +833,25 @@
       <div class="grid-toggle">
   <!-- Single Grid -->
   <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-    <img
-      class="grid-icon"
-      alt="Single grid"
-      width="30" height="30"
-      src="assets/images/inactive single grid.svg"
-      data-active-src="assets/images/single grid.svg"
-      data-inactive-src="assets/images/inactive single grid.svg"
-    />
+    <img src="assets/images/inactive single grid.svg" alt="Single grid" width="30" height="30"
+         data-active-src="assets/images/single grid.svg"
+         data-inactive-src="assets/images/inactive single grid.svg">
   </button>
 
-  <!-- 2 Grid (default active) -->
+  <!-- 2 Grid (currently active) -->
   <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-    <img
-      class="grid-icon"
-      alt="2 grid view"
-      width="28" height="28"
-      src="assets/images/2 grid view.svg"
-      data-active-src="assets/images/2 grid view.svg"
-      data-inactive-src="assets/images/inactive 2 grid view.svg"
-    />
+    <img src="assets/images/2 grid view.svg" alt="Two grid view" width="30" height="30"
+         data-active-src="assets/images/2 grid view.svg"
+         data-inactive-src="assets/images/inactive 2 grid view.svg">
   </button>
 
   <!-- 3 Grid -->
   <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-    <img
-      class="grid-icon"
-      alt="3 grid view"
-      width="28" height="28"
-      src="assets/images/inactive 3 grid view.svg"
-      data-active-src="assets/images/3 grid view.svg"
-      data-inactive-src="assets/images/inactive 3 grid view.svg"
-    />
+    <img src="assets/images/inactive 3 grid view.svg" alt="Three grid view" width="30" height="30"
+         data-active-src="assets/images/3 grid view.svg"
+         data-inactive-src="assets/images/inactive 3 grid view.svg">
   </button>
 </div>
-
 
     <div class="card-container grid-2"></div>
 
@@ -1430,22 +1414,22 @@
       renderStore(filtered);
 
     }
+    
+function activateButton(type) {
+  document.querySelectorAll(".layout-button").forEach(btn => btn.classList.remove("active"));
+  if (type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
+  if (type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
+  if (type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
 
-
-
-    function activateButton(type){
-
-      document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
-
-      if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
-
-      if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
-
-      if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-
-    }
-
-
+  // Swap icon sources
+  document.querySelectorAll(".grid-toggle button").forEach(btn => {
+    const img = btn.querySelector("img");
+    if (!img) return;
+    img.src = btn.classList.contains("active")
+      ? img.dataset.activeSrc
+      : img.dataset.inactiveSrc;
+  });
+}
 
     function setGridView(type){
 
