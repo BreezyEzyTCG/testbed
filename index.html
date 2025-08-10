@@ -282,31 +282,25 @@
       pointer-events:none;
     }
     /* Quickview arrows */
-.qv-arrow{
-  background:var(--qv-arrow-bg);
-  border:none;
-  width:35px;               /* circle size */
-  height:35px;
-  border-radius:999px;
-  display:grid;
-  place-items:center;
-  margin:0 5px;
-  pointer-events:auto;
-  cursor:pointer;
-  box-shadow:0 2px 8px rgba(0,0,0,.15);
-  color:var(--qv-ctl);
-  line-height:0;            /* avoid baseline nudge */
+.qv-arrow {
+  background: var(--qv-arrow-bg);
+  border: none;
+  width: 40px;  /* circle size */
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center; /* centers SVG inside */
+  margin: 0 8px;       /* spacing from edges */
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  color: var(--qv-ctl);
 }
 
-/* Icon size + tiny visual centering */
-#qvPrev svg, #qvNext svg{
-  width:22px;               /* arrow size */
-  height:22px;
-  display:block;
-}
-#qvPrev svg{ transform:translateX(-0.5px); }
-#qvNext svg{ transform:translateX(0.5px); }
-
+.qv-arrow svg {
+  width: 22px;  /* arrow size inside circle */
+  height: 22px;
+  display: block;
 }
     /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
