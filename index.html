@@ -29,7 +29,9 @@
       --qv-panel:#f7f7f7;
       --qv-thumb-border:#789cac;
       --qv-arrow-bg:rgba(255,255,255,.9);
-      --qv-close:#273135; /* requested */
+
+      /* Controls contrast (light) */
+      --qv-ctl:#262c2f;
     }
     @media (prefers-color-scheme: dark){
       :root{
@@ -40,7 +42,9 @@
         --qv-panel:#0b0f14;
         --qv-thumb-border:#93c5fd;
         --qv-arrow-bg:rgba(31,41,55,.85);
-        /* keep close button as requested */
+
+        /* Controls contrast (dark) */
+        --qv-ctl:#f8f9f9;
       }
     }
 
@@ -238,7 +242,7 @@
     .qv-title{ margin:0; font-size:1.05rem; line-height:1.2; }
     .qv-close{
       background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer;
-      color:var(--qv-close);
+      color:var(--qv-ctl);
     }
     .qv-body{
       display:grid; grid-template-columns:1fr; gap:14px;
@@ -281,6 +285,8 @@
       background:var(--qv-arrow-bg); border:none; width:38px; height:38px; border-radius:999px;
       display:grid; place-items:center; margin:0 8px; pointer-events:auto; cursor:pointer;
       box-shadow:0 2px 8px rgba(0,0,0,.15);
+      color:var(--qv-ctl);
+      font-size:20px;
     }
 
     /* Info column */
@@ -507,8 +513,8 @@
           obj.category    = (row[4] || obj.category    || "").trim(); // Column E
           obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
 
-          /* DESCRIPTION from Column G (index 6) */
-          obj.description = (row[6] || obj.description || "").trim();
+          /* DESCRIPTION: prefer header "description", then Column O (14), else old G (6) */
+          obj.description = (obj.description || row[14] || row[6] || "").trim();
 
           /* CONDITION at Column H (index 7) */
           obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
@@ -691,11 +697,16 @@
     function getCurrentRenderedList(){ return __lastRendered; }
 
     /* ================== QUICKVIEW ================== */
+
+    /* Preferred zoom factor (tweak to taste) */
+    const PREFERRED_ZOOM = 1.7;
+
     const qv = {
       open:false, index:0, images:[], product:null,
       backdrop:null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
       main:null, img:null, thumbs:null, prev:null, next:null, addBtn:null, closeBtn:null,
-      zoom:{ scale:1, levels:[1,2,3] }
+      // preferred -> 2x -> 3x -> preferred
+      zoom:{ scale:PREFERRED_ZOOM, levels:[PREFERRED_ZOOM, 2, 3] }
     };
 
     function buildImagesArray(p){
@@ -730,12 +741,32 @@
         if(e.key === 'ArrowRight') showSlide(qv.index + 1);
       });
 
-      // Zoom/pan basic (click cycles 1x->2x->3x->1x)
+      // Zoom/pan (preferred -> 2x -> 3x -> preferred)
       qv.main.addEventListener('click', cycleZoom);
       let isPanning = false, startX=0, startY=0, transX=0, transY=0;
 
+      function setZoom(scale){
+        qv.zoom.scale = Math.max(scale, PREFERRED_ZOOM);
+        qv.main.classList.add('zoomed');
+        qv.img.style.cursor = 'move';
+        qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+      }
+      function resetToPreferred(){
+        transX = 0; transY = 0;
+        qv.zoom.scale = PREFERRED_ZOOM;
+        qv.main.classList.add('zoomed');
+        qv.img.style.cursor = 'move';
+        qv.img.style.transform = `translate(0px,0px) scale(${PREFERRED_ZOOM})`;
+      }
+      function cycleZoom(){
+        const levels = qv.zoom.levels; // [preferred,2,3]
+        const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.001);
+        const next = levels[(idx + 1) % levels.length];
+        setZoom(next);
+      }
+
       function startPan(e){
-        if(qv.zoom.scale === 1) return;
+        if(qv.zoom.scale < PREFERRED_ZOOM) return;
         isPanning = true;
         const p = getPoint(e);
         startX = p.x - transX;
@@ -743,7 +774,7 @@
         e.preventDefault();
       }
       function doPan(e){
-        if(!isPanning || qv.zoom.scale === 1) return;
+        if(!isPanning || qv.zoom.scale < PREFERRED_ZOOM) return;
         const p = getPoint(e);
         transX = p.x - startX;
         transY = p.y - startY;
@@ -751,24 +782,6 @@
         e.preventDefault();
       }
       function endPan(){ isPanning = false; }
-      function resetZoom(){
-        qv.zoom.scale = 1; transX = 0; transY = 0;
-        qv.main.classList.remove('zoomed');
-        qv.img.style.transform = 'translate(0px,0px) scale(1)';
-        qv.img.style.cursor = 'zoom-in';
-      }
-      function cycleZoom(){
-        const idx = qv.zoom.levels.indexOf(qv.zoom.scale);
-        const nextScale = qv.zoom.levels[(idx + 1) % qv.zoom.levels.length];
-        qv.zoom.scale = nextScale;
-        if(nextScale === 1){
-          resetZoom();
-        }else{
-          qv.main.classList.add('zoomed');
-          qv.img.style.cursor = 'move';
-          qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
-        }
-      }
       function getPoint(e){
         if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
         return { x:e.clientX, y:e.clientY };
@@ -782,8 +795,8 @@
       qv.main.addEventListener('touchmove', doPan, {passive:false});
       qv.main.addEventListener('touchend', endPan);
 
-      // expose helpers for slide change
-      qv._resetZoom = resetZoom;
+      // expose helper for slide/open/close
+      qv._resetToPreferred = resetToPreferred;
     }
 
     function openQuickview(product){
@@ -797,17 +810,17 @@
       qv.rarity.textContent = product.rarity ? `Rarity: ${product.rarity}` : '';
       qv.condition.textContent = product.condition ? `Condition: ${product.condition}` : '';
       qv.stock.textContent = Number.isFinite(product.stock) ? `Stock: ${product.stock}` : '';
-      qv.desc.textContent = product.description || '';
 
-      // CTA + stock state
+      // Description with fallback + line breaks
+      const desc = (product.description || "").trim();
+      document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g,"<br>") : "No description yet.";
+
+      // CTA + stock state (already matches main page)
       const out = safeNumber(product.stock, 0) <= 0;
       qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
       qv.addBtn.disabled = out;
-      if(!out){
-        qv.addBtn.onclick = () => addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
-      }else{
-        qv.addBtn.onclick = null;
-      }
+      qv.addBtn.onclick = out ? null : () =>
+        addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
 
       // Thumbnails
       qv.thumbs.innerHTML = '';
@@ -824,6 +837,7 @@
       qv.next.onclick = ()=>showSlide(qv.index + 1);
 
       showSlide(0);
+      if(qv._resetToPreferred) qv._resetToPreferred();
 
       // Open
       qv.backdrop.classList.add('open');
@@ -838,7 +852,7 @@
       qv.backdrop.classList.remove('open');
       qv.backdrop.setAttribute('aria-hidden','true');
       document.body.style.overflow='';
-      if(qv._resetZoom) qv._resetZoom();
+      if(qv._resetToPreferred) qv._resetToPreferred();
     }
 
     function showSlide(i){
@@ -847,7 +861,7 @@
       if(i >= qv.images.length) i = 0;
       qv.index = i;
       qv.img.src = qv.images[i];
-      if(qv._resetZoom) qv._resetZoom();
+      if(qv._resetToPreferred) qv._resetToPreferred();
       [...qv.thumbs.children].forEach((el, idx)=> el.classList.toggle('active', idx===i));
     }
 
