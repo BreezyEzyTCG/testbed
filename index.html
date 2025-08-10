@@ -238,6 +238,14 @@
       background:transparent;
     }
     .qv-title{ margin:0; font-size:1.05rem; line-height:1.2; }
+    #qvSeries {
+      margin-bottom: 0.5rem; /* adds space after series name */
+    }
+    
+    #qvSeries small {
+      display: inline-block;
+    }
+
     .qv-close{
       background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer;
       color:var(--qv-ctl);
@@ -307,7 +315,10 @@
 
     /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
-    .qv-meta p{ margin:.35rem 0; }
+    .qv-meta p{ 
+      margin: .35rem 0;
+  font-size: 0.85rem; /* adjust this value */
+}
     .qv-descwrap{ margin-top:.75rem; }
     .qv-desclabel{ display:block; font-weight:700; margin-bottom:.25rem; }
     .qv-desc{
