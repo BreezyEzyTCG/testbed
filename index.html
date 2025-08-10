@@ -28,7 +28,6 @@
       --qv-border:#eee;
       --qv-panel:#f7f7f7;
       --qv-thumb-border:#789cac;
-      --qv-arrow-bg:rgba(255,255,255,.9);
 
       /* Controls contrast (light) */
       --qv-ctl:#262c2f;
@@ -41,7 +40,6 @@
         --qv-border:#374151;
         --qv-panel:#0b0f14;
         --qv-thumb-border:#93c5fd;
-        --qv-arrow-bg:rgba(31,41,55,.85);
 
         /* Controls contrast (dark) */
         --qv-ctl:#f8f9f9;
@@ -280,28 +278,27 @@
     .qv-nav{
       position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between;
       pointer-events:none;
+      padding:0 4px;
     }
-    /* Quickview arrows */
-.qv-arrow {
-  background: var(--qv-arrow-bg);
-  border: none;
-  width: 40px;  /* circle size */
-  height: 40px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center; /* centers SVG inside */
-  margin: 1.5px;       /* spacing from edges */
-  pointer-events: auto;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,.15);
-  color: var(--qv-ctl);
-}
 
-.qv-arrow svg {
-  width: 22px;  /* arrow size inside circle */
-  height: 22px;
-  display: block;
-}
+    /* SVG button arrows (single-asset buttons) */
+    .qv-arrow{
+      pointer-events:auto;
+      background:transparent;
+      border:none;
+      padding:0;
+      width:44px;
+      height:44px;
+      display:block;
+      cursor:pointer;
+    }
+    .qv-arrow img{
+      width:100%;
+      height:100%;
+      display:block;
+      pointer-events:none; /* so taps go to the button, not the img */
+    }
+
     /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
     .qv-meta p{ margin:.35rem 0; }
@@ -405,10 +402,10 @@
             <img id="qvImage" alt="Product image" />
             <div class="qv-nav">
               <button type="button" class="qv-arrow" id="qvPrev" aria-label="Previous">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5L8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <img id="qvPrevImg" alt="" />
               </button>
               <button type="button" class="qv-arrow" id="qvNext" aria-label="Next">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4.5L16 12l-7.5 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <img id="qvNextImg" alt="" />
               </button>
             </div>
           </div>
@@ -738,6 +735,21 @@
       return [...new Set(arr)];
     }
 
+    /* pick correct arrow assets for theme */
+    const lightLeft  = "assets/images/arrow-button-left-2-svgrepo-com.svg";
+    const lightRight = "assets/images/arrow-button-right-2-svgrepo-com.svg";
+    const darkLeft   = "assets/images/white-arrow-button-left-2-svgrepo-com.svg";
+    const darkRight  = "assets/images/white-arrow-button-right-2-svgrepo-com.svg";
+
+    function applyArrowTheme(){
+      const mql = window.matchMedia("(prefers-color-scheme: dark)");
+      const isDark = mql.matches;
+      const prevImg = document.getElementById("qvPrevImg");
+      const nextImg = document.getElementById("qvNextImg");
+      if(prevImg) prevImg.src = isDark ? darkLeft : lightLeft;
+      if(nextImg) nextImg.src = isDark ? darkRight : lightRight;
+    }
+
     function setupQuickview(){
       qv.backdrop = document.getElementById('qvBackdrop');
       qv.modal    = qv.backdrop.querySelector('.qv-modal');
@@ -755,6 +767,15 @@
       qv.next     = document.getElementById('qvNext');
       qv.addBtn   = document.getElementById('qvAdd');
       qv.closeBtn = qv.backdrop.querySelector('.qv-close');
+
+      // set arrow images for current theme and listen for changes
+      applyArrowTheme();
+      const mql = window.matchMedia("(prefers-color-scheme: dark)");
+      if (mql.addEventListener) {
+        mql.addEventListener("change", applyArrowTheme);
+      } else if (mql.addListener) {
+        mql.addListener(applyArrowTheme); // Safari fallback
+      }
 
       qv.closeBtn.addEventListener('click', closeQuickview);
       qv.backdrop.addEventListener('click', (e)=>{ if(e.target === qv.backdrop) closeQuickview(); });
