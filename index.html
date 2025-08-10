@@ -525,49 +525,49 @@
       });
     }
 
-       async function fetchInventoryFromSheet(){
-        try {
-        const res = await fetch(SHEET_CSV);
-        const csv = await res.text();
-    
-        const rows = parseCSV(csv);
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
+     async function fetchInventoryFromSheet(){
+  try {
+    const res = await fetch(SHEET_CSV);
+    const csv = await res.text();
 
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            const val = (cell || "").trim();
-            if (key === "price" || key === "stock") obj[key] = safeNumber(val);
-            else obj[key] = val;
-          });
+    const rows = parseCSV(csv);
+    const headers = rows.shift().map(h => h.trim().toLowerCase());
 
-          /* Explicit fallbacks by index (0-based) */
-          obj.category    = (row[4] || obj.category    || "").trim(); // Column E
-          obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
+    allProducts = rows.map(row => {
+      const obj = {};
+      row.forEach((cell, i) => {
+        const key = headers[i];
+        const val = (cell || "").trim();
+        if (key === "price" || key === "stock") obj[key] = safeNumber(val);
+        else obj[key] = val;
+      });
 
-          /* DESCRIPTION: prefer header "description", then Column O (14), else old G (6) */
-          obj.description = (obj.description || row[14] || row[6] || "").trim();
+      /* Explicit fallbacks by index (0-based) */
+      obj.category    = (row[4] || obj.category    || "").trim(); // Column E
+      obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
 
-          /* CONDITION at Column H (index 7) */
-          obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
+      /* DESCRIPTION: strictly from Column G (index 6) */
+      obj.description = (row[6] || "").trim();
 
-          /* Extra images by header or index (L=11, M=12, N=13) */
-          obj.back  = (obj.back  || row[11] || "").trim();
-          obj.img2  = (obj.img2  || row[12] || "").trim();
-          obj.img3  = (obj.img3  || row[13] || "").trim();
+      /* CONDITION at Column H (index 7) */
+      obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
 
-          return obj;
-        });
+      /* Extra images by header or index (L=11, M=12, N=13) */
+      obj.back  = (obj.back  || row[11] || "").trim();
+      obj.img2  = (obj.img2  || row[12] || "").trim();
+      obj.img3  = (obj.img3  || row[13] || "").trim();
 
-        populateAllDropdowns();
-        renderStore(allProducts);
-        enforceResponsiveGrid();
-      }catch(e){
-        console.error(e);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
-      }
-    }
+      return obj;
+    });
+
+    populateAllDropdowns();
+    renderStore(allProducts);
+    enforceResponsiveGrid();
+  } catch(e) {
+    console.error(e);
+    document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+  }
+}
 
     function getBadgeInfo(raw){
       if(!raw) return null;
