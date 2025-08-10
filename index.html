@@ -145,11 +145,25 @@
       margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
     }
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
-    .layout-button{ background:transparent; border:none; padding:0.5rem; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
-    .layout-button:active{ transform:scale(0.96); }
-    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
-    .layout-button.single svg{ width:30px; height:30px; }
-    .layout-button.active svg{ fill:var(--icon-color-active); }
+   .layout-button {
+  background:transparent;
+  border:none;
+  padding:.5rem;
+  border-radius:6px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .15s ease;
+}
+.layout-button:active { transform:scale(0.96); }
+.layout-button img {
+  width:24px;
+  height:24px;
+  opacity:.8;
+  display:block;
+}
+.layout-button.active img { opacity:1; }
 
     /* ================== Cards ================== */
     .card-container{
@@ -441,28 +455,54 @@
   <div class="site-shell">
   <div class="shell-pad">
     <div class="hero">
+      <!-- Top row: search (left) + cart (right) -->
       <div class="topbar">
+        <input
+          type="text"
+          id="searchTop"
+          placeholder="Search for a card..."
+          oninput="applyFilters()"
+          aria-label="Search"
+        />
+
         <a class="cart-link" href="cart.html" aria-label="Cart">
           <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
           <span class="cart-count" id="cartCount">0</span>
         </a>
       </div>
 
+      <!-- Center brand -->
       <div class="brand-center">
         <div>
           <h1 class="brand-title">BreezyEzyTCG</h1>
           <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
+          <!-- Filters overlay beneath the subtitle -->
+          <div class="filters-overlay">
+            <div class="filter-grid">
+              <select id="category-filter" onchange="onCategoryChange()">
+                <option value="all">All Categories</option>
+              </select>
+              <select id="subcategory-filter" onchange="applyFilters()">
+                <option value="all">All Subcategories</option>
+              </select>
+              <select id="rarity-filter" onchange="applyFilters()">
+                <option value="all">All Rarity</option>
+              </select>
+              <select id="condition-filter" onchange="applyFilters()">
+                <option value="all">All Conditions</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Collapse/expand button goes here -->
+      <!-- Collapse/expand button (uses your assets) -->
       <button class="hero-toggle" type="button" aria-label="Collapse banner"></button>
     </div>
   </div>
-
+</div>
 
     <!-- Filter/search bar under the banner -->
-    <div class="filter-bar">
       <div class="search-row">
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
       </div>
@@ -555,6 +595,8 @@
 
   <script>
     let allProducts = [];
+
+    const SEARCH_INPUT_ID = "searchTop"; // moved search to top bar
 
     const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
 
@@ -769,22 +811,23 @@
     function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
 
     /* ---------- Filtering ---------- */
-    function applyFilters(){
-      const kw   = document.getElementById("search").value.toLowerCase();
-      const cat  = document.getElementById("category-filter").value;
-      const sub  = document.getElementById("subcategory-filter").value;
-      const rar  = document.getElementById("rarity-filter").value;
-      const cond = document.getElementById("condition-filter").value;
+   function applyFilters(){
+  const kwEl = document.getElementById(SEARCH_INPUT_ID);
+  const kw   = (kwEl?.value || "").toLowerCase();
+  const cat  = document.getElementById("category-filter").value;
+  const sub  = document.getElementById("subcategory-filter").value;
+  const rar  = document.getElementById("rarity-filter").value;
+  const cond = document.getElementById("condition-filter").value;
 
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(kw) &&
-        (cat === "all" || p.category === cat) &&
-        (sub === "all" || p.subcategory === sub) &&
-        (rar === "all" || p.rarity === rar) &&
-        (cond === "all" || p.condition === cond)
-      );
-      renderStore(filtered);
-    }
+  const filtered = allProducts.filter(p =>
+    (p.name || "").toLowerCase().includes(kw) &&
+    (cat === "all" || p.category === cat) &&
+    (sub === "all" || p.subcategory === sub) &&
+    (rar === "all" || p.rarity === rar) &&
+    (cond === "all" || p.condition === cond)
+  );
+  renderStore(filtered);
+}
 
     function activateButton(type){
       document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
@@ -1237,39 +1280,35 @@ function isDoubleTap() {
     attachImageClickDelegation();
 
     // ===== Shrink-on-scroll + manual expand =====
+// ===== Shrink-on-scroll + manual expand =====
 (function(){
   const shell = document.querySelector('.site-shell');
-  const hero  = document.querySelector('.hero');
   const toggleBtn = document.querySelector('.hero-toggle');
   let collapsed = false;
-  let userForced = false;      // if user clicked the arrow
-  const COLLAPSE_OFFSET = 140; // px scrolled before auto-collapse
+  let userForced = false;
+  const COLLAPSE_OFFSET = 140;
 
   function applyState(next){
     collapsed = next;
     shell.classList.toggle('collapsed', collapsed);
   }
 
-  // Auto collapse on scroll, unless the user explicitly expanded
   function onScroll(){
-    if (userForced && !collapsed) return; // user wants it open; don't fight them
+    if (userForced && !collapsed) return;
     const shouldCollapse = window.scrollY > COLLAPSE_OFFSET;
     if (shouldCollapse !== collapsed) applyState(shouldCollapse);
   }
 
-  // Manual toggle (always allowed)
   toggleBtn.addEventListener('click', ()=>{
     userForced = true;
     applyState(!collapsed);
   });
 
-  // Also expand if user scrolls back to near top
   window.addEventListener('scroll', ()=>{
-    if (window.scrollY < 20) { userForced = false; } // re-enable auto when back at top
+    if (window.scrollY < 20) userForced = false;
     onScroll();
   }, { passive:true });
 
-  // Start expanded
   applyState(false);
 })();
 
