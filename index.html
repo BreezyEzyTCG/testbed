@@ -115,8 +115,52 @@
       padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
       width:210px; /* half of previous 420px */
     }
+    /* Wrapper so we can show icon on mobile but keep desktop same */
+.search-toggle{
+  display:flex; align-items:center; gap:8px;
+}
+
+/* Keep desktop behavior identical */
+.search-icon-btn{
+  display:none; /* hidden on desktop */
+  background:transparent; border:none; padding:6px; cursor:pointer;
+}
+.search-icon-btn img{ width:22px; height:22px; display:block; }
+
     @media (max-width:767.98px){
-      #search{ width:100%; max-width:60vw; }
+     /* --- Mobile search: icon-only by default, expandable glass input --- */
+.search-icon-btn{ display:inline-flex; }
+
+#search{
+  /* collapsed by default on mobile */
+  width:0;
+  opacity:0;
+  padding:0.5rem;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.35);
+  color:#fff;
+  background:rgba(255,255,255,.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: width .25s ease, opacity .2s ease, padding .25s ease, margin-left .25s ease;
+  pointer-events:none;       /* prevent focus while closed */
+  margin-left:0;
+}
+
+/* When open, reveal the input to the right of the icon */
+.search-toggle.open #search{
+  width:72vw;                /* visible width on mobile */
+  opacity:1;
+  pointer-events:auto;
+  margin-left:4px;
+}
+
+/* Improve placeholder contrast on glass background */
+#search::placeholder{ color:rgba(255,255,255,.9); }
+
+/* Keep brand/cart layout tidy on small screens */
+.banner-bar{ gap:8px; }
+
     }
 
     /* ========= Filter selects (unchanged) ========= */
@@ -357,7 +401,12 @@
         <!-- New top row inside banner -->
         <div class="banner-bar">
           <!-- Search (left) -->
-          <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+<div class="search-toggle" id="searchToggle">
+  <button type="button" class="search-icon-btn" id="searchBtn" aria-label="Open search">
+    <img src="assets/images/search icon.svg" alt="Search" />
+  </button>
+  <input type="text" id="search" placeholder="Search for a product..." oninput="applyFilters()" />
+</div>
 
           <!-- Cart (right) -->
           <a class="cart-link" href="cart.html" aria-label="Cart">
@@ -1127,11 +1176,42 @@
     window.addEventListener("resize", () => { enforceResponsiveGrid(); fitCardTitles(document); });
     window.addEventListener("orientationchange", () => { enforceResponsiveGrid(); fitCardTitles(document); });
 
+    /* --- Mobile search toggle --- */
+(function(){
+  const toggle = document.getElementById('searchToggle');
+  const btn = document.getElementById('searchBtn');
+  const input = document.getElementById('search');
+  if(!toggle || !btn || !input) return;
+
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    toggle.classList.toggle('open');
+    if (toggle.classList.contains('open')) {
+      setTimeout(()=> input.focus(), 150);
+    }
+  });
+
+  // Close when tapping outside
+  document.addEventListener('click', (e)=>{
+    if (!toggle.classList.contains('open')) return;
+    if (!toggle.contains(e.target)) toggle.classList.remove('open');
+  });
+
+  // ESC to close
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && toggle.classList.contains('open')) {
+      toggle.classList.remove('open');
+      input.blur();
+    }
+  });
+})();
+
+
     updateCartCount();
-    fetchInventoryFromSheet();
-    setupQuickview();
-    attachImageClickDelegation();
-    setToggleIcons(2);
+fetchInventoryFromSheet();
+setupQuickview();
+attachImageClickDelegation();
+setToggleIcons(2); // default matches the "double active" button initially
   </script>
 </body>
 </html>
