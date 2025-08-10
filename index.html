@@ -831,37 +831,42 @@
     <div class="controls">
 
       <div class="grid-toggle">
+  <!-- Single Grid -->
+  <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+    <img
+      class="grid-icon"
+      alt="Single grid"
+      width="30" height="30"
+      src="assets/images/inactive single grid.svg"
+      data-active-src="assets/images/single grid.svg"
+      data-inactive-src="assets/images/inactive single grid.svg"
+    />
+  </button>
 
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+  <!-- 2 Grid (default active) -->
+  <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+    <img
+      class="grid-icon"
+      alt="2 grid view"
+      width="28" height="28"
+      src="assets/images/2 grid view.svg"
+      data-active-src="assets/images/2 grid view.svg"
+      data-inactive-src="assets/images/inactive 2 grid view.svg"
+    />
+  </button>
 
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
-
-        </button>
-
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-
-            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
-
-          </svg>
-
-        </button>
-
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
-
-          </svg>
-
-        </button>
-
-      </div>
-
-    </div>
-
+  <!-- 3 Grid -->
+  <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+    <img
+      class="grid-icon"
+      alt="3 grid view"
+      width="28" height="28"
+      src="assets/images/inactive 3 grid view.svg"
+      data-active-src="assets/images/3 grid view.svg"
+      data-inactive-src="assets/images/inactive 3 grid view.svg"
+    />
+  </button>
+</div>
 
 
     <div class="card-container grid-2"></div>
