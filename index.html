@@ -525,7 +525,7 @@
       });
     }
 
-     async function fetchInventoryFromSheet(){
+    async function fetchInventoryFromSheet(){
   try {
     const res = await fetch(SHEET_CSV);
     const csv = await res.text();
@@ -535,27 +535,30 @@
 
     allProducts = rows.map(row => {
       const obj = {};
+
+      // Map all normal columns except description
       row.forEach((cell, i) => {
         const key = headers[i];
         const val = (cell || "").trim();
+        if (key === "description") return; // skip mapping here
         if (key === "price" || key === "stock") obj[key] = safeNumber(val);
         else obj[key] = val;
       });
 
-      /* Explicit fallbacks by index (0-based) */
-      obj.category    = (row[4] || obj.category    || "").trim(); // Column E
-      obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
+      /* CATEGORY/SUBCATEGORY */
+      obj.category    = (row[4] || "").trim(); // Column E
+      obj.subcategory = (row[5] || "").trim(); // Column F
 
       /* DESCRIPTION: strictly from Column G (index 6) */
       obj.description = (row[6] || "").trim();
 
       /* CONDITION at Column H (index 7) */
-      obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
+      obj.condition   = (row[7] || "").trim(); // Column H
 
-      /* Extra images by header or index (L=11, M=12, N=13) */
-      obj.back  = (obj.back  || row[11] || "").trim();
-      obj.img2  = (obj.img2  || row[12] || "").trim();
-      obj.img3  = (obj.img3  || row[13] || "").trim();
+      /* Extra images */
+      obj.back  = (row[11] || "").trim();
+      obj.img2  = (row[12] || "").trim();
+      obj.img3  = (row[13] || "").trim();
 
       return obj;
     });
