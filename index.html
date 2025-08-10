@@ -274,6 +274,28 @@
   user-select: none;        /* avoid text/image selection */
   pointer-events: auto;     /* make sure we still get events */
 }
+
+  /* --- Quickview mobile viewport fixes --- */
+
+/* Use dynamic viewport units so the modal isn't clipped by the URL bar */
+@supports (height: 1dvh) {
+  .qv-modal{
+    max-height: min(92dvh, 92vh);
+  }
+  .qv-main{
+    height: min(52dvh, 520px);
+  }
+}
+
+/* Smooth scrolling in the modal body on iOS/Android */
+.qv-body{
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Respect notches/home indicator areas */
+.qv-backdrop{
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
     
     .qv-main.zoomed img{ cursor:move; }
     .qv-thumbs{
@@ -789,207 +811,257 @@ function isDoubleTap() {
     }
 
     function setupQuickview(){
-      qv.backdrop = document.getElementById('qvBackdrop');
-      qv.modal    = qv.backdrop.querySelector('.qv-modal');
-      qv.title    = document.getElementById('qvTitle');
-      qv.price    = document.getElementById('qvPrice');
-      qv.series   = document.getElementById('qvSeries').querySelector('small');
-      qv.rarity   = document.getElementById('qvRarity');
-      qv.condition= document.getElementById('qvCondition');
-      qv.stock    = document.getElementById('qvStock');
-      qv.desc     = document.getElementById('qvDesc');
-      qv.main     = document.getElementById('qvMain');
-      qv.img      = document.getElementById('qvImage');
-      qv.img.setAttribute('draggable', 'false');
-      qv.img.addEventListener('dragstart', e => e.preventDefault());
-      qv.img.addEventListener('mousedown', startPan);
-      qv.img.addEventListener('mousemove', doPan);
-      qv.img.addEventListener('mouseup', endPan);
-      qv.img.addEventListener('mouseleave', endPan);
-      qv.img.addEventListener('touchstart', startPan, {passive:false});
-      qv.img.addEventListener('touchmove', doPan, {passive:false});
-      qv.img.addEventListener('touchend', endPan);
-      qv.thumbs   = document.getElementById('qvThumbs');
-      qv.prev     = document.getElementById('qvPrev');
-      qv.next     = document.getElementById('qvNext');
-      qv.addBtn   = document.getElementById('qvAdd');
-      qv.closeBtn = qv.backdrop.querySelector('.qv-close');
+  qv.backdrop = document.getElementById('qvBackdrop');
+  qv.modal    = qv.backdrop.querySelector('.qv-modal');
+  qv.title    = document.getElementById('qvTitle');
+  qv.price    = document.getElementById('qvPrice');
+  qv.series   = document.getElementById('qvSeries').querySelector('small');
+  qv.rarity   = document.getElementById('qvRarity');
+  qv.condition= document.getElementById('qvCondition');
+  qv.stock    = document.getElementById('qvStock');
+  qv.desc     = document.getElementById('qvDesc');
+  qv.main     = document.getElementById('qvMain');
+  qv.img      = document.getElementById('qvImage');
+  qv.thumbs   = document.getElementById('qvThumbs');
+  qv.prev     = document.getElementById('qvPrev');
+  qv.next     = document.getElementById('qvNext');
+  qv.addBtn   = document.getElementById('qvAdd');
+  qv.closeBtn = qv.backdrop.querySelector('.qv-close');
 
-      // set arrow images for current theme and listen for changes
-      applyArrowTheme();
-      const mql = window.matchMedia("(prefers-color-scheme: dark)");
-      if (mql.addEventListener) {
-        mql.addEventListener("change", applyArrowTheme);
-      } else if (mql.addListener) {
-        mql.addListener(applyArrowTheme); // Safari fallback
-      }
+  // prevent native image drag (desktop)
+  qv.img.setAttribute('draggable', 'false');
+  qv.img.addEventListener('dragstart', e => e.preventDefault());
 
-      qv.closeBtn.addEventListener('click', closeQuickview);
-      qv.backdrop.addEventListener('click', (e)=>{ if(e.target === qv.backdrop) closeQuickview(); });
-      document.addEventListener('keydown', (e)=>{
-        if(!qv.open) return;
-        if(e.key === 'Escape') closeQuickview();
-        if(e.key === 'ArrowLeft') showSlide(qv.index - 1);
-        if(e.key === 'ArrowRight') showSlide(qv.index + 1);
-      });
+  // set arrow images for current theme and listen for changes
+  applyArrowTheme();
+  const mql = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mql.addEventListener) mql.addEventListener("change", applyArrowTheme);
+  else if (mql.addListener) mql.addListener(applyArrowTheme); // Safari fallback
 
-      /* ---------- Zoom/Pan Core ---------- */
-let isPanning = false, movedSincePointerDown = false;
-let startX = 0, startY = 0;
-let transX = 0, transY = 0;
+  qv.closeBtn.addEventListener('click', closeQuickview);
+  qv.backdrop.addEventListener('click', (e)=>{ if(e.target === qv.backdrop) closeQuickview(); });
+  document.addEventListener('keydown', (e)=>{
+    if(!qv.open) return;
+    if(e.key === 'Escape') closeQuickview();
+    if(e.key === 'ArrowLeft') showSlide(qv.index - 1);
+    if(e.key === 'ArrowRight') showSlide(qv.index + 1);
+  });
 
-      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  /* ---------- Zoom/Pan Core ---------- */
+  let isPanning = false, movedSincePointerDown = false;
+  let startX = 0, startY = 0;
+  let transX = 0, transY = 0;
 
-      function applyTransform(){
-        if(qv.zoom.scale <= MIN_ZOOM + 1e-3){
-          qv.img.style.transform = `translate(0px,0px) scale(${MIN_ZOOM})`;
-          qv.main.classList.remove('zoomed');
-          qv.img.style.cursor = 'zoom-in';
-        }else{
-          qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
-          qv.main.classList.add('zoomed');
-          qv.img.style.cursor = 'move';
-        }
-      }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
-      function setZoomAtPoint(newScale, clientX, clientY){
-        const rect = qv.main.getBoundingClientRect();
-        const cx = clamp(clientX - rect.left, 0, rect.width);
-        const cy = clamp(clientY - rect.top,  0, rect.height);
-
-        const prev = qv.zoom.scale;
-        newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
-
-        // Keep the point under cursor fixed (transform-origin at 0 0)
-        const dx = (cx - transX) / prev;
-        const dy = (cy - transY) / prev;
-        transX = cx - dx * newScale;
-        transY = cy - dy * newScale;
-
-        qv.zoom.scale = newScale;
-        applyTransform();
-      }
-
-      function setZoom(newScale){
-        // Zoom to center if no point provided
-        const rect = qv.main.getBoundingClientRect();
-        setZoomAtPoint(newScale, rect.left + rect.width/2, rect.top + rect.height/2);
-      }
-
-      function resetToFit(){
-        transX = 0; transY = 0;
-        qv.zoom.scale = MIN_ZOOM;
-        applyTransform();
-      }
-
-      function cycleZoom(){
-        const levels = qv.zoom.levels; // [1, preferred, 2.5, 3.5]
-        const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.01);
-        const next = levels[(idx + 1) % levels.length];
-        setZoom(next);
-      }
-
-      /* ----- Mouse wheel zoom (desktop / trackpad) ----- */
-      qv.main.addEventListener('wheel', (e)=>{
-        // Ignore browser page zoom (ctrl/cmd + wheel)
-        if (e.ctrlKey) return;
-        e.preventDefault();
-        const factor = e.deltaY < 0 ? 1.12 : 0.89;
-        const targetScale = qv.zoom.scale * factor;
-        setZoomAtPoint(targetScale, e.clientX, e.clientY);
-      }, { passive:false });
-
-      /* ----- Pan with mouse (when zoomed) ----- */
-      function getPoint(e){
-        if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
-        return { x:e.clientX, y:e.clientY };
-      }
-    function startPan(e){
-  if (e.target.closest('.qv-arrow')) return;
-  if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
-  isPanning = true;
-  movedSincePointerDown = false;
-  const p = (e.touches?.[0])
-    ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
-    : {x:e.clientX, y:e.clientY};
-  startX = p.x - (transX ?? 0);
-  startY = p.y - (transY ?? 0);
-  e.preventDefault();
-}
-function doPan(e){
-  if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
-  const p = (e.touches?.[0])
-    ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
-    : {x:e.clientX, y:e.clientY};
-  transX = p.x - startX;
-  transY = p.y - startY;
-  window.transX = transX; 
-  window.transY = transY;
-  qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
-  movedSincePointerDown = true;
-  e.preventDefault();
-}
-function endPan(){ isPanning = false; }
-
-      /* ----- Touch: pinch to zoom + one-finger pan ----- */
-      let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
-
-      function distance(t1, t2){
-        const dx = t2.clientX - t1.clientX;
-        const dy = t2.clientY - t1.clientY;
-        return Math.hypot(dx, dy);
-      }
-      function midpoint(t1, t2){
-        return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
-      }
-
-      qv.main.addEventListener('touchstart', (e)=>{
-        if(e.touches.length === 2){
-          pinchActive = true;
-          pinchStartDist = distance(e.touches[0], e.touches[1]);
-          pinchStartScale = qv.zoom.scale;
-          e.preventDefault();
-        } else if(e.touches.length === 1){
-          startPan(e);
-        }
-      }, {passive:false});
-
-      qv.main.addEventListener('touchmove', (e)=>{
-        if(pinchActive && e.touches.length === 2){
-          const dist = distance(e.touches[0], e.touches[1]);
-          const factor = dist / pinchStartDist;
-          const target = clamp(pinchStartScale * factor, MIN_ZOOM, MAX_ZOOM);
-          const mid = midpoint(e.touches[0], e.touches[1]);
-          setZoomAtPoint(target, mid.x, mid.y);
-          e.preventDefault();
-        } else if(e.touches.length === 1){
-          doPan(e);
-        }
-      }, {passive:false});
-
-      qv.main.addEventListener('touchend', (e)=>{
-        if(e.touches.length < 2) pinchActive = false;
-        if(e.touches.length === 0) endPan();
-      });
-
-      // Click to cycle zoom levels
-      qv.main.addEventListener('click', (e)=>{
-        // Avoid cycling if you just clicked an arrow
-        if (e.target.closest('.qv-arrow')) return;
-        cycleZoom();
-      });
-
-      // Prev/Next (stop propagation so clicks don't trigger zoom)
-      const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
-      const onNext = (e)=>{ e.stopPropagation(); showSlide(qv.index + 1); };
-      qv.prev.addEventListener('click', onPrev);
-      qv.next.addEventListener('click', onNext);
-
-      // expose helpers
-      qv._resetToFit = resetToFit;
-      qv._applyTransform = applyTransform;
-      qv._setZoom = setZoom;
+  function applyTransform(){
+    if(qv.zoom.scale <= MIN_ZOOM + 1e-3){
+      qv.img.style.transform = `translate(0px,0px) scale(${MIN_ZOOM})`;
+      qv.main.classList.remove('zoomed');
+      qv.img.style.cursor = 'zoom-in';
+    }else{
+      qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+      qv.main.classList.add('zoomed');
+      qv.img.style.cursor = 'move';
     }
+  }
+
+  function setZoomAtPoint(newScale, clientX, clientY){
+    const rect = qv.main.getBoundingClientRect();
+    const cx = clamp(clientX - rect.left, 0, rect.width);
+    const cy = clamp(clientY - rect.top,  0, rect.height);
+
+    const prev = qv.zoom.scale;
+    newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
+
+    // Keep the point under cursor fixed (transform-origin at 0 0)
+    const dx = (cx - transX) / prev;
+    const dy = (cy - transY) / prev;
+    transX = cx - dx * newScale;
+    transY = cy - dy * newScale;
+
+    qv.zoom.scale = newScale;
+    applyTransform();
+  }
+
+  function setZoom(newScale){
+    const rect = qv.main.getBoundingClientRect();
+    setZoomAtPoint(newScale, rect.left + rect.width/2, rect.top + rect.height/2);
+  }
+
+  function resetToFit(){
+    transX = 0; transY = 0;
+    qv.zoom.scale = MIN_ZOOM;
+    applyTransform();
+  }
+
+  function cycleZoomAt(x, y){
+    const levels = qv.zoom.levels; // [1, preferred, 2.5, 3.5]
+    const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.01);
+    const next = levels[(idx + 1) % levels.length];
+    if (typeof x === 'number' && typeof y === 'number') {
+      setZoomAtPoint(next, x, y);
+    } else {
+      setZoom(next);
+    }
+  }
+
+  /* ----- Mouse wheel zoom (desktop / trackpad) ----- */
+  qv.main.addEventListener('wheel', (e)=>{
+    // Ignore browser page zoom (ctrl/cmd + wheel)
+    if (e.ctrlKey) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+    const targetScale = qv.zoom.scale * factor;
+    setZoomAtPoint(targetScale, e.clientX, e.clientY);
+  }, { passive:false });
+
+  /* ----- Pan with mouse/touch (when zoomed) ----- */
+  function startPan(e){
+    if (e.target.closest('.qv-arrow')) return;
+    if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+    isPanning = true;
+    movedSincePointerDown = false;
+    const p = (e.touches?.[0])
+      ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+      : {x:e.clientX, y:e.clientY};
+    startX = p.x - (transX ?? 0);
+    startY = p.y - (transY ?? 0);
+    e.preventDefault();
+  }
+  function doPan(e){
+    if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+    const p = (e.touches?.[0])
+      ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+      : {x:e.clientX, y:e.clientY};
+    transX = p.x - startX;
+    transY = p.y - startY;
+    qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+    movedSincePointerDown = true;
+    e.preventDefault();
+  }
+  function endPan(){ isPanning = false; }
+
+  // Bind pan to container
+  qv.main.addEventListener('mousedown', startPan);
+  qv.main.addEventListener('mousemove', doPan);
+  qv.main.addEventListener('mouseup', endPan);
+  qv.main.addEventListener('mouseleave', endPan);
+  qv.main.addEventListener('touchstart', startPan, {passive:false});
+  qv.main.addEventListener('touchmove',  doPan,   {passive:false});
+  qv.main.addEventListener('touchend',   endPan);
+
+  // Bind pan to the image itself (important for desktop)
+  qv.img.addEventListener('mousedown', startPan);
+  qv.img.addEventListener('mousemove', doPan);
+  qv.img.addEventListener('mouseup', endPan);
+  qv.img.addEventListener('mouseleave', endPan);
+  qv.img.addEventListener('touchstart', startPan, {passive:false});
+  qv.img.addEventListener('touchmove',  doPan,   {passive:false});
+  qv.img.addEventListener('touchend',   endPan);
+
+  /* ----- Touch: pinch to zoom + one-finger pan + swipe to change slide ----- */
+  let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
+
+  // swipe state (only when not zoomed)
+  const SWIPE_THRESHOLD = 40;  // px
+  let swipeActive = false, swipeStartX = 0, swipeStartY = 0, swipeCurrX = 0, swipeCurrY = 0;
+
+  function distance(t1, t2){
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    return Math.hypot(dx, dy);
+  }
+  function midpoint(t1, t2){
+    return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
+  }
+
+  // Override the container touch handlers to add pinch + swipe logic
+  qv.main.addEventListener('touchstart', (e)=>{
+    if(e.touches.length === 2){
+      pinchActive = true;
+      pinchStartDist = distance(e.touches[0], e.touches[1]);
+      pinchStartScale = qv.zoom.scale;
+      swipeActive = false; // cancel swipe
+      e.preventDefault();
+      return;
+    }
+    if(e.touches.length === 1){
+      if (qv.zoom.scale <= MIN_ZOOM + 1e-3){
+        // not zoomed: prepare for swipe
+        swipeActive = true;
+        swipeStartX = swipeCurrX = e.touches[0].clientX;
+        swipeStartY = swipeCurrY = e.touches[0].clientY;
+      } else {
+        // zoomed: one-finger pan
+        swipeActive = false;
+        startPan(e);
+      }
+    }
+  }, {passive:false});
+
+  qv.main.addEventListener('touchmove', (e)=>{
+    if(pinchActive && e.touches.length === 2){
+      const dist = distance(e.touches[0], e.touches[1]);
+      const factor = dist / pinchStartDist;
+      const target = clamp(pinchStartScale * factor, MIN_ZOOM, MAX_ZOOM);
+      const mid = midpoint(e.touches[0], e.touches[1]);
+      setZoomAtPoint(target, mid.x, mid.y);
+      e.preventDefault();
+      return;
+    }
+
+    if (e.touches.length === 1){
+      if (swipeActive){
+        swipeCurrX = e.touches[0].clientX;
+        swipeCurrY = e.touches[0].clientY;
+        const dx = swipeCurrX - swipeStartX;
+        const dy = swipeCurrY - swipeStartY;
+        // If mostly horizontal, prevent vertical page scroll during swipe
+        if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+      } else {
+        // zoomed: keep panning
+        doPan(e);
+      }
+    }
+  }, {passive:false});
+
+  qv.main.addEventListener('touchend', (e)=>{
+    if(e.touches.length < 2) pinchActive = false;
+
+    if (swipeActive){
+      const dx = swipeCurrX - swipeStartX;
+      const dy = swipeCurrY - swipeStartY;
+      if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)){
+        // swipe left -> next; swipe right -> previous
+        if (dx < 0) showSlide(qv.index + 1);
+        else        showSlide(qv.index - 1);
+        e.preventDefault();
+      }
+      swipeActive = false;
+      return;
+    }
+
+    if(e.touches.length === 0) endPan();
+  });
+
+  // Double‑click / double‑tap to cycle zoom at the tapped point
+  qv.main.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    cycleZoomAt(e.clientX, e.clientY);
+  });
+
+  // Prev/Next (stop propagation so clicks don't trigger zoom)
+  const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
+  const onNext = (e)=>{ e.stopPropagation(); showSlide(qv.index + 1); };
+  qv.prev.addEventListener('click', onPrev);
+  qv.next.addEventListener('click', onNext);
+
+  // expose helpers for other parts of the code
+  qv._resetToFit = resetToFit;
+  qv._applyTransform = applyTransform;
+  qv._setZoom = setZoom;
+}
 
     function openQuickview(product){
       qv.product = product;
