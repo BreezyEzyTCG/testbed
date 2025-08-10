@@ -262,7 +262,11 @@
       transition:transform .06s ease; cursor:zoom-in;
       /* Important: we zoom from top-left to make the math stable */
       transform-origin: 0 0;
-    }
+       -webkit-user-drag: none;  /* Chrome/Safari */
+  user-select: none;        /* avoid text/image selection */
+  pointer-events: auto;     /* make sure we still get events */
+}
+    
     .qv-main.zoomed img{ cursor:move; }
     .qv-thumbs{
       display:flex; gap:8px; margin-top:10px; overflow:auto; padding-bottom:4px;
@@ -321,6 +325,12 @@
 
     /* Focus trap helper */
     .qv-sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+
+    .qv-main img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: auto;
+}
   </style>
 </head>
 <body>
@@ -779,6 +789,15 @@ function isDoubleTap() {
       qv.desc     = document.getElementById('qvDesc');
       qv.main     = document.getElementById('qvMain');
       qv.img      = document.getElementById('qvImage');
+      qv.img.setAttribute('draggable', 'false');
+      qv.img.addEventListener('dragstart', e => e.preventDefault());
+      qv.img.addEventListener('mousedown', startPan);
+      qv.img.addEventListener('mousemove', doPan);
+      qv.img.addEventListener('mouseup', endPan);
+      qv.img.addEventListener('mouseleave', endPan);
+      qv.img.addEventListener('touchstart', startPan, {passive:false});
+      qv.img.addEventListener('touchmove', doPan, {passive:false});
+      qv.img.addEventListener('touchend', endPan);
       qv.thumbs   = document.getElementById('qvThumbs');
       qv.prev     = document.getElementById('qvPrev');
       qv.next     = document.getElementById('qvNext');
