@@ -726,6 +726,20 @@
     const PREFERRED_ZOOM = 1.7;    // nice middle spot for cards
     const MAX_ZOOM = 4;
 
+    // --- click/drag guards + double-tap support ---
+let isPanning = false;
+let movedSincePointerDown = false;
+let lastTapTime = 0;
+const DOUBLE_TAP_MS = 280;
+
+function isDoubleTap() {
+  const now = Date.now();
+  const ok = (now - lastTapTime) < DOUBLE_TAP_MS;
+  lastTapTime = now;
+  return ok;
+}
+
+
     const qv = {
       open:false, index:0, images:[], product:null,
       backdrop:null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
@@ -790,7 +804,9 @@
       });
 
       /* ---------- Zoom/Pan Core ---------- */
-      let isPanning = false, startX=0, startY=0, transX=0, transY=0;
+let isPanning = false, movedSincePointerDown = false;
+let startX = 0, startY = 0;
+let transX = 0, transY = 0;
 
       function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
@@ -858,30 +874,32 @@
         if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
         return { x:e.clientX, y:e.clientY };
       }
-      function startPan(e){
-        // ignore clicks on arrows
-        if (e.target.closest('.qv-arrow')) return;
-        if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
-        isPanning = true;
-        const p = getPoint(e);
-        startX = p.x - transX;
-        startY = p.y - transY;
-        e.preventDefault();
-      }
-      function doPan(e){
-        if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
-        const p = getPoint(e);
-        transX = p.x - startX;
-        transY = p.y - startY;
-        applyTransform();
-        e.preventDefault();
-      }
-      function endPan(){ isPanning = false; }
-
-      qv.main.addEventListener('mousedown', startPan);
-      qv.main.addEventListener('mousemove', doPan);
-      qv.main.addEventListener('mouseup', endPan);
-      qv.main.addEventListener('mouseleave', endPan);
+    function startPan(e){
+  if (e.target.closest('.qv-arrow')) return;
+  if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+  isPanning = true;
+  movedSincePointerDown = false;
+  const p = (e.touches?.[0])
+    ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+    : {x:e.clientX, y:e.clientY};
+  startX = p.x - (transX ?? 0);
+  startY = p.y - (transY ?? 0);
+  e.preventDefault();
+}
+function doPan(e){
+  if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+  const p = (e.touches?.[0])
+    ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+    : {x:e.clientX, y:e.clientY};
+  transX = p.x - startX;
+  transY = p.y - startY;
+  window.transX = transX; 
+  window.transY = transY;
+  qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+  movedSincePointerDown = true;
+  e.preventDefault();
+}
+function endPan(){ isPanning = false; }
 
       /* ----- Touch: pinch to zoom + one-finger pan ----- */
       let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
