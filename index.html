@@ -281,24 +281,32 @@
       position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between;
       pointer-events:none;
     }
-    .qv-arrow{
-      background:var(--qv-arrow-bg); border:none; width:35px; height:35px; border-radius:999px;
-      display:grid; place-items:center; margin:0 8px; pointer-events:auto; cursor:pointer;
-      box-shadow:0 2px 8px rgba(0,0,0,.15);
-      color:var(--qv-ctl);
-    }
-    .qv-arrow.left svg {
-  width: 25px;
-  height: 25px;
-  display: block;
-  transform: translateX(-0.5px); /* nudge left arrow */
+    /* Quickview arrows */
+.qv-arrow{
+  background:var(--qv-arrow-bg);
+  border:none;
+  width:40px;               /* circle size */
+  height:40px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  margin:0 8px;
+  pointer-events:auto;
+  cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+  color:var(--qv-ctl);
+  line-height:0;            /* avoid baseline nudge */
 }
 
-.qv-arrow.right svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-  transform: translateX(0.5px); /* nudge right arrow */
+/* Icon size + tiny visual centering */
+#qvPrev svg, #qvNext svg{
+  width:22px;               /* arrow size */
+  height:22px;
+  display:block;
+}
+#qvPrev svg{ transform:translateX(-0.5px); }
+#qvNext svg{ transform:translateX(0.5px); }
+
 }
     /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
