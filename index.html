@@ -57,17 +57,23 @@
     .shell-pad{ padding:10px 12px 0; }
 
     .hero{
-      position:relative;
-      height:clamp(160px, 28vw, 260px);
-      border-radius:14px; overflow:hidden;
-      background-image:url("assets/images/Breezy%20Banner.png");
-      background-size:cover; background-position:center 30%;
-    }
-    .hero::before{
-      content:""; position:absolute; inset:0;
-      background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
-      pointer-events:none;
-    }
+  position:relative;
+  height:clamp(160px, 28vw, 260px);
+  border-radius:14px;
+  overflow:hidden;
+  background-image:url("assets/images/Breezy%20Banner.png");
+  background-size:cover;
+  background-position:center 30%;
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
+  pointer-events:none;
+}
+
+/* (and your .hero-toggle styles from earlier) */
 
     /* Cart chip on banner (top-right) */
     .topbar{
@@ -110,6 +116,13 @@
 
     /* ========= Filter/search bar ========= */
     .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+      <div class="mini-bar">
+  <div class="mini-title">
+    <strong>BreezyEzyTCG</strong>
+    <span class="dot">•</span>
+    <span>Collectibles Store</span>
+  </div>
+</div>
     .search-row{ max-width:1200px; margin:0 auto 10px; display:flex; justify-content:center; }
     #search{
       padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff; width:420px;
@@ -364,29 +377,89 @@
   user-select: none;
   pointer-events: auto;
 }
+      /* ====== Shrink-on-scroll header states ====== */
+.site-shell {
+  transition: box-shadow .25s ease;
+}
+.site-shell .hero {
+  transition: height .35s ease, border-radius .35s ease, opacity .25s ease;
+}
+.site-shell .brand-center { transition: opacity .25s ease; }
+
+/* Arrow button on the banner */
+.hero-toggle{
+  position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+  width:34px; height:34px; border-radius:999px; border:0;
+  background:rgba(255,255,255,.92); box-shadow:0 2px 8px rgba(0,0,0,.18);
+  cursor:pointer;
+}
+.hero-toggle::before{
+  content:""; display:block; width:10px; height:10px; margin:0 auto;
+  border-right:2px solid #2c3e50; border-bottom:2px solid #2c3e50; 
+  transform:rotate(-45deg) translateY(-1px); margin-top:10px; /* chevron up (collapse) */
+}
+
+/* Mini bar (title shown only when collapsed) */
+.mini-bar{
+  max-width:1200px; margin:0 auto 8px; padding:0 4px;
+  display:none; align-items:center; justify-content:flex-start; gap:.5rem;
+}
+.mini-title{ color:#f7fafc; display:flex; align-items:center; gap:.4rem; }
+.mini-title .dot{ opacity:.8; }
+
+/* Collapsed state */
+.site-shell.collapsed .hero{
+  height:64px;         /* was clamp(... up to 260px) */
+  border-radius:10px;
+  opacity:.9;
+}
+.site-shell.collapsed .brand-center{ opacity:0; pointer-events:none; }
+
+/* Hide search on collapse; keep dropdowns visible */
+.site-shell.collapsed .search-row{ display:none; }
+.site-shell.collapsed .mini-bar{ display:flex; }
+
+/* Make filter bar a touch tighter when collapsed */
+.site-shell.collapsed .filter-bar{
+  padding:8px 12px 10px;
+}
+
+/* Change arrow direction when collapsed (to expand) */
+.site-shell.collapsed .hero-toggle::before{
+  transform:rotate(135deg) translateY(1px); /* chevron down */
+}
+
+/* Optional: slightly reduce dropdown height in collapsed mode */
+.site-shell.collapsed .filter-grid select{
+  padding:.45rem .6rem;
+}
   </style>
 </head>
 <body>
 
   <!-- ===== Overlay Banner Header ===== -->
   <div class="site-shell">
-    <div class="shell-pad">
-      <div class="hero">
-        <div class="topbar">
-          <a class="cart-link" href="cart.html" aria-label="Cart">
-            <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
-            <span class="cart-count" id="cartCount">0</span>
-          </a>
-        </div>
+  <div class="shell-pad">
+    <div class="hero">
+      <div class="topbar">
+        <a class="cart-link" href="cart.html" aria-label="Cart">
+          <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
 
-        <div class="brand-center">
-          <div>
-            <h1 class="brand-title">BreezyEzyTCG</h1>
-            <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
-          </div>
+      <div class="brand-center">
+        <div>
+          <h1 class="brand-title">BreezyEzyTCG</h1>
+          <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
         </div>
       </div>
+
+      <!-- Collapse/expand button goes here -->
+      <button class="hero-toggle" type="button" aria-label="Collapse banner"></button>
     </div>
+  </div>
+
 
     <!-- Filter/search bar under the banner -->
     <div class="filter-bar">
@@ -1162,6 +1235,44 @@ function isDoubleTap() {
     fetchInventoryFromSheet();
     setupQuickview();
     attachImageClickDelegation();
+
+    // ===== Shrink-on-scroll + manual expand =====
+(function(){
+  const shell = document.querySelector('.site-shell');
+  const hero  = document.querySelector('.hero');
+  const toggleBtn = document.querySelector('.hero-toggle');
+  let collapsed = false;
+  let userForced = false;      // if user clicked the arrow
+  const COLLAPSE_OFFSET = 140; // px scrolled before auto-collapse
+
+  function applyState(next){
+    collapsed = next;
+    shell.classList.toggle('collapsed', collapsed);
+  }
+
+  // Auto collapse on scroll, unless the user explicitly expanded
+  function onScroll(){
+    if (userForced && !collapsed) return; // user wants it open; don't fight them
+    const shouldCollapse = window.scrollY > COLLAPSE_OFFSET;
+    if (shouldCollapse !== collapsed) applyState(shouldCollapse);
+  }
+
+  // Manual toggle (always allowed)
+  toggleBtn.addEventListener('click', ()=>{
+    userForced = true;
+    applyState(!collapsed);
+  });
+
+  // Also expand if user scrolls back to near top
+  window.addEventListener('scroll', ()=>{
+    if (window.scrollY < 20) { userForced = false; } // re-enable auto when back at top
+    onScroll();
+  }, { passive:true });
+
+  // Start expanded
+  applyState(false);
+})();
+
   </script>
 </body>
 </html>
