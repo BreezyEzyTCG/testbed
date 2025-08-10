@@ -19,6 +19,7 @@
       --fg:#ffffff;
       --chip-bg:#072a54;
       --chip-fg:#fff;
+      --accent:#ef4444;
 
       /* Quickview (light) */
       --qv-bg:#ffffff;
@@ -40,6 +41,7 @@
         --qv-panel:#0b0f14;
         --qv-thumb-border:#93c5fd;
 
+        /* Controls contrast (dark) */
         --qv-ctl:#f8f9f9;
       }
     }
@@ -51,9 +53,8 @@
       position:sticky; top:0; z-index:20;
       background:var(--shell);
       box-shadow:0 2px 10px rgba(0,0,0,.08);
-      transition:box-shadow .25s ease;
     }
-    .shell-pad{ padding:10px 12px 0; position:relative; }
+    .shell-pad{ padding:10px 12px 0; }
 
     .hero{
       position:relative;
@@ -61,7 +62,6 @@
       border-radius:14px; overflow:hidden;
       background-image:url("assets/images/Breezy%20Banner.png");
       background-size:cover; background-position:center 30%;
-      transition:height .35s ease, border-radius .35s ease, opacity .25s ease;
     }
     .hero::before{
       content:""; position:absolute; inset:0;
@@ -69,40 +69,11 @@
       pointer-events:none;
     }
 
-    /* Topbar: search (left) + cart (right) */
+    /* Cart chip on banner (top-right) */
     .topbar{
-      position:absolute; inset:10px 12px auto 12px;
-      display:flex; align-items:center; justify-content:space-between; gap:.75rem; z-index:5;
+      position:absolute; top:10px; right:12px;
+      display:flex; align-items:center; gap:.5rem; z-index:5;
     }
-
-    /* Desktop search input (half old width) */
-    #searchTop{
-      width:210px; max-width:50vw;
-      padding:.45rem .6rem; border-radius:8px;
-      border:1px solid rgba(255,255,255,.35);
-      background:#ffffff; color:#111;
-      box-shadow:0 2px 6px rgba(0,0,0,.06);
-    }
-
-    /* Mobile: icon that expands to input on tap */
-    .search-icon{
-      width:36px; height:36px; border:none; border-radius:999px; cursor:pointer;
-      background:#fff center/22px 22px no-repeat;
-      /* GitHub asset library icon */
-      background-image:url("https://github.githubassets.com/images/icons/emoji/unicode/1f50d.png?v8");
-      display:none;
-      box-shadow:0 2px 8px rgba(0,0,0,.18);
-    }
-    @media (max-width:767.98px){
-      .search-icon{ display:block; }
-      #searchTop{ display:none; }
-      .topbar.search-open #searchTop{
-        display:block; position:absolute; left:12px; top:10px; right:68px; z-index:6;
-        width:auto; max-width:none;
-      }
-    }
-
-    /* Cart chip */
     .cart-link{
       position:relative; display:inline-flex; align-items:center; gap:.5rem;
       color:var(--chip-fg); text-decoration:none; background:var(--chip-bg);
@@ -122,11 +93,10 @@
       .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
     }
 
-    /* Brand block */
+    /* Centered brand block */
     .brand-center{
       position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
       text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
-      transition:opacity .25s ease;
     }
     .brand-title{
       margin:0; line-height:1.1; font-weight:800;
@@ -138,64 +108,40 @@
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* Single-row filters under subtitle */
-    .filters-overlay{ margin-top:.8rem; display:flex; justify-content:center; pointer-events:auto; }
-    .filters-row{
-      display:flex; align-items:center; gap:.5rem;
-      width: min(96vw, 1100px);
-      padding:0 .25rem;
-      overflow:auto; /* mobile: keep one row; allow side scroll if tight */
-      -webkit-overflow-scrolling: touch;
+    /* ========= Filter/search bar ========= */
+    .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+    .search-row{ max-width:1200px; margin:0 auto 10px; display:flex; justify-content:center; }
+    #search{
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff; width:420px;
     }
-    .filters-row select{
-      flex:0 0 auto;
-      min-width:180px; max-width:260px;
-      padding:.48rem .6rem; border-radius:8px;
-      border:1px solid rgba(255,255,255,.30);
-      background:#ffffff; color:#111;
-      font-size:.95rem;
+    .filter-grid{
+      max-width:1200px; margin:0 auto; display:grid; gap:0.5rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .filter-grid select{
+      width:100%; padding:0.55rem 0.65rem; border-radius:8px;
+      border:1px solid rgba(255,255,255,.3); background:#ffffff; color:#111;
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
-    @media (max-width:767.98px){
-      .filters-row select{ min-width:160px; font-size:.92rem; }
-    }
+    @media (max-width:1023.98px){ .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width:767.98px){ #search{ width:100%; max-width:60vw; } }
 
-    /* Center seam arrow (expand/collapse) */
-    .header-toggle{
-      position:absolute; left:50%; bottom:-18px; transform:translateX(-50%);
-      width:36px; height:36px; border-radius:999px; border:0; cursor:pointer; z-index:30;
-      background:#fff center/26px 26px no-repeat;
-      box-shadow:0 2px 8px rgba(0,0,0,.25);
-      background-image:url("assets/images/arrow%20button%20collapse.svg");
-    }
-    .site-shell.collapsed .header-toggle{
-      background-image:url("assets/images/arrow%20button%20expand.svg");
-    }
-
-    /* Collapsed state */
-    .site-shell.collapsed .hero{ height:64px; border-radius:10px; opacity:.9; }
-    .site-shell.collapsed .brand-center{ opacity:0; pointer-events:none; }
-
-    /* ================== Controls (grid toggles) ================== */
+    /* ================== Controls ================== */
     .controls{
       display:flex; justify-content:flex-end; align-items:center; gap:0.75rem;
-      margin:1.35rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
+      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
     }
-    .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin-left:auto; }
-    .layout-button{
-      background:transparent; border:none; padding:.5rem; border-radius:6px; cursor:pointer;
-      display:flex; align-items:center; justify-content:center; transition:transform .15s ease;
-    }
+    .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
+    .layout-button{ background:transparent; border:none; padding:0.5rem; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
     .layout-button:active{ transform:scale(0.96); }
-    .layout-button img{ width:24px; height:24px; opacity:.8; display:block; }
-    .layout-button.active img{ opacity:1; }
-    @media (max-width:767.98px){ .layout-button.triple{ display:none; } }
-    @media (min-width:768px){ .layout-button.single{ display:none; } }
+    .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
+    .layout-button.single svg{ width:30px; height:30px; }
+    .layout-button.active svg{ fill:var(--icon-color-active); }
 
     /* ================== Cards ================== */
     .card-container{
       display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:1.5rem; max-width:1200px; margin:1.0rem auto 2rem; padding:0 1rem; transition:all .3s ease;
+      gap:1.5rem; max-width:1200px; margin:1.25rem auto 2rem; padding:0 1rem; transition:all .3s ease;
     }
     .card-container.grid-1{ grid-template-columns:repeat(1,1fr); }
     .card-container.grid-2{ grid-template-columns:repeat(2,1fr); }
@@ -247,6 +193,16 @@
       background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
     }
 
+    /* ================== Mobile tweaks ================== */
+    @media (max-width:767.98px){
+      .controls{ justify-content:flex-end; }
+      .grid-toggle{ gap:0.15rem !important; }
+      .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
+      .grid-toggle > .layout-button svg{ width:22px; height:22px; }
+      .layout-button.triple{ display:none; } /* no 3-grid on mobile */
+    }
+    @media (min-width:768px){ .layout-button.single{ display:none; } }
+
     /* Robust disabled */
     .product-actions button[disabled], button[disabled]{
       background:#cbd5e1 !important; color:#6b7280 !important;
@@ -262,76 +218,196 @@
     }
     #toast.show { display:block; opacity:1; }
 
-    /* ================== QUICKVIEW (unchanged essentials) ================== */
-    .qv-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:10000; }
+    /* ================== QUICKVIEW STYLES ================== */
+    .qv-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center;
+      z-index:10000;
+    }
     .qv-backdrop.open{ display:flex; }
-    .qv-modal{ background:var(--qv-bg); color:var(--qv-fg); width:min(1000px, 96vw); max-height:92vh; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.25); display:grid; grid-template-columns:1fr; grid-template-rows:auto 1fr; border:1px solid var(--qv-border); }
-    .qv-header{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--qv-border); }
+    .qv-modal{
+      background:var(--qv-bg); color:var(--qv-fg);
+      width:min(1000px, 96vw); max-height:92vh;
+      border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.25);
+      display:grid; grid-template-columns:1fr; grid-template-rows:auto 1fr;
+      border:1px solid var(--qv-border);
+    }
+    .qv-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px; border-bottom:1px solid var(--qv-border);
+      background:transparent;
+    }
     .qv-title{ margin:0; font-size:1.05rem; line-height:1.2; }
-    .qv-body{ display:grid; grid-template-columns:1fr; gap:14px; padding:12px; overflow:auto; }
-    @media (min-width:900px){ .qv-body{ grid-template-columns:58% 42%; } }
+    #qvSeries {
+      margin-bottom: 0.5rem; /* adds space after series name */
+    }
+    
+    #qvSeries small {
+      display: inline-block;
+    }
+
+    .qv-close{
+      background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer;
+      color:var(--qv-ctl);
+    }
+    .qv-body{
+      display:grid; grid-template-columns:1fr; gap:14px;
+      padding:12px; overflow:auto; background:transparent;
+    }
+    @media (min-width:900px){
+      .qv-body{ grid-template-columns:58% 42%; }
+    }
+
+    /* Gallery */
     .qv-gallery{ position:relative; user-select:none; }
-    .qv-main{ position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; height:min(60vh, 520px); touch-action:none; }
-    .qv-main img{ max-width:100%; max-height:100%; object-fit:contain; display:block; transition:transform .06s ease; cursor:zoom-in; transform-origin: 0 0; -webkit-user-drag:none; user-select:none; pointer-events:auto; }
-    @supports (height: 1dvh){ .qv-modal{ max-height:min(92dvh,92vh); } .qv-main{ height:min(52dvh,520px); } }
-    .qv-thumbs{ display:flex; gap:8px; margin-top:10px; overflow:auto; padding-bottom:4px; }
-    .qv-thumb{ width:64px; height:64px; border:2px solid transparent; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
+    .qv-main{
+      position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden;
+      display:flex; align-items:center; justify-content:center; height:min(60vh, 520px);
+      touch-action:none; /* allows custom pan/pinch */
+    }
+    .qv-main img{
+      max-width:100%; max-height:100%; object-fit:contain; display:block;
+      transition:transform .06s ease; cursor:zoom-in;
+      /* Important: we zoom from top-left to make the math stable */
+      transform-origin: 0 0;
+       -webkit-user-drag: none;  /* Chrome/Safari */
+  user-select: none;        /* avoid text/image selection */
+  pointer-events: auto;     /* make sure we still get events */
+}
+
+  /* --- Quickview mobile viewport fixes --- */
+
+/* Use dynamic viewport units so the modal isn't clipped by the URL bar */
+@supports (height: 1dvh) {
+  .qv-modal{
+    max-height: min(92dvh, 92vh);
+  }
+  .qv-main{
+    height: min(52dvh, 520px);
+  }
+}
+
+/* Smooth scrolling in the modal body on iOS/Android */
+.qv-body{
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Respect notches/home indicator areas */
+.qv-backdrop{
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+    
+    .qv-main.zoomed img{ cursor:move; }
+    .qv-thumbs{
+      display:flex; gap:8px; margin-top:10px; overflow:auto; padding-bottom:4px;
+    }
+    .qv-thumb{
+      width:64px; height:64px; border:2px solid transparent; border-radius:6px;
+      background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto;
+    }
+    @media (prefers-color-scheme: dark){
+      .qv-thumb{ background:#111827; }
+    }
     .qv-thumb.active{ border-color:var(--qv-thumb-border); }
-    .qv-nav{ position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; pointer-events:none; padding:0 4px; }
-    .qv-arrow{ pointer-events:auto; background:transparent; border:none; padding:0; width:44px; height:44px; display:block; cursor:pointer; }
-    .qv-arrow img{ width:100%; height:100%; display:block; pointer-events:none; }
+    .qv-thumb img{ max-width:100%; max-height:100%; object-fit:contain; }
+
+    .qv-nav{
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between;
+      pointer-events:none;
+      padding:0 4px;
+    }
+
+    /* SVG button arrows (single-asset buttons) */
+    .qv-arrow{
+      pointer-events:auto;
+      background:transparent;
+      border:none;
+      padding:0;
+      width:44px;
+      height:44px;
+      display:block;
+      cursor:pointer;
+    }
+    .qv-arrow img{
+      width:100%;
+      height:100%;
+      display:block;
+      pointer-events:none; /* so taps go to the button, not the img */
+    }
+
+    /* Info column */
+    .qv-meta small{ color:var(--qv-muted); }
+    .qv-meta p{ 
+      margin: .35rem 0;
+  font-size: 0.85rem; /* adjust this value */
+}
+    .qv-descwrap{ margin-top:.75rem; }
+    .qv-desclabel{ display:block; font-weight:700; margin-bottom:.25rem; }
+    .qv-desc{
+      font-style:italic;
+      margin:0;
+      line-height:1.35; color:inherit;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden;
+    }
+    .qv-cta{ margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .qv-price{ font-weight:700; font-size:1.1rem; margin-right:auto; }
+    .qv-cta button[disabled]{ background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !important; }
+    @media (prefers-color-scheme: dark){
+      .qv-cta button[disabled]{ background:#374151 !important; color:#9ca3af !important; }
+    }
+
+    /* Focus trap helper */
+    .qv-sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+
+    .qv-main img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: auto;
+}
   </style>
 </head>
 <body>
 
   <!-- ===== Overlay Banner Header ===== -->
-  <div class="site-shell" id="siteShell">
+  <div class="site-shell">
     <div class="shell-pad">
       <div class="hero">
-        <!-- Top row: search (left) + cart (right) -->
-        <div class="topbar" id="topbar">
-          <button class="search-icon" type="button" aria-label="Open search"></button>
-          <input
-            type="text"
-            id="searchTop"
-            placeholder="Search for a card..."
-            oninput="applyFilters()"
-            aria-label="Search"
-          />
+        <div class="topbar">
           <a class="cart-link" href="cart.html" aria-label="Cart">
             <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
             <span class="cart-count" id="cartCount">0</span>
           </a>
         </div>
 
-        <!-- Center brand -->
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
             <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
-            <!-- Filters: single row under the subtitle -->
-            <div class="filters-overlay">
-              <div class="filters-row">
-                <select id="category-filter" onchange="onCategoryChange()">
-                  <option value="all">All Categories</option>
-                </select>
-                <select id="subcategory-filter" onchange="applyFilters()">
-                  <option value="all">All Subcategories</option>
-                </select>
-                <select id="rarity-filter" onchange="applyFilters()">
-                  <option value="all">All Rarity</option>
-                </select>
-                <select id="condition-filter" onchange="applyFilters()">
-                  <option value="all">All Conditions</option>
-                </select>
-              </div>
-            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- seam arrow (centered between header and content) -->
-      <button class="header-toggle" id="headerToggle" type="button" aria-label="Collapse banner"></button>
+    <!-- Filter/search bar under the banner -->
+    <div class="filter-bar">
+      <div class="search-row">
+        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+      </div>
+
+      <div class="filter-grid">
+        <select id="category-filter" onchange="onCategoryChange()">
+          <option value="all">All Categories</option>
+        </select>
+        <select id="subcategory-filter" onchange="applyFilters()">
+          <option value="all">All Subcategories</option>
+        </select>
+        <select id="rarity-filter" onchange="applyFilters()">
+          <option value="all">All Rarity</option>
+        </select>
+        <select id="condition-filter" onchange="applyFilters()">
+          <option value="all">All Conditions</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -339,17 +415,18 @@
   <div class="container-panel">
     <div class="controls">
       <div class="grid-toggle">
-        <!-- Single (mobile only) -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <img src="assets/images/single%20grid.svg" alt="Single view">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
         </button>
-        <!-- Two columns (desktop + mobile) -->
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <img src="assets/images/2%20grid%20view.svg" alt="Two grid view">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
+          </svg>
         </button>
-        <!-- Three columns (desktop only) -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <img src="assets/images/3%20grid%20view.svg" alt="Three grid view">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -405,7 +482,6 @@
 
   <script>
     let allProducts = [];
-    const SEARCH_INPUT_ID = "searchTop";
 
     const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
 
@@ -443,7 +519,9 @@
       try{ return JSON.parse(localStorage.getItem("cart") || "[]"); }
       catch{ return []; }
     }
-    function getCartCount(){ return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0); }
+    function getCartCount(){
+      return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
+    }
     function updateCartCount(){
       const el = document.getElementById("cartCount");
       if (el) el.textContent = String(getCartCount());
@@ -456,10 +534,10 @@
       else cart.push({ name, price, quantity:1, image:image_url });
       localStorage.setItem("cart", JSON.stringify(cart));
       updateCartCount();
-      showToast(`${name} added to cart!`);
+      showToast(${name} added to cart!);
     }
 
-    /* -------- CSV parser -------- */
+    /* -------- CSV parser that handles quotes/commas -------- */
     function parseCSV(text){
       const lines = text.replace(/\r/g,'').split('\n').filter(l => l.length);
       return lines.map(line => {
@@ -481,42 +559,48 @@
     }
 
     async function fetchInventoryFromSheet(){
-      try {
-        const res = await fetch(SHEET_CSV);
-        const csv = await res.text();
+  try {
+    const res = await fetch(SHEET_CSV);
+    const csv = await res.text();
 
-        const rows = parseCSV(csv);
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
+    const rows = parseCSV(csv);
+    const headers = rows.shift().map(h => h.trim().toLowerCase());
 
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            const val = (cell || "").trim();
-            if (key === "price" || key === "stock") obj[key] = safeNumber(val);
-            else obj[key] = val;
-          });
+    allProducts = rows.map(row => {
+      const obj = {};
+      row.forEach((cell, i) => {
+        const key = headers[i];
+        const val = (cell || "").trim();
+        if (key === "price" || key === "stock") obj[key] = safeNumber(val);
+        else obj[key] = val;
+      });
 
-          obj.category    = (row[4] || obj.category    || "").trim();
-          obj.subcategory = (row[5] || obj.subcategory || "").trim();
-          obj.description = (row[14] || "").trim();
-          obj.condition   = (row[7] || obj.condition   || "").trim();
+      /* Explicit fallbacks by index (0-based) */
+      obj.category    = (row[4] || obj.category    || "").trim(); // Column E
+      obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
 
-          obj.back  = (obj.back  || row[11] || "").trim();
-          obj.img2  = (obj.img2  || row[12] || "").trim();
-          obj.img3  = (obj.img3  || row[13] || "").trim();
+      /* DESCRIPTION: strictly from Column O (index 14) */
+      obj.description = (row[14] || "").trim();
 
-          return obj;
-        });
+      /* CONDITION at Column H (index 7) */
+      obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
 
-        populateAllDropdowns();
-        renderStore(allProducts);
-        enforceResponsiveGrid();
-      } catch(e) {
-        console.error(e);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
-      }
-    }
+      /* Extra images by header or index (L=11, M=12, N=13) */
+      obj.back  = (obj.back  || row[11] || "").trim();
+      obj.img2  = (obj.img2  || row[12] || "").trim();
+      obj.img3  = (obj.img3  || row[13] || "").trim();
+
+      return obj;
+    });
+
+    populateAllDropdowns();
+    renderStore(allProducts);
+    enforceResponsiveGrid();
+  } catch(e) {
+    console.error(e);
+    document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+  }
+}
 
     function getBadgeInfo(raw){
       if(!raw) return null;
@@ -541,13 +625,13 @@
         const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
 
         const btnAttrs = out
-          ? `disabled aria-disabled="true" tabindex="-1"`
-          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
+          ? disabled aria-disabled="true" tabindex="-1"
+          : onclick="addToCart('${safeName}', ${price}, '${safeImg}')";
 
         const card = document.createElement("div");
         card.className = "card";
-        card.innerHTML = `
-          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
+        card.innerHTML = 
+          ${badge ? <div class="badge ${badge.cls}">${badge.label}</div> : `}
           <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
           <div class="title-block">
             <h3 class="card-title">${p.name || ""}</h3>
@@ -562,7 +646,7 @@
           <div class="product-actions">
             <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
           </div>
-        `;
+        ;
         container.appendChild(card);
       });
     }
@@ -613,8 +697,7 @@
 
     /* ---------- Filtering ---------- */
     function applyFilters(){
-      const kwEl = document.getElementById(SEARCH_INPUT_ID);
-      const kw   = (kwEl?.value || "").toLowerCase();
+      const kw   = document.getElementById("search").value.toLowerCase();
       const cat  = document.getElementById("category-filter").value;
       const sub  = document.getElementById("subcategory-filter").value;
       const rar  = document.getElementById("rarity-filter").value;
@@ -642,7 +725,7 @@
       if(!isMobile() && type === 1) return;
       const cont = document.querySelector(".card-container");
       cont.classList.remove("grid-1","grid-2","grid-3");
-      cont.classList.add(`grid-${type}`);
+      cont.classList.add(grid-${type});
       activateButton(type);
       applyFilters();
     }
@@ -653,7 +736,7 @@
       else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
     }
 
-    /* Fit titles */
+    /* === Title auto-fit === */
     function fitCardTitles(root = document){
       const titles = root.querySelectorAll('.card-title');
       titles.forEach(el => {
@@ -669,7 +752,7 @@
       });
     }
 
-    /* Wrap renderStore once */
+    /* Wrap renderStore once: track list + fit titles */
     let __lastRendered = [];
     const __renderOriginal = renderStore;
     renderStore = function(list){
@@ -677,25 +760,397 @@
       __renderOriginal(list);
       requestAnimationFrame(() => fitCardTitles(document));
     };
+    function getCurrentRenderedList(){ return __lastRendered; }
 
-    /* Quickview minimal setup (arrows theme) */
+    /* ================== QUICKVIEW ================== */
+
+    /* Zoom settings */
+    const MIN_ZOOM = 1;            // fit to screen
+    const PREFERRED_ZOOM = 1.7;    // nice middle spot for cards
+    const MAX_ZOOM = 4;
+
+    // --- click/drag guards + double-tap support ---
+let isPanning = false;
+let movedSincePointerDown = false;
+let lastTapTime = 0;
+const DOUBLE_TAP_MS = 280;
+
+function isDoubleTap() {
+  const now = Date.now();
+  const ok = (now - lastTapTime) < DOUBLE_TAP_MS;
+  lastTapTime = now;
+  return ok;
+}
+
+
+    const qv = {
+      open:false, index:0, images:[], product:null,
+      backdrop:null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
+      main:null, img:null, thumbs:null, prev:null, next:null, addBtn:null, closeBtn:null,
+      zoom:{ scale: MIN_ZOOM, levels:[MIN_ZOOM, PREFERRED_ZOOM, 2.5, 3.5] }
+    };
+
+    function buildImagesArray(p){
+      const arr = [p.image_url, p.back, p.img2, p.img3].filter(Boolean);
+      return [...new Set(arr)];
+    }
+
+    /* pick correct arrow assets for theme */
     const lightLeft  = "assets/images/arrow-button-left-2-svgrepo-com.svg";
     const lightRight = "assets/images/arrow-button-right-2-svgrepo-com.svg";
     const darkLeft   = "assets/images/white-arrow-button-left-2-svgrepo-com.svg";
     const darkRight  = "assets/images/white-arrow-button-right-2-svgrepo-com.svg";
+
     function applyArrowTheme(){
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const mql = window.matchMedia("(prefers-color-scheme: dark)");
+      const isDark = mql.matches;
       const prevImg = document.getElementById("qvPrevImg");
       const nextImg = document.getElementById("qvNextImg");
       if(prevImg) prevImg.src = isDark ? darkLeft : lightLeft;
       if(nextImg) nextImg.src = isDark ? darkRight : lightRight;
     }
+
     function setupQuickview(){
-      applyArrowTheme();
-      const mql = window.matchMedia("(prefers-color-scheme: dark)");
-      if (mql.addEventListener) mql.addEventListener("change", applyArrowTheme);
-      else if (mql.addListener)  mql.addListener(applyArrowTheme);
+  qv.backdrop = document.getElementById('qvBackdrop');
+  qv.modal    = qv.backdrop.querySelector('.qv-modal');
+  qv.title    = document.getElementById('qvTitle');
+  qv.price    = document.getElementById('qvPrice');
+  qv.series   = document.getElementById('qvSeries').querySelector('small');
+  qv.rarity   = document.getElementById('qvRarity');
+  qv.condition= document.getElementById('qvCondition');
+  qv.stock    = document.getElementById('qvStock');
+  qv.desc     = document.getElementById('qvDesc');
+  qv.main     = document.getElementById('qvMain');
+  qv.img      = document.getElementById('qvImage');
+  qv.thumbs   = document.getElementById('qvThumbs');
+  qv.prev     = document.getElementById('qvPrev');
+  qv.next     = document.getElementById('qvNext');
+  qv.addBtn   = document.getElementById('qvAdd');
+  qv.closeBtn = qv.backdrop.querySelector('.qv-close');
+
+  // prevent native image drag (desktop)
+  qv.img.setAttribute('draggable', 'false');
+  qv.img.addEventListener('dragstart', e => e.preventDefault());
+
+  // set arrow images for current theme and listen for changes
+  applyArrowTheme();
+  const mql = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mql.addEventListener) mql.addEventListener("change", applyArrowTheme);
+  else if (mql.addListener) mql.addListener(applyArrowTheme); // Safari fallback
+
+  qv.closeBtn.addEventListener('click', closeQuickview);
+  qv.backdrop.addEventListener('click', (e)=>{ if(e.target === qv.backdrop) closeQuickview(); });
+  document.addEventListener('keydown', (e)=>{
+    if(!qv.open) return;
+    if(e.key === 'Escape') closeQuickview();
+    if(e.key === 'ArrowLeft') showSlide(qv.index - 1);
+    if(e.key === 'ArrowRight') showSlide(qv.index + 1);
+  });
+
+  /* ---------- Zoom/Pan Core ---------- */
+  let isPanning = false, movedSincePointerDown = false;
+  let startX = 0, startY = 0;
+  let transX = 0, transY = 0;
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  function applyTransform(){
+    if(qv.zoom.scale <= MIN_ZOOM + 1e-3){
+      qv.img.style.transform = translate(0px,0px) scale(${MIN_ZOOM});
+      qv.main.classList.remove('zoomed');
+      qv.img.style.cursor = 'zoom-in';
+    }else{
+      qv.img.style.transform = translate(${transX}px, ${transY}px) scale(${qv.zoom.scale});
+      qv.main.classList.add('zoomed');
+      qv.img.style.cursor = 'move';
     }
+  }
+
+  function setZoomAtPoint(newScale, clientX, clientY){
+    const rect = qv.main.getBoundingClientRect();
+    const cx = clamp(clientX - rect.left, 0, rect.width);
+    const cy = clamp(clientY - rect.top,  0, rect.height);
+
+    const prev = qv.zoom.scale;
+    newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
+
+    // Keep the point under cursor fixed (transform-origin at 0 0)
+    const dx = (cx - transX) / prev;
+    const dy = (cy - transY) / prev;
+    transX = cx - dx * newScale;
+    transY = cy - dy * newScale;
+
+    qv.zoom.scale = newScale;
+    applyTransform();
+  }
+
+  function setZoom(newScale){
+    const rect = qv.main.getBoundingClientRect();
+    setZoomAtPoint(newScale, rect.left + rect.width/2, rect.top + rect.height/2);
+  }
+
+  function resetToFit(){
+    transX = 0; transY = 0;
+    qv.zoom.scale = MIN_ZOOM;
+    applyTransform();
+  }
+
+  function cycleZoomAt(x, y){
+    const levels = qv.zoom.levels; // [1, preferred, 2.5, 3.5]
+    const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.01);
+    const next = levels[(idx + 1) % levels.length];
+    if (typeof x === 'number' && typeof y === 'number') {
+      setZoomAtPoint(next, x, y);
+    } else {
+      setZoom(next);
+    }
+  }
+
+  /* ----- Mouse wheel zoom (desktop / trackpad) ----- */
+  qv.main.addEventListener('wheel', (e)=>{
+    // Ignore browser page zoom (ctrl/cmd + wheel)
+    if (e.ctrlKey) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+    const targetScale = qv.zoom.scale * factor;
+    setZoomAtPoint(targetScale, e.clientX, e.clientY);
+  }, { passive:false });
+
+  /* ----- Pan with mouse/touch (when zoomed) ----- */
+  function startPan(e){
+    if (e.target.closest('.qv-arrow')) return;
+    if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+    isPanning = true;
+    movedSincePointerDown = false;
+    const p = (e.touches?.[0])
+      ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+      : {x:e.clientX, y:e.clientY};
+    startX = p.x - (transX ?? 0);
+    startY = p.y - (transY ?? 0);
+    e.preventDefault();
+  }
+  function doPan(e){
+    if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+    const p = (e.touches?.[0])
+      ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+      : {x:e.clientX, y:e.clientY};
+    transX = p.x - startX;
+    transY = p.y - startY;
+    qv.img.style.transform = translate(${transX}px, ${transY}px) scale(${qv.zoom.scale});
+    movedSincePointerDown = true;
+    e.preventDefault();
+  }
+  function endPan(){ isPanning = false; }
+
+  // Bind pan to container
+  qv.main.addEventListener('mousedown', startPan);
+  qv.main.addEventListener('mousemove', doPan);
+  qv.main.addEventListener('mouseup', endPan);
+  qv.main.addEventListener('mouseleave', endPan);
+  qv.main.addEventListener('touchstart', startPan, {passive:false});
+  qv.main.addEventListener('touchmove',  doPan,   {passive:false});
+  qv.main.addEventListener('touchend',   endPan);
+
+  // Bind pan to the image itself (important for desktop)
+  qv.img.addEventListener('mousedown', startPan);
+  qv.img.addEventListener('mousemove', doPan);
+  qv.img.addEventListener('mouseup', endPan);
+  qv.img.addEventListener('mouseleave', endPan);
+  qv.img.addEventListener('touchstart', startPan, {passive:false});
+  qv.img.addEventListener('touchmove',  doPan,   {passive:false});
+  qv.img.addEventListener('touchend',   endPan);
+
+  /* ----- Touch: pinch to zoom + one-finger pan + swipe to change slide ----- */
+  let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
+
+  // swipe state (only when not zoomed)
+  const SWIPE_THRESHOLD = 40;  // px
+  let swipeActive = false, swipeStartX = 0, swipeStartY = 0, swipeCurrX = 0, swipeCurrY = 0;
+
+  function distance(t1, t2){
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    return Math.hypot(dx, dy);
+  }
+  function midpoint(t1, t2){
+    return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
+  }
+
+  // Override the container touch handlers to add pinch + swipe logic
+  qv.main.addEventListener('touchstart', (e)=>{
+    if(e.touches.length === 2){
+      pinchActive = true;
+      pinchStartDist = distance(e.touches[0], e.touches[1]);
+      pinchStartScale = qv.zoom.scale;
+      swipeActive = false; // cancel swipe
+      e.preventDefault();
+      return;
+    }
+    if(e.touches.length === 1){
+      if (qv.zoom.scale <= MIN_ZOOM + 1e-3){
+        // not zoomed: prepare for swipe
+        swipeActive = true;
+        swipeStartX = swipeCurrX = e.touches[0].clientX;
+        swipeStartY = swipeCurrY = e.touches[0].clientY;
+      } else {
+        // zoomed: one-finger pan
+        swipeActive = false;
+        startPan(e);
+      }
+    }
+  }, {passive:false});
+
+  qv.main.addEventListener('touchmove', (e)=>{
+    if(pinchActive && e.touches.length === 2){
+      const dist = distance(e.touches[0], e.touches[1]);
+      const factor = dist / pinchStartDist;
+      const target = clamp(pinchStartScale * factor, MIN_ZOOM, MAX_ZOOM);
+      const mid = midpoint(e.touches[0], e.touches[1]);
+      setZoomAtPoint(target, mid.x, mid.y);
+      e.preventDefault();
+      return;
+    }
+
+    if (e.touches.length === 1){
+      if (swipeActive){
+        swipeCurrX = e.touches[0].clientX;
+        swipeCurrY = e.touches[0].clientY;
+        const dx = swipeCurrX - swipeStartX;
+        const dy = swipeCurrY - swipeStartY;
+        // If mostly horizontal, prevent vertical page scroll during swipe
+        if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+      } else {
+        // zoomed: keep panning
+        doPan(e);
+      }
+    }
+  }, {passive:false});
+
+  qv.main.addEventListener('touchend', (e)=>{
+    if(e.touches.length < 2) pinchActive = false;
+
+    if (swipeActive){
+      const dx = swipeCurrX - swipeStartX;
+      const dy = swipeCurrY - swipeStartY;
+      if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)){
+        // swipe left -> next; swipe right -> previous
+        if (dx < 0) showSlide(qv.index - 1);
+        else        showSlide(qv.index + 1)
+          
+        e.preventDefault();
+      }
+      swipeActive = false;
+      return;
+    }
+
+    if(e.touches.length === 0) endPan();
+  });
+
+  // Double‑click / double‑tap to cycle zoom at the tapped point
+  qv.main.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    cycleZoomAt(e.clientX, e.clientY);
+  });
+
+  // Prev/Next (stop propagation so clicks don't trigger zoom)
+  const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
+  const onNext = (e)=>{ e.stopPropagation(); showSlide(qv.index + 1); };
+  qv.prev.addEventListener('click', onPrev);
+  qv.next.addEventListener('click', onNext);
+
+  // expose helpers for other parts of the code
+  qv._resetToFit = resetToFit;
+  qv._applyTransform = applyTransform;
+  qv._setZoom = setZoom;
+}
+
+    function openQuickview(product){
+      qv.product = product;
+      qv.images = buildImagesArray(product);
+      qv.index = 0;
+
+      qv.title.textContent = product.name || '';
+      qv.price.textContent = (Number.isFinite(product.price) ? $${Number(product.price).toFixed(2)} : '');
+      qv.series.textContent = product['series name'] || '';
+      qv.rarity.textContent = product.rarity ? Rarity: ${product.rarity} : '';
+      qv.condition.textContent = product.condition ? Condition: ${product.condition} : '';
+      qv.stock.textContent = Number.isFinite(product.stock) ? Stock: ${product.stock} : '';
+
+      // Description with fallback + line breaks
+      // Description: show "-" if Column G is empty
+      const desc = (product.description || "").trim();
+      document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
+
+
+      // CTA + stock state (already matches main page)
+      const out = safeNumber(product.stock, 0) <= 0;
+      qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
+      qv.addBtn.disabled = out;
+      qv.addBtn.onclick = out ? null : () =>
+        addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
+
+      // Thumbnails
+      qv.thumbs.innerHTML = '';
+      qv.images.forEach((src, i) => {
+        const t = document.createElement('button');
+        t.type = 'button';
+        t.className = 'qv-thumb' + (i===0 ? ' active':'');
+        t.innerHTML = <img src="${src}" alt="thumbnail ${i+1}">;
+        t.addEventListener('click', (e)=>{ e.stopPropagation(); showSlide(i); });
+        qv.thumbs.appendChild(t);
+      });
+
+      showSlide(0);
+
+      // Start at fit; users can scroll/pinch to zoom or click to cycle
+      if(qv._resetToFit) qv._resetToFit();
+
+      // Open
+      qv.backdrop.classList.add('open');
+      qv.backdrop.setAttribute('aria-hidden', 'false');
+      qv.open = true;
+      document.body.style.overflow='hidden';
+      qv.closeBtn.focus();
+    }
+
+    function closeQuickview(){
+      qv.open = false;
+      qv.backdrop.classList.remove('open');
+      qv.backdrop.setAttribute('aria-hidden','true');
+      document.body.style.overflow='';
+      if(qv._resetToFit) qv._resetToFit();
+    }
+
+    function showSlide(i){
+      if(qv.images.length === 0) return;
+      if(i < 0) i = qv.images.length - 1;
+      if(i >= qv.images.length) i = 0;
+      qv.index = i;
+      qv.img.src = qv.images[i];
+      if(qv._resetToFit) qv._resetToFit();
+      [...qv.thumbs.children].forEach((el, idx)=> el.classList.toggle('active', idx===i));
+    }
+
+    /* Delegate clicks from the grid to open Quickview */
+    function attachImageClickDelegation(){
+      const container = document.querySelector('.card-container');
+      if(!container) return;
+      container.addEventListener('click', (e)=>{
+        const img = e.target.closest('img');
+        if(!img || !container.contains(img)) return;
+        const cards = [...container.querySelectorAll('.card img')];
+        const clickIndex = cards.indexOf(img);
+        const renderedList = getCurrentRenderedList();
+        const chosen = renderedList[clickIndex];
+        if(chosen) openQuickview(chosen);
+      });
+    }
+
+    /* pick correct arrow assets for theme on load */
+    function applyArrowThemeOnLoad(){
+      applyArrowTheme();
+    }
+    window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyArrowThemeOnLoad);
 
     /* Events */
     window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
@@ -706,70 +1161,7 @@
     updateCartCount();
     fetchInventoryFromSheet();
     setupQuickview();
-
-    // ===== Shrink-on-scroll + seam arrow toggle =====
-    (function(){
-      const shell = document.getElementById('siteShell');
-      const toggleBtn = document.getElementById('headerToggle');
-      let collapsed = false;
-      let userForced = false;
-      const COLLAPSE_OFFSET = 140;
-
-      function applyState(next){
-        collapsed = next;
-        shell.classList.toggle('collapsed', collapsed);
-      }
-
-      function onScroll(){
-        if (userForced && !collapsed) return;
-        const shouldCollapse = window.scrollY > COLLAPSE_OFFSET;
-        if (shouldCollapse !== collapsed) applyState(shouldCollapse);
-      }
-
-      toggleBtn.addEventListener('click', ()=>{
-        userForced = true;
-        applyState(!collapsed);
-      });
-
-      window.addEventListener('scroll', ()=>{
-        if (window.scrollY < 20) userForced = false;
-        onScroll();
-      }, { passive:true });
-
-      applyState(false);
-    })();
-
-    // ===== Mobile search icon -> expand input =====
-    (function(){
-      const topbar = document.getElementById('topbar');
-      const icon = topbar.querySelector('.search-icon');
-      const input = document.getElementById('searchTop');
-
-      icon.addEventListener('click', ()=>{
-        topbar.classList.toggle('search-open');
-        if (topbar.classList.contains('search-open')){
-          input.style.display = 'block';
-          input.focus();
-        }else{
-          input.blur();
-          input.value = '';
-          applyFilters();
-          if (isMobile()) input.style.display = '';
-        }
-      });
-
-      // Close on ESC or outside tap
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape' && topbar.classList.contains('search-open')){
-          icon.click();
-        }
-      });
-      document.addEventListener('click', (e)=>{
-        if (!topbar.contains(e.target) && topbar.classList.contains('search-open')){
-          icon.click();
-        }
-      }, true);
-    })();
+    attachImageClickDelegation();
   </script>
 </body>
 </html>
