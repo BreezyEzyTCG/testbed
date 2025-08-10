@@ -1051,8 +1051,6 @@
             // swipe left -> next; swipe right -> previous
             if (dx < 0) showSlide(qv.index - 1)
             else        showSlide(qv.index + 1)
-            if (dx < 0) showSlide(qv.index + 1)
-            else        showSlide(qv.index - 1)
             e.preventDefault();
           }
           swipeActive = false;
