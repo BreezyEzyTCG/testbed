@@ -282,13 +282,24 @@
       pointer-events:none;
     }
     .qv-arrow{
-      background:var(--qv-arrow-bg); border:none; width:38px; height:38px; border-radius:999px;
+      background:var(--qv-arrow-bg); border:none; width:35px; height:35px; border-radius:999px;
       display:grid; place-items:center; margin:0 8px; pointer-events:auto; cursor:pointer;
       box-shadow:0 2px 8px rgba(0,0,0,.15);
       color:var(--qv-ctl);
     }
-    .qv-arrow svg{ width:18px; height:18px; display:block; }
+    .qv-arrow.left svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  transform: translateX(-0.5px); /* nudge left arrow */
+}
 
+.qv-arrow.right svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  transform: translateX(0.5px); /* nudge right arrow */
+}
     /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
     .qv-meta p{ margin:.35rem 0; }
