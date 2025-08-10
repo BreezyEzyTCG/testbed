@@ -1,1167 +1,2333 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
   <title>BreezyEzy!</title>
 
+
+
   <!-- Google Font: Poetsen One (for brand title) -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
+
+
   <style>
+
     :root{
+
       --icon-color-default:#ddeaef;
+
       --icon-color-active:#789cac;
 
+
+
       --shell:#58747c;
+
       --fg:#ffffff;
+
       --chip-bg:#072a54;
+
       --chip-fg:#fff;
+
       --accent:#ef4444;
 
+
+
       /* Quickview (light) */
+
       --qv-bg:#ffffff;
+
       --qv-fg:#111827;
+
       --qv-muted:#666;
+
       --qv-border:#eee;
+
       --qv-panel:#f7f7f7;
+
       --qv-thumb-border:#789cac;
 
+
+
       /* Controls contrast (light) */
+
       --qv-ctl:#262c2f;
+
     }
+
     @media (prefers-color-scheme: dark){
+
       :root{
+
         --qv-bg:#1f2937;
+
         --qv-fg:#e5e7eb;
+
         --qv-muted:#a3a3a3;
+
         --qv-border:#374151;
+
         --qv-panel:#0b0f14;
+
         --qv-thumb-border:#93c5fd;
 
+
+
         /* Controls contrast (dark) */
+
         --qv-ctl:#f8f9f9;
+
       }
+
     }
+
+
 
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
 
+
+
     /* ================== HERO HEADER ================== */
+
     .site-shell{
+
       position:sticky; top:0; z-index:20;
+
       background:var(--shell);
+
       box-shadow:0 2px 10px rgba(0,0,0,.08);
+
     }
+
     .shell-pad{ padding:10px 12px 0; }
 
+
+
     .hero{
+
       position:relative;
+
       height:clamp(160px, 28vw, 260px);
+
       border-radius:14px; overflow:hidden;
+
       background-image:url("assets/images/Breezy%20Banner.png");
+
       background-size:cover; background-position:center 30%;
+
     }
+
     .hero::before{
+
       content:""; position:absolute; inset:0;
+
       background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
+
       pointer-events:none;
+
     }
+
+
 
     /* Cart chip on banner (top-right) */
+
     .topbar{
+
       position:absolute; top:10px; right:12px;
+
       display:flex; align-items:center; gap:.5rem; z-index:5;
+
     }
+
     .cart-link{
+
       position:relative; display:inline-flex; align-items:center; gap:.5rem;
+
       color:var(--chip-fg); text-decoration:none; background:var(--chip-bg);
+
       padding:.55rem .85rem; border-radius:.7rem; font-weight:700; white-space:nowrap;
+
     }
+
     .cart-link img{ width:20px; height:20px; display:block;
+
       filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%);
+
     }
+
     .cart-count{
+
       position:absolute; top:-6px; right:-6px; min-width:10px; height:20px; padding:0 6px;
+
       background:#1bb9df; color:#f5f5f5; border:2px solid #ffffff; border-radius:999px;
+
       font-size:.75rem; line-height:16px; display:flex; align-items:center; justify-content:center;
+
       font-weight:800; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.18);
+
     }
+
     @media (min-width:768px){
+
       .cart-link img{ width:22px; height:22px; }
+
       .cart-count{ top:-7px; right:-7px; min-width:22px; height:22px; line-height:18px; }
+
     }
+
+
 
     /* Centered brand block */
+
     .brand-center{
+
       position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
+
       text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
+
     }
+
     .brand-title{
+
       margin:0; line-height:1.1; font-weight:800;
+
       font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
       font-size:32px; text-shadow:0 2px 10px rgba(0,0,0,.35);
+
     }
+
     .brand-subtitle{
+
       margin:.35rem 0 0 0; opacity:.95; font-size:clamp(1rem, 3vw, 1.2rem);
+
       text-shadow:0 1px 6px rgba(0,0,0,.35);
+
     }
+
+
 
     /* ========= Filter/search bar ========= */
+
     .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+
     .search-row{ max-width:1200px; margin:0 auto 10px; display:flex; justify-content:center; }
+
     #search{
+
       padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff; width:420px;
+
     }
+
     .filter-grid{
+
       max-width:1200px; margin:0 auto; display:grid; gap:0.5rem;
+
       grid-template-columns: repeat(4, minmax(0, 1fr));
+
     }
+
     .filter-grid select{
+
       width:100%; padding:0.55rem 0.65rem; border-radius:8px;
+
       border:1px solid rgba(255,255,255,.3); background:#ffffff; color:#111;
+
       box-shadow:0 2px 6px rgba(0,0,0,.06);
+
     }
+
     @media (max-width:1023.98px){ .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
     @media (max-width:767.98px){ #search{ width:100%; max-width:60vw; } }
 
+
+
     /* ================== Controls ================== */
+
     .controls{
+
       display:flex; justify-content:flex-end; align-items:center; gap:0.75rem;
+
       margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
+
     }
+
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
+
     .layout-button{ background:transparent; border:none; padding:0.5rem; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
+
     .layout-button:active{ transform:scale(0.96); }
+
     .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
+
     .layout-button.single svg{ width:30px; height:30px; }
+
     .layout-button.active svg{ fill:var(--icon-color-active); }
 
+
+
     /* ================== Cards ================== */
+
     .card-container{
+
       display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+
       gap:1.5rem; max-width:1200px; margin:1.25rem auto 2rem; padding:0 1rem; transition:all .3s ease;
+
     }
+
     .card-container.grid-1{ grid-template-columns:repeat(1,1fr); }
+
     .card-container.grid-2{ grid-template-columns:repeat(2,1fr); }
+
     .card-container.grid-3{ grid-template-columns:repeat(3,1fr); }
 
+
+
     .card{
+
       position:relative; background:#fff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,.08);
+
       overflow:hidden; display:flex; flex-direction:column; padding:1rem; text-align:center;
+
     }
+
     .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; cursor:zoom-in; }
 
+
+
     .title-block{ min-height:calc(2 * 1.2em + 3 * 1.3em); }
+
     .card-title{
+
       font-size:clamp(1.05rem, 1.2vw + .9rem, 1.20rem);
+
       margin:0.25rem 0; line-height:1.2; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
+
       overflow-wrap:anywhere; word-break:break-word;
+
     }
+
     @media (max-width:767.98px){
+
       .card-title{ -webkit-line-clamp:2; font-size:clamp(.95rem, 4.6vw, 1.10rem); }
+
     }
+
+
 
     .series-name{
+
       font-size:0.75rem; color:#555; margin:0.2rem 0 0.6rem; font-style:italic;
+
       display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+
       line-height:1.3; min-height:calc(3 * 1.3em);
+
     }
+
+
 
     .card-info{ min-height: calc(4 * (1.3em + 0.5rem)); display:flex; flex-direction:column; justify-content:flex-start; }
+
     .price,.rarity,.condition,.stock{
+
       font-size:0.88rem; line-height:1.3; margin:0.25rem 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+
     }
+
+
 
     .badge{
+
       position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold;
+
       border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1;
+
     }
+
     .badge.sale{ background:#e02424; color:#fff; }
+
     .badge.popular{ background:#ffcc00; color:#000; }
+
     .badge.new{ background:#2fbf71; color:#f8f9fb; }
 
+
+
     .product-actions{ margin-top:auto; }
+
     button{
+
       margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff;
+
       border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s;
+
     }
+
+
 
     .container-panel{
+
       max-width:1200px; margin:0 auto 2rem; padding:0 0 1rem;
+
       background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05);
+
     }
+
+
 
     /* ================== Mobile tweaks ================== */
+
     @media (max-width:767.98px){
+
       .controls{ justify-content:flex-end; }
+
       .grid-toggle{ gap:0.15rem !important; }
+
       .grid-toggle > .layout-button{ padding:0.25rem !important; margin:0 !important; }
+
       .grid-toggle > .layout-button svg{ width:22px; height:22px; }
+
       .layout-button.triple{ display:none; } /* no 3-grid on mobile */
+
     }
+
     @media (min-width:768px){ .layout-button.single{ display:none; } }
 
+
+
     /* Robust disabled */
+
     .product-actions button[disabled], button[disabled]{
+
       background:#cbd5e1 !important; color:#6b7280 !important;
+
       cursor:not-allowed !important; pointer-events:none; box-shadow:none !important;
+
       transform:none !important; opacity:1 !important;
+
     }
+
+
 
     /* Toast */
+
     #toast {
+
       display:none; position:fixed; bottom:10px; right:10px;
+
       background:#e31996; color:#f5f5f5; padding:10px 15px; border-radius:5px;
+
       z-index:1000; opacity:0; transition:opacity 0.5s ease;
+
     }
+
     #toast.show { display:block; opacity:1; }
 
+
+
     /* ================== QUICKVIEW STYLES ================== */
+
     .qv-backdrop{
+
       position:fixed; inset:0; background:rgba(0,0,0,.55);
+
       display:none; align-items:center; justify-content:center;
+
       z-index:10000;
+
     }
+
     .qv-backdrop.open{ display:flex; }
+
     .qv-modal{
+
       background:var(--qv-bg); color:var(--qv-fg);
+
       width:min(1000px, 96vw); max-height:92vh;
+
       border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.25);
+
       display:grid; grid-template-columns:1fr; grid-template-rows:auto 1fr;
+
       border:1px solid var(--qv-border);
+
     }
+
     .qv-header{
+
       display:flex; align-items:center; justify-content:space-between;
+
       padding:10px 14px; border-bottom:1px solid var(--qv-border);
+
       background:transparent;
+
     }
+
     .qv-title{ margin:0; font-size:1.05rem; line-height:1.2; }
+
     #qvSeries {
+
       margin-bottom: 0.5rem; /* adds space after series name */
+
     }
-    
+
+
+
     #qvSeries small {
+
       display: inline-block;
+
     }
+
+
 
     .qv-close{
+
       background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer;
+
       color:var(--qv-ctl);
-    }
-    .qv-body{
-      display:grid; grid-template-columns:1fr; gap:14px;
-      padding:12px; overflow:auto; background:transparent;
-    }
-    @media (min-width:900px){
-      .qv-body{ grid-template-columns:58% 42%; }
+
     }
 
-    /* Gallery */
-    .qv-gallery{ position:relative; user-select:none; }
-    .qv-main{
-      position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden;
-      display:flex; align-items:center; justify-content:center; height:min(60vh, 520px);
-      touch-action:none; /* allows custom pan/pinch */
+    .qv-body{
+
+      display:grid; grid-template-columns:1fr; gap:14px;
+
+      padding:12px; overflow:auto; background:transparent;
+
     }
+
+    @media (min-width:900px){
+
+      .qv-body{ grid-template-columns:58% 42%; }
+
+    }
+
+
+
+    /* Gallery */
+
+    .qv-gallery{ position:relative; user-select:none; }
+
+    .qv-main{
+
+      position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden;
+
+      display:flex; align-items:center; justify-content:center; height:min(60vh, 520px);
+
+      touch-action:none; /* allows custom pan/pinch */
+
+    }
+
     .qv-main img{
+
       max-width:100%; max-height:100%; object-fit:contain; display:block;
+
       transition:transform .06s ease; cursor:zoom-in;
+
       /* Important: we zoom from top-left to make the math stable */
+
       transform-origin: 0 0;
+
        -webkit-user-drag: none;  /* Chrome/Safari */
+
   user-select: none;        /* avoid text/image selection */
+
   pointer-events: auto;     /* make sure we still get events */
+
 }
+
+
 
   /* --- Quickview mobile viewport fixes --- */
 
+
+
 /* Use dynamic viewport units so the modal isn't clipped by the URL bar */
+
 @supports (height: 1dvh) {
+
   .qv-modal{
+
     max-height: min(92dvh, 92vh);
+
   }
+
   .qv-main{
+
     height: min(52dvh, 520px);
+
   }
+
 }
+
+
 
 /* Smooth scrolling in the modal body on iOS/Android */
+
 .qv-body{
+
   -webkit-overflow-scrolling: touch;
+
 }
+
+
 
 /* Respect notches/home indicator areas */
+
 .qv-backdrop{
+
   padding-bottom: max(env(safe-area-inset-bottom), 8px);
+
 }
-    
+
+
+
     .qv-main.zoomed img{ cursor:move; }
+
     .qv-thumbs{
+
       display:flex; gap:8px; margin-top:10px; overflow:auto; padding-bottom:4px;
+
     }
+
     .qv-thumb{
+
       width:64px; height:64px; border:2px solid transparent; border-radius:6px;
+
       background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto;
+
     }
+
     @media (prefers-color-scheme: dark){
+
       .qv-thumb{ background:#111827; }
+
     }
+
     .qv-thumb.active{ border-color:var(--qv-thumb-border); }
+
     .qv-thumb img{ max-width:100%; max-height:100%; object-fit:contain; }
 
+
+
     .qv-nav{
+
       position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between;
+
       pointer-events:none;
+
       padding:0 4px;
+
     }
+
+
 
     /* SVG button arrows (single-asset buttons) */
+
     .qv-arrow{
+
       pointer-events:auto;
+
       background:transparent;
+
       border:none;
+
       padding:0;
+
       width:44px;
+
       height:44px;
+
       display:block;
+
       cursor:pointer;
+
     }
+
     .qv-arrow img{
+
       width:100%;
+
       height:100%;
+
       display:block;
+
       pointer-events:none; /* so taps go to the button, not the img */
+
     }
+
+
 
     /* Info column */
+
     .qv-meta small{ color:var(--qv-muted); }
+
     .qv-meta p{ 
+
       margin: .35rem 0;
+
   font-size: 0.85rem; /* adjust this value */
+
 }
+
     .qv-descwrap{ margin-top:.75rem; }
+
     .qv-desclabel{ display:block; font-weight:700; margin-bottom:.25rem; }
+
     .qv-desc{
+
       font-style:italic;
+
       margin:0;
+
       line-height:1.35; color:inherit;
+
       display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden;
+
     }
+
     .qv-cta{ margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
     .qv-price{ font-weight:700; font-size:1.1rem; margin-right:auto; }
+
     .qv-cta button[disabled]{ background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !important; }
+
     @media (prefers-color-scheme: dark){
+
       .qv-cta button[disabled]{ background:#374151 !important; color:#9ca3af !important; }
+
     }
+
+
 
     /* Focus trap helper */
+
     .qv-sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
+
+
     .qv-main img {
+
   -webkit-user-drag: none;
+
   user-select: none;
+
   pointer-events: auto;
+
 }
+
   </style>
+
 </head>
+
 <body>
 
+
+
   <!-- ===== Overlay Banner Header ===== -->
+
   <div class="site-shell">
+
     <div class="shell-pad">
+
       <div class="hero">
+
         <div class="topbar">
+
           <a class="cart-link" href="cart.html" aria-label="Cart">
+
             <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
+
             <span class="cart-count" id="cartCount">0</span>
+
           </a>
+
         </div>
+
+
 
         <div class="brand-center">
+
           <div>
+
             <h1 class="brand-title">BreezyEzyTCG</h1>
+
             <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
+
+
 
     <!-- Filter/search bar under the banner -->
+
     <div class="filter-bar">
+
       <div class="search-row">
+
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+
       </div>
+
+
 
       <div class="filter-grid">
+
         <select id="category-filter" onchange="onCategoryChange()">
+
           <option value="all">All Categories</option>
+
         </select>
+
         <select id="subcategory-filter" onchange="applyFilters()">
+
           <option value="all">All Subcategories</option>
+
         </select>
+
         <select id="rarity-filter" onchange="applyFilters()">
+
           <option value="all">All Rarity</option>
+
         </select>
+
         <select id="condition-filter" onchange="applyFilters()">
+
           <option value="all">All Conditions</option>
+
         </select>
+
       </div>
+
     </div>
+
   </div>
+
+
 
   <!-- ===== Content Panel (grid toggle + cards) ===== -->
+
   <div class="container-panel">
+
     <div class="controls">
+
       <div class="grid-toggle">
+
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
+
         </button>
+
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+
             <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
+
           </svg>
+
         </button>
+
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+
             <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+
           </svg>
+
         </button>
+
       </div>
+
     </div>
+
+
 
     <div class="card-container grid-2"></div>
+
   </div>
 
+
+
   <!-- ===== Quickview Modal ===== -->
+
   <div class="qv-backdrop" id="qvBackdrop" aria-hidden="true">
+
     <div class="qv-modal" role="dialog" aria-modal="true" aria-labelledby="qvTitle">
+
       <div class="qv-header">
+
         <h3 class="qv-title" id="qvTitle"></h3>
+
         <button class="qv-close" type="button" aria-label="Close">&times;</button>
+
       </div>
+
       <div class="qv-body">
+
         <section class="qv-gallery">
+
           <div class="qv-main" id="qvMain">
+
             <img id="qvImage" alt="Product image" />
+
             <div class="qv-nav">
+
               <button type="button" class="qv-arrow" id="qvPrev" aria-label="Previous">
+
                 <img id="qvPrevImg" alt="" />
+
               </button>
+
               <button type="button" class="qv-arrow" id="qvNext" aria-label="Next">
+
                 <img id="qvNextImg" alt="" />
+
               </button>
+
             </div>
+
           </div>
+
           <div class="qv-thumbs" id="qvThumbs"></div>
+
         </section>
+
         <section class="qv-info">
+
           <div class="qv-meta">
+
             <p class="qv-price" id="qvPrice"></p>
+
             <p id="qvSeries"><small></small></p>
+
             <p id="qvRarity"></p>
+
             <p id="qvCondition"></p>
+
             <p id="qvStock"></p>
+
             <div class="qv-descwrap">
+
               <strong class="qv-desclabel">Description:</strong>
+
               <p class="qv-desc" id="qvDesc"></p>
+
             </div>
+
           </div>
+
           <div class="qv-cta">
+
             <button id="qvAdd" type="button">Add to Cart</button>
+
           </div>
+
           <span class="qv-sr-only" id="qvFocusStart" tabindex="0"></span>
+
           <span class="qv-sr-only" id="qvFocusEnd" tabindex="0"></span>
+
         </section>
+
       </div>
+
     </div>
+
   </div>
+
+
 
   <div id="toast"></div>
 
+
+
   <script>
+
     let allProducts = [];
+
+
 
     const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
 
+
+
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
+
+
     let toastHideTimer = null;
+
     function showToast(msg, duration = 3000) {
+
       const toast = document.getElementById("toast");
+
       toast.textContent = msg;
+
       toast.style.display = "block";
+
       toast.classList.remove("show");
+
       void toast.offsetWidth;
+
       toast.classList.add("show");
+
       if (toastHideTimer) clearTimeout(toastHideTimer);
+
       toastHideTimer = setTimeout(() => {
+
         toast.classList.remove("show");
+
         const done = (e) => {
+
           if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
+
             toast.style.display = "none";
+
             toast.removeEventListener("transitionend", done);
+
           }
+
         };
+
         toast.addEventListener("transitionend", done);
+
       }, duration);
+
     }
+
+
 
     function safeNumber(val, fallback=0){
+
       if (typeof val === "number" && Number.isFinite(val)) return val;
+
       const n = parseFloat(val);
+
       return Number.isFinite(n) ? n : fallback;
+
     }
+
+
 
     /* ---- Cart helpers ---- */
+
     function getCart(){
+
       try{ return JSON.parse(localStorage.getItem("cart") || "[]"); }
+
       catch{ return []; }
+
     }
+
     function getCartCount(){
+
       return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
+
     }
+
     function updateCartCount(){
+
       const el = document.getElementById("cartCount");
+
       if (el) el.textContent = String(getCartCount());
+
     }
+
+
 
     function addToCart(name, price, image_url){
+
       const cart = getCart();
+
       const found = cart.find(i => i.name === name);
+
       if(found) found.quantity += 1;
+
       else cart.push({ name, price, quantity:1, image:image_url });
+
       localStorage.setItem("cart", JSON.stringify(cart));
+
       updateCartCount();
-      showToast(${name} added to cart!);
+
+      showToast(`${name} added to cart!`);
+
     }
+
+
 
     /* -------- CSV parser that handles quotes/commas -------- */
+
     function parseCSV(text){
+
       const lines = text.replace(/\r/g,'').split('\n').filter(l => l.length);
+
       return lines.map(line => {
+
         const out = []; let cur = ''; let inQuotes = false;
+
         for(let i=0;i<line.length;i++){
+
           const c = line[i];
+
           if(c === '"'){
+
             if(inQuotes && line[i+1] === '"'){ cur+='"'; i++; }
+
             else inQuotes = !inQuotes;
+
           }else if(c === ',' && !inQuotes){
+
             out.push(cur); cur='';
+
           }else{
+
             cur += c;
+
           }
+
         }
+
         out.push(cur);
+
         return out;
+
       });
+
     }
+
+
 
     async function fetchInventoryFromSheet(){
+
   try {
+
     const res = await fetch(SHEET_CSV);
+
     const csv = await res.text();
 
+
+
     const rows = parseCSV(csv);
+
     const headers = rows.shift().map(h => h.trim().toLowerCase());
 
+
+
     allProducts = rows.map(row => {
+
       const obj = {};
+
       row.forEach((cell, i) => {
+
         const key = headers[i];
+
         const val = (cell || "").trim();
+
         if (key === "price" || key === "stock") obj[key] = safeNumber(val);
+
         else obj[key] = val;
+
       });
+
+
 
       /* Explicit fallbacks by index (0-based) */
+
       obj.category    = (row[4] || obj.category    || "").trim(); // Column E
+
       obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
 
+
+
       /* DESCRIPTION: strictly from Column O (index 14) */
+
       obj.description = (row[14] || "").trim();
 
+
+
       /* CONDITION at Column H (index 7) */
+
       obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
 
+
+
       /* Extra images by header or index (L=11, M=12, N=13) */
+
       obj.back  = (obj.back  || row[11] || "").trim();
+
       obj.img2  = (obj.img2  || row[12] || "").trim();
+
       obj.img3  = (obj.img3  || row[13] || "").trim();
 
+
+
       return obj;
+
     });
 
+
+
     populateAllDropdowns();
+
     renderStore(allProducts);
+
     enforceResponsiveGrid();
+
   } catch(e) {
+
     console.error(e);
+
     document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+
   }
+
 }
 
+
+
     function getBadgeInfo(raw){
+
       if(!raw) return null;
+
       const t = String(raw).trim().toLowerCase();
+
       if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
+
       if(t === "new") return { cls:"new", label:"NEW" };
+
       if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
+
       return null;
+
     }
+
+
 
     function renderStore(list){
+
       const container = document.querySelector(".card-container");
+
       container.innerHTML = "";
 
+
+
       list.forEach((p) => {
+
         const stock = safeNumber(p.stock, 0);
+
         const price = safeNumber(p.price, 0);
+
         const out = stock <= 0;
 
+
+
         const badge = getBadgeInfo(p.badge);
+
         const safeName = String(p.name || "").replace(/'/g, "\\'");
+
         const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
 
+
+
         const btnAttrs = out
-          ? disabled aria-disabled="true" tabindex="-1"
-          : onclick="addToCart('${safeName}', ${price}, '${safeImg}')";
+
+          ? `disabled aria-disabled="true" tabindex="-1"`
+
+          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
+
+
 
         const card = document.createElement("div");
+
         card.className = "card";
-        card.innerHTML = 
-          ${badge ? <div class="badge ${badge.cls}">${badge.label}</div> : `}
+
+        card.innerHTML = `
+
+          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
+
           <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
+
           <div class="title-block">
+
             <h3 class="card-title">${p.name || ""}</h3>
+
             <p class="series-name">${p["series name"] || ""}</p>
+
           </div>
+
           <div class="card-info">
+
             <p class="price">$${price.toFixed(2)}</p>
+
             <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
+
             <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
+
             <p class="stock"><strong>Stock:</strong> ${stock}</p>
+
           </div>
+
           <div class="product-actions">
+
             <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
+
           </div>
-        ;
+
+        `;
+
         container.appendChild(card);
+
       });
+
     }
+
+
 
     /* ---------- Dropdown population ---------- */
+
     const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
+
+
     function populateAllDropdowns(){
+
       const catSel = document.getElementById("category-filter");
+
       catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+
       byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
+
         const opt = document.createElement("option"); opt.value = c; opt.textContent = c; catSel.appendChild(opt);
+
       });
+
+
 
       const rarSel = document.getElementById("rarity-filter");
+
       rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+
       byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
+
         const opt = document.createElement("option"); opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
+
       });
+
+
 
       const conSel = document.getElementById("condition-filter");
+
       conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+
       byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
+
         const opt = document.createElement("option"); opt.value = c; opt.textContent = c; conSel.appendChild(opt);
+
       });
+
+
 
       updateSubcategoryOptions();
+
     }
+
+
 
     function updateSubcategoryOptions(){
+
       const cat = document.getElementById("category-filter").value;
+
       const subSel = document.getElementById("subcategory-filter");
 
+
+
       const pool = (cat === "all") ? allProducts : allProducts.filter(p => p.category === cat);
+
       const subs = byUniqueSorted(pool.map(p => p.subcategory));
 
+
+
       const current = subSel.value;
+
       subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
+
       subs.forEach(s => {
+
         const opt = document.createElement("option"); opt.value = s; opt.textContent = s; subSel.appendChild(opt);
+
       });
 
+
+
       if (current !== "all" && subs.includes(current)) subSel.value = current;
+
       else subSel.value = "all";
+
     }
+
+
 
     function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
 
+
+
     /* ---------- Filtering ---------- */
+
     function applyFilters(){
+
       const kw   = document.getElementById("search").value.toLowerCase();
+
       const cat  = document.getElementById("category-filter").value;
+
       const sub  = document.getElementById("subcategory-filter").value;
+
       const rar  = document.getElementById("rarity-filter").value;
+
       const cond = document.getElementById("condition-filter").value;
 
+
+
       const filtered = allProducts.filter(p =>
+
         (p.name || "").toLowerCase().includes(kw) &&
+
         (cat === "all" || p.category === cat) &&
+
         (sub === "all" || p.subcategory === sub) &&
+
         (rar === "all" || p.rarity === rar) &&
+
         (cond === "all" || p.condition === cond)
+
       );
+
       renderStore(filtered);
+
     }
+
+
 
     function activateButton(type){
+
       document.querySelectorAll(".layout-button").forEach(b => b.classList.remove("active"));
+
       if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
+
       if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
+
       if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
+
     }
+
+
 
     function setGridView(type){
+
       if(isMobile() && type === 3) return;
+
       if(!isMobile() && type === 1) return;
+
       const cont = document.querySelector(".card-container");
+
       cont.classList.remove("grid-1","grid-2","grid-3");
-      cont.classList.add(grid-${type});
+
+      cont.classList.add(`grid-${type}`);
+
       activateButton(type);
+
       applyFilters();
+
     }
+
+
 
     function enforceResponsiveGrid(){
+
       const cont = document.querySelector(".card-container");
+
       if(isMobile() && cont.classList.contains("grid-3")) setGridView(2);
+
       else if(!isMobile() && cont.classList.contains("grid-1")) setGridView(2);
+
     }
+
+
 
     /* === Title auto-fit === */
+
     function fitCardTitles(root = document){
+
       const titles = root.querySelectorAll('.card-title');
+
       titles.forEach(el => {
+
         el.style.fontSize = '';
+
         const style = getComputedStyle(el);
+
         const clamp = parseInt(style.getPropertyValue('-webkit-line-clamp') || '2', 10);
+
         const maxH = parseFloat(style.lineHeight) * clamp;
+
         el.style.maxHeight = maxH + 'px';
+
         let current = parseFloat(style.fontSize); const floor = 12;
+
         while ((el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && current > floor){
+
           current -= 0.5; el.style.fontSize = current + 'px';
+
         }
+
       });
+
     }
 
+
+
     /* Wrap renderStore once: track list + fit titles */
+
     let __lastRendered = [];
+
     const __renderOriginal = renderStore;
+
     renderStore = function(list){
+
       __lastRendered = list.slice();
+
       __renderOriginal(list);
+
       requestAnimationFrame(() => fitCardTitles(document));
+
     };
+
     function getCurrentRenderedList(){ return __lastRendered; }
+
+
 
     /* ================== QUICKVIEW ================== */
 
+
+
     /* Zoom settings */
+
     const MIN_ZOOM = 1;            // fit to screen
+
     const PREFERRED_ZOOM = 1.7;    // nice middle spot for cards
+
     const MAX_ZOOM = 4;
 
+
+
     // --- click/drag guards + double-tap support ---
+
 let isPanning = false;
+
 let movedSincePointerDown = false;
+
 let lastTapTime = 0;
+
 const DOUBLE_TAP_MS = 280;
 
+
+
 function isDoubleTap() {
+
   const now = Date.now();
+
   const ok = (now - lastTapTime) < DOUBLE_TAP_MS;
+
   lastTapTime = now;
+
   return ok;
+
 }
+
+
+
 
 
     const qv = {
+
       open:false, index:0, images:[], product:null,
+
       backdrop:null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
+
       main:null, img:null, thumbs:null, prev:null, next:null, addBtn:null, closeBtn:null,
+
       zoom:{ scale: MIN_ZOOM, levels:[MIN_ZOOM, PREFERRED_ZOOM, 2.5, 3.5] }
+
     };
 
+
+
     function buildImagesArray(p){
+
       const arr = [p.image_url, p.back, p.img2, p.img3].filter(Boolean);
+
       return [...new Set(arr)];
+
     }
+
+
 
     /* pick correct arrow assets for theme */
+
     const lightLeft  = "assets/images/arrow-button-left-2-svgrepo-com.svg";
+
     const lightRight = "assets/images/arrow-button-right-2-svgrepo-com.svg";
+
     const darkLeft   = "assets/images/white-arrow-button-left-2-svgrepo-com.svg";
+
     const darkRight  = "assets/images/white-arrow-button-right-2-svgrepo-com.svg";
 
+
+
     function applyArrowTheme(){
+
       const mql = window.matchMedia("(prefers-color-scheme: dark)");
+
       const isDark = mql.matches;
+
       const prevImg = document.getElementById("qvPrevImg");
+
       const nextImg = document.getElementById("qvNextImg");
+
       if(prevImg) prevImg.src = isDark ? darkLeft : lightLeft;
+
       if(nextImg) nextImg.src = isDark ? darkRight : lightRight;
+
     }
 
+
+
     function setupQuickview(){
+
   qv.backdrop = document.getElementById('qvBackdrop');
+
   qv.modal    = qv.backdrop.querySelector('.qv-modal');
+
   qv.title    = document.getElementById('qvTitle');
+
   qv.price    = document.getElementById('qvPrice');
+
   qv.series   = document.getElementById('qvSeries').querySelector('small');
+
   qv.rarity   = document.getElementById('qvRarity');
+
   qv.condition= document.getElementById('qvCondition');
+
   qv.stock    = document.getElementById('qvStock');
+
   qv.desc     = document.getElementById('qvDesc');
+
   qv.main     = document.getElementById('qvMain');
+
   qv.img      = document.getElementById('qvImage');
+
   qv.thumbs   = document.getElementById('qvThumbs');
+
   qv.prev     = document.getElementById('qvPrev');
+
   qv.next     = document.getElementById('qvNext');
+
   qv.addBtn   = document.getElementById('qvAdd');
+
   qv.closeBtn = qv.backdrop.querySelector('.qv-close');
 
+
+
   // prevent native image drag (desktop)
+
   qv.img.setAttribute('draggable', 'false');
+
   qv.img.addEventListener('dragstart', e => e.preventDefault());
 
+
+
   // set arrow images for current theme and listen for changes
+
   applyArrowTheme();
+
   const mql = window.matchMedia("(prefers-color-scheme: dark)");
+
   if (mql.addEventListener) mql.addEventListener("change", applyArrowTheme);
+
   else if (mql.addListener) mql.addListener(applyArrowTheme); // Safari fallback
 
+
+
   qv.closeBtn.addEventListener('click', closeQuickview);
+
   qv.backdrop.addEventListener('click', (e)=>{ if(e.target === qv.backdrop) closeQuickview(); });
+
   document.addEventListener('keydown', (e)=>{
+
     if(!qv.open) return;
+
     if(e.key === 'Escape') closeQuickview();
+
     if(e.key === 'ArrowLeft') showSlide(qv.index - 1);
+
     if(e.key === 'ArrowRight') showSlide(qv.index + 1);
+
   });
 
+
+
   /* ---------- Zoom/Pan Core ---------- */
+
   let isPanning = false, movedSincePointerDown = false;
+
   let startX = 0, startY = 0;
+
   let transX = 0, transY = 0;
+
+
 
   function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
+
+
   function applyTransform(){
+
     if(qv.zoom.scale <= MIN_ZOOM + 1e-3){
-      qv.img.style.transform = translate(0px,0px) scale(${MIN_ZOOM});
+
+      qv.img.style.transform = `translate(0px,0px) scale(${MIN_ZOOM})`;
+
       qv.main.classList.remove('zoomed');
+
       qv.img.style.cursor = 'zoom-in';
+
     }else{
-      qv.img.style.transform = translate(${transX}px, ${transY}px) scale(${qv.zoom.scale});
+
+      qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+
       qv.main.classList.add('zoomed');
+
       qv.img.style.cursor = 'move';
+
     }
+
   }
+
+
 
   function setZoomAtPoint(newScale, clientX, clientY){
+
     const rect = qv.main.getBoundingClientRect();
+
     const cx = clamp(clientX - rect.left, 0, rect.width);
+
     const cy = clamp(clientY - rect.top,  0, rect.height);
 
+
+
     const prev = qv.zoom.scale;
+
     newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
 
+
+
     // Keep the point under cursor fixed (transform-origin at 0 0)
+
     const dx = (cx - transX) / prev;
+
     const dy = (cy - transY) / prev;
+
     transX = cx - dx * newScale;
+
     transY = cy - dy * newScale;
 
+
+
     qv.zoom.scale = newScale;
+
     applyTransform();
+
   }
+
+
 
   function setZoom(newScale){
+
     const rect = qv.main.getBoundingClientRect();
+
     setZoomAtPoint(newScale, rect.left + rect.width/2, rect.top + rect.height/2);
+
   }
+
+
 
   function resetToFit(){
+
     transX = 0; transY = 0;
+
     qv.zoom.scale = MIN_ZOOM;
+
     applyTransform();
+
   }
+
+
 
   function cycleZoomAt(x, y){
+
     const levels = qv.zoom.levels; // [1, preferred, 2.5, 3.5]
+
     const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.01);
+
     const next = levels[(idx + 1) % levels.length];
+
     if (typeof x === 'number' && typeof y === 'number') {
+
       setZoomAtPoint(next, x, y);
+
     } else {
+
       setZoom(next);
+
     }
+
   }
+
+
 
   /* ----- Mouse wheel zoom (desktop / trackpad) ----- */
+
   qv.main.addEventListener('wheel', (e)=>{
+
     // Ignore browser page zoom (ctrl/cmd + wheel)
+
     if (e.ctrlKey) return;
+
     e.preventDefault();
+
     const factor = e.deltaY < 0 ? 1.12 : 0.89;
+
     const targetScale = qv.zoom.scale * factor;
+
     setZoomAtPoint(targetScale, e.clientX, e.clientY);
+
   }, { passive:false });
 
+
+
   /* ----- Pan with mouse/touch (when zoomed) ----- */
+
   function startPan(e){
+
     if (e.target.closest('.qv-arrow')) return;
+
     if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+
     isPanning = true;
+
     movedSincePointerDown = false;
+
     const p = (e.touches?.[0])
+
       ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+
       : {x:e.clientX, y:e.clientY};
+
     startX = p.x - (transX ?? 0);
+
     startY = p.y - (transY ?? 0);
+
     e.preventDefault();
+
   }
+
   function doPan(e){
+
     if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
+
     const p = (e.touches?.[0])
+
       ? {x:e.touches[0].clientX, y:e.touches[0].clientY}
+
       : {x:e.clientX, y:e.clientY};
+
     transX = p.x - startX;
+
     transY = p.y - startY;
-    qv.img.style.transform = translate(${transX}px, ${transY}px) scale(${qv.zoom.scale});
+
+    qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+
     movedSincePointerDown = true;
+
     e.preventDefault();
+
   }
+
   function endPan(){ isPanning = false; }
 
+
+
   // Bind pan to container
+
   qv.main.addEventListener('mousedown', startPan);
+
   qv.main.addEventListener('mousemove', doPan);
+
   qv.main.addEventListener('mouseup', endPan);
+
   qv.main.addEventListener('mouseleave', endPan);
+
   qv.main.addEventListener('touchstart', startPan, {passive:false});
+
   qv.main.addEventListener('touchmove',  doPan,   {passive:false});
+
   qv.main.addEventListener('touchend',   endPan);
 
+
+
   // Bind pan to the image itself (important for desktop)
+
   qv.img.addEventListener('mousedown', startPan);
+
   qv.img.addEventListener('mousemove', doPan);
+
   qv.img.addEventListener('mouseup', endPan);
+
   qv.img.addEventListener('mouseleave', endPan);
+
   qv.img.addEventListener('touchstart', startPan, {passive:false});
+
   qv.img.addEventListener('touchmove',  doPan,   {passive:false});
+
   qv.img.addEventListener('touchend',   endPan);
 
+
+
   /* ----- Touch: pinch to zoom + one-finger pan + swipe to change slide ----- */
+
   let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
 
+
+
   // swipe state (only when not zoomed)
+
   const SWIPE_THRESHOLD = 40;  // px
+
   let swipeActive = false, swipeStartX = 0, swipeStartY = 0, swipeCurrX = 0, swipeCurrY = 0;
 
+
+
   function distance(t1, t2){
+
     const dx = t2.clientX - t1.clientX;
+
     const dy = t2.clientY - t1.clientY;
+
     return Math.hypot(dx, dy);
+
   }
+
   function midpoint(t1, t2){
+
     return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
+
   }
+
+
 
   // Override the container touch handlers to add pinch + swipe logic
+
   qv.main.addEventListener('touchstart', (e)=>{
+
     if(e.touches.length === 2){
+
       pinchActive = true;
+
       pinchStartDist = distance(e.touches[0], e.touches[1]);
+
       pinchStartScale = qv.zoom.scale;
+
       swipeActive = false; // cancel swipe
+
       e.preventDefault();
+
       return;
+
     }
+
     if(e.touches.length === 1){
+
       if (qv.zoom.scale <= MIN_ZOOM + 1e-3){
+
         // not zoomed: prepare for swipe
+
         swipeActive = true;
+
         swipeStartX = swipeCurrX = e.touches[0].clientX;
+
         swipeStartY = swipeCurrY = e.touches[0].clientY;
+
       } else {
+
         // zoomed: one-finger pan
+
         swipeActive = false;
+
         startPan(e);
+
       }
+
     }
+
   }, {passive:false});
+
+
 
   qv.main.addEventListener('touchmove', (e)=>{
+
     if(pinchActive && e.touches.length === 2){
+
       const dist = distance(e.touches[0], e.touches[1]);
+
       const factor = dist / pinchStartDist;
+
       const target = clamp(pinchStartScale * factor, MIN_ZOOM, MAX_ZOOM);
+
       const mid = midpoint(e.touches[0], e.touches[1]);
+
       setZoomAtPoint(target, mid.x, mid.y);
+
       e.preventDefault();
+
       return;
+
     }
+
+
 
     if (e.touches.length === 1){
+
       if (swipeActive){
+
         swipeCurrX = e.touches[0].clientX;
+
         swipeCurrY = e.touches[0].clientY;
+
         const dx = swipeCurrX - swipeStartX;
+
         const dy = swipeCurrY - swipeStartY;
+
         // If mostly horizontal, prevent vertical page scroll during swipe
+
         if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+
       } else {
+
         // zoomed: keep panning
+
         doPan(e);
+
       }
+
     }
+
   }, {passive:false});
 
+
+
   qv.main.addEventListener('touchend', (e)=>{
+
     if(e.touches.length < 2) pinchActive = false;
 
+
+
     if (swipeActive){
+
       const dx = swipeCurrX - swipeStartX;
+
       const dy = swipeCurrY - swipeStartY;
+
       if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)){
+
         // swipe left -> next; swipe right -> previous
-        if (dx < 0) showSlide(qv.index - 1);
+
+        if (dx < 0) showSlide(qv.index - 1)
         else        showSlide(qv.index + 1)
+
+
           
+
         e.preventDefault();
+
       }
+
       swipeActive = false;
+
       return;
+
     }
 
+
+
     if(e.touches.length === 0) endPan();
+
   });
+
+
 
   // Double‑click / double‑tap to cycle zoom at the tapped point
+
   qv.main.addEventListener('dblclick', (e) => {
+
     e.preventDefault();
+
     cycleZoomAt(e.clientX, e.clientY);
+
   });
 
+
+
   // Prev/Next (stop propagation so clicks don't trigger zoom)
+
   const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
+
   const onNext = (e)=>{ e.stopPropagation(); showSlide(qv.index + 1); };
+
   qv.prev.addEventListener('click', onPrev);
+
   qv.next.addEventListener('click', onNext);
 
+
+
   // expose helpers for other parts of the code
+
   qv._resetToFit = resetToFit;
+
   qv._applyTransform = applyTransform;
+
   qv._setZoom = setZoom;
+
 }
 
+
+
     function openQuickview(product){
+
       qv.product = product;
+
       qv.images = buildImagesArray(product);
+
       qv.index = 0;
 
+
+
       qv.title.textContent = product.name || '';
-      qv.price.textContent = (Number.isFinite(product.price) ? $${Number(product.price).toFixed(2)} : '');
+
+      qv.price.textContent = (Number.isFinite(product.price) ? `$${Number(product.price).toFixed(2)}` : '');
+
       qv.series.textContent = product['series name'] || '';
-      qv.rarity.textContent = product.rarity ? Rarity: ${product.rarity} : '';
-      qv.condition.textContent = product.condition ? Condition: ${product.condition} : '';
-      qv.stock.textContent = Number.isFinite(product.stock) ? Stock: ${product.stock} : '';
+
+      qv.rarity.textContent = product.rarity ? `Rarity: ${product.rarity}` : '';
+
+      qv.condition.textContent = product.condition ? `Condition: ${product.condition}` : '';
+
+      qv.stock.textContent = Number.isFinite(product.stock) ? `Stock: ${product.stock}` : '';
+
+
 
       // Description with fallback + line breaks
+
       // Description: show "-" if Column G is empty
+
       const desc = (product.description || "").trim();
+
       document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
 
 
+
+
+
       // CTA + stock state (already matches main page)
+
       const out = safeNumber(product.stock, 0) <= 0;
+
       qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
+
       qv.addBtn.disabled = out;
+
       qv.addBtn.onclick = out ? null : () =>
+
         addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
 
+
+
       // Thumbnails
+
       qv.thumbs.innerHTML = '';
+
       qv.images.forEach((src, i) => {
+
         const t = document.createElement('button');
+
         t.type = 'button';
+
         t.className = 'qv-thumb' + (i===0 ? ' active':'');
-        t.innerHTML = <img src="${src}" alt="thumbnail ${i+1}">;
+
+        t.innerHTML = `<img src="${src}" alt="thumbnail ${i+1}">`;
+
         t.addEventListener('click', (e)=>{ e.stopPropagation(); showSlide(i); });
+
         qv.thumbs.appendChild(t);
+
       });
+
+
 
       showSlide(0);
 
+
+
       // Start at fit; users can scroll/pinch to zoom or click to cycle
+
       if(qv._resetToFit) qv._resetToFit();
+
+
 
       // Open
+
       qv.backdrop.classList.add('open');
+
       qv.backdrop.setAttribute('aria-hidden', 'false');
+
       qv.open = true;
+
       document.body.style.overflow='hidden';
+
       qv.closeBtn.focus();
+
     }
+
+
 
     function closeQuickview(){
+
       qv.open = false;
+
       qv.backdrop.classList.remove('open');
+
       qv.backdrop.setAttribute('aria-hidden','true');
+
       document.body.style.overflow='';
+
       if(qv._resetToFit) qv._resetToFit();
+
     }
+
+
 
     function showSlide(i){
+
       if(qv.images.length === 0) return;
+
       if(i < 0) i = qv.images.length - 1;
+
       if(i >= qv.images.length) i = 0;
+
       qv.index = i;
+
       qv.img.src = qv.images[i];
+
       if(qv._resetToFit) qv._resetToFit();
+
       [...qv.thumbs.children].forEach((el, idx)=> el.classList.toggle('active', idx===i));
+
     }
+
+
 
     /* Delegate clicks from the grid to open Quickview */
+
     function attachImageClickDelegation(){
+
       const container = document.querySelector('.card-container');
+
       if(!container) return;
+
       container.addEventListener('click', (e)=>{
+
         const img = e.target.closest('img');
+
         if(!img || !container.contains(img)) return;
+
         const cards = [...container.querySelectorAll('.card img')];
+
         const clickIndex = cards.indexOf(img);
+
         const renderedList = getCurrentRenderedList();
+
         const chosen = renderedList[clickIndex];
+
         if(chosen) openQuickview(chosen);
+
       });
+
     }
+
+
 
     /* pick correct arrow assets for theme on load */
+
     function applyArrowThemeOnLoad(){
+
       applyArrowTheme();
+
     }
+
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyArrowThemeOnLoad);
 
+
+
     /* Events */
+
     window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
+
     window.addEventListener("resize", () => { enforceResponsiveGrid(); fitCardTitles(document); });
+
     window.addEventListener("orientationchange", () => { enforceResponsiveGrid(); fitCardTitles(document); });
 
+
+
     /* Init */
+
     updateCartCount();
+
     fetchInventoryFromSheet();
+
     setupQuickview();
+
     attachImageClickDelegation();
+
   </script>
+
 </body>
+
 </html>
