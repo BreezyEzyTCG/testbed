@@ -69,11 +69,13 @@
       pointer-events:none;
     }
 
-    /* Cart chip on banner (top-right) */
-    .topbar{
-      position:absolute; top:10px; right:12px;
-      display:flex; align-items:center; gap:.5rem; z-index:5;
+    /* NEW: banner top row (search left, cart right) */
+    .banner-bar{
+      position:absolute; top:10px; left:12px; right:12px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:5;
     }
+
+    /* Cart chip */
     .cart-link{
       position:relative; display:inline-flex; align-items:center; gap:.5rem;
       color:var(--chip-fg); text-decoration:none; background:var(--chip-bg);
@@ -108,12 +110,18 @@
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* ========= Filter/search bar ========= */
-    .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
-    .search-row{ max-width:1200px; margin:0 auto 10px; display:flex; justify-content:center; }
+    /* ========= Search input now lives in banner ========= */
     #search{
-      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff; width:420px;
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
+      width:210px; /* half of previous 420px */
     }
+    @media (max-width:767.98px){
+      #search{ width:100%; max-width:60vw; }
+    }
+
+    /* ========= Filter selects (unchanged) ========= */
+    .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+    /* removed .search-row – search is in banner now */
     .filter-grid{
       max-width:1200px; margin:0 auto; display:grid; gap:0.5rem;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -124,7 +132,6 @@
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
     @media (max-width:1023.98px){ .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width:767.98px){ #search{ width:100%; max-width:60vw; } }
 
     /* ================== Controls ================== */
     .controls{
@@ -134,8 +141,6 @@
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
     .layout-button{ background:transparent; border:none; padding:0.5rem; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
     .layout-button:active{ transform:scale(0.96); }
-
-    /* swapped svg → img only; sizes unchanged */
     .layout-button img{ width:24px; height:24px; }
     .layout-button.single img{ width:30px; height:30px; }
 
@@ -254,33 +259,27 @@
       .qv-body{ grid-template-columns:58% 42%; }
     }
 
-    /* Gallery */
     .qv-gallery{ position:relative; user-select:none; }
     .qv-main{
       position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden;
       display:flex; align-items:center; justify-content:center; height:min(60vh, 520px);
-      touch-action:none; /* allows custom pan/pinch */
+      touch-action:none;
     }
     .qv-main img{
       max-width:100%; max-height:100%; object-fit:contain; display:block;
       transition:transform .06s ease; cursor:zoom-in;
-      /* Important: we zoom from top-left to make the math stable */
       transform-origin: 0 0;
-       -webkit-user-drag: none;  /* Chrome/Safari */
-      user-select: none;        /* avoid text/image selection */
-      pointer-events: auto;     /* make sure we still get events */
+      -webkit-user-drag: none;
+      user-select: none;
+      pointer-events: auto;
     }
 
-  /* --- Quickview mobile viewport fixes --- */
-  /* Use dynamic viewport units so the modal isn't clipped by the URL bar */
-  @supports (height: 1dvh) {
-    .qv-modal{ max-height: min(92dvh, 92vh); }
-    .qv-main{ height: min(52dvh, 520px); }
-  }
-  /* Smooth scrolling in the modal body on iOS/Android */
-  .qv-body{ -webkit-overflow-scrolling: touch; }
-  /* Respect notches/home indicator areas */
-  .qv-backdrop{ padding-bottom: max(env(safe-area-inset-bottom), 8px); }
+    @supports (height: 1dvh) {
+      .qv-modal{ max-height: min(92dvh, 92vh); }
+      .qv-main{ height: min(52dvh, 520px); }
+    }
+    .qv-body{ -webkit-overflow-scrolling: touch; }
+    .qv-backdrop{ padding-bottom: max(env(safe-area-inset-bottom), 8px); }
 
     .qv-main.zoomed img{ cursor:move; }
     .qv-thumbs{
@@ -302,7 +301,6 @@
       padding:0 4px;
     }
 
-    /* SVG button arrows (single-asset buttons) */
     .qv-arrow{
       pointer-events:auto;
       background:transparent;
@@ -317,14 +315,13 @@
       width:100%;
       height:100%;
       display:block;
-      pointer-events:none; /* so taps go to the button, not the img */
+      pointer-events:none;
     }
 
-    /* Info column */
     .qv-meta small{ color:var(--qv-muted); }
     .qv-meta p{ 
       margin: .35rem 0;
-      font-size: 0.85rem; /* adjust this value */
+      font-size: 0.85rem;
     }
     .qv-descwrap{ margin-top:.75rem; }
     .qv-desclabel{ display:block; font-weight:700; margin-bottom:.25rem; }
@@ -336,12 +333,11 @@
     }
     .qv-cta{ margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .qv-price{ font-weight:700; font-size:1.1rem; margin-right:auto; }
-    .qv-cta button[disabled]{ background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !重要; }
+    .qv-cta button[disabled]{ background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !important; }
     @media (prefers-color-scheme: dark){
       .qv-cta button[disabled]{ background:#374151 !important; color:#9ca3af !important; }
     }
 
-    /* Focus trap helper */
     .qv-sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
     .qv-main img {
@@ -357,13 +353,20 @@
   <div class="site-shell">
     <div class="shell-pad">
       <div class="hero">
-        <div class="topbar">
+
+        <!-- New top row inside banner -->
+        <div class="banner-bar">
+          <!-- Search (left) -->
+          <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
+
+          <!-- Cart (right) -->
           <a class="cart-link" href="cart.html" aria-label="Cart">
             <img src="assets/images/cart-3-svgrepo-com.svg" alt="Cart" />
             <span class="cart-count" id="cartCount">0</span>
           </a>
         </div>
 
+        <!-- Brand in the middle -->
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
@@ -373,12 +376,8 @@
       </div>
     </div>
 
-    <!-- Filter/search bar under the banner -->
+    <!-- Filter selects under the banner (search removed here) -->
     <div class="filter-bar">
-      <div class="search-row">
-        <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
-      </div>
-
       <div class="filter-grid">
         <select id="category-filter" onchange="onCategoryChange()">
           <option value="all">All Categories</option>
@@ -701,18 +700,9 @@
 
     /* ---------- Grid toggle icons (new) ---------- */
     const ICONS = {
-      1: {
-        active:   "assets/images/single grid.svg",
-        inactive: "assets/images/inactive single grid.svg",
-      },
-      2: {
-        active:   "assets/images/2 grid view.svg",
-        inactive: "assets/images/inactive 2 grid view.svg",
-      },
-      3: {
-        active:   "assets/images/3 grid view.svg",
-        inactive: "assets/images/inactive 3 grid view.svg",
-      }
+      1: { active: "assets/images/single grid.svg",  inactive: "assets/images/inactive single grid.svg" },
+      2: { active: "assets/images/2 grid view.svg",  inactive: "assets/images/inactive 2 grid view.svg" },
+      3: { active: "assets/images/3 grid view.svg",  inactive: "assets/images/inactive 3 grid view.svg" }
     };
 
     function setToggleIcons(activeType){
@@ -733,7 +723,7 @@
       if(type === 1) document.querySelector(".layout-button.single")?.classList.add("active");
       if(type === 2) document.querySelector(".layout-button.double")?.classList.add("active");
       if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
-      setToggleIcons(type);   // update icons when the active layout changes
+      setToggleIcons(type);
     }
 
     function setGridView(type){
@@ -768,7 +758,6 @@
       });
     }
 
-    /* Wrap renderStore once: track list + fit titles */
     let __lastRendered = [];
     const __renderOriginal = renderStore;
     renderStore = function(list){
@@ -780,12 +769,10 @@
 
     /* ================== QUICKVIEW ================== */
 
-    /* Zoom settings */
-    const MIN_ZOOM = 1;            // fit to screen
-    const PREFERRED_ZOOM = 1.7;    // nice middle spot for cards
+    const MIN_ZOOM = 1;
+    const PREFERRED_ZOOM = 1.7;
     const MAX_ZOOM = 4;
 
-    // --- click/drag guards + double-tap support ---
     let isPanning = false;
     let movedSincePointerDown = false;
     let lastTapTime = 0;
@@ -810,7 +797,6 @@
       return [...new Set(arr)];
     }
 
-    /* pick correct arrow assets for theme */
     const lightLeft  = "assets/images/arrow-button-left-2-svgrepo-com.svg";
     const lightRight = "assets/images/arrow-button-right-2-svgrepo-com.svg";
     const darkLeft   = "assets/images/white-arrow-button-left-2-svgrepo-com.svg";
@@ -843,15 +829,13 @@
       qv.addBtn   = document.getElementById('qvAdd');
       qv.closeBtn = qv.backdrop.querySelector('.qv-close');
 
-      // prevent native image drag (desktop)
       qv.img.setAttribute('draggable', 'false');
       qv.img.addEventListener('dragstart', e => e.preventDefault());
 
-      // set arrow images for current theme and listen for changes
       applyArrowTheme();
       const mql = window.matchMedia("(prefers-color-scheme: dark)");
       if (mql.addEventListener) mql.addEventListener("change", applyArrowTheme);
-      else if (mql.addListener) mql.addListener(applyArrowTheme); // Safari fallback
+      else if (mql.addListener) mql.addListener(applyArrowTheme);
 
       qv.closeBtn.addEventListener('click', closeQuickview);
       qv.backdrop.addEventListener('click', (e)=>{ if(e.target === qv.backdrop) closeQuickview(); });
@@ -862,7 +846,6 @@
         if(e.key === 'ArrowRight') showSlide(qv.index - 1);
       });
 
-      /* ---------- Zoom/Pan Core ---------- */
       let isPanning = false, movedSincePointerDown = false;
       let startX = 0, startY = 0;
       let transX = 0, transY = 0;
@@ -889,7 +872,6 @@
         const prev = qv.zoom.scale;
         newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
 
-        // Keep the point under cursor fixed (transform-origin at 0 0)
         const dx = (cx - transX) / prev;
         const dy = (cy - transY) / prev;
         transX = cx - dx * newScale;
@@ -911,7 +893,7 @@
       }
 
       function cycleZoomAt(x, y){
-        const levels = qv.zoom.levels; // [1, preferred, 2.5, 3.5]
+        const levels = qv.zoom.levels;
         const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.01);
         const next = levels[(idx + 1) % levels.length];
         if (typeof x === 'number' && typeof y === 'number') {
@@ -921,9 +903,7 @@
         }
       }
 
-      /* ----- Mouse wheel zoom (desktop / trackpad) ----- */
       qv.main.addEventListener('wheel', (e)=>{
-        // Ignore browser page zoom (ctrl/cmd + wheel)
         if (e.ctrlKey) return;
         e.preventDefault();
         const factor = e.deltaY < 0 ? 1.12 : 0.89;
@@ -931,7 +911,6 @@
         setZoomAtPoint(targetScale, e.clientX, e.clientY);
       }, { passive:false });
 
-      /* ----- Pan with mouse/touch (when zoomed) ----- */
       function startPan(e){
         if (e.target.closest('.qv-arrow')) return;
         if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
@@ -957,7 +936,6 @@
       }
       function endPan(){ isPanning = false; }
 
-      // Bind pan to container
       qv.main.addEventListener('mousedown', startPan);
       qv.main.addEventListener('mousemove', doPan);
       qv.main.addEventListener('mouseup', endPan);
@@ -966,7 +944,6 @@
       qv.main.addEventListener('touchmove',  doPan,   {passive:false});
       qv.main.addEventListener('touchend',   endPan);
 
-      // Bind pan to the image itself (important for desktop)
       qv.img.addEventListener('mousedown', startPan);
       qv.img.addEventListener('mousemove', doPan);
       qv.img.addEventListener('mouseup', endPan);
@@ -975,11 +952,9 @@
       qv.img.addEventListener('touchmove',  doPan,   {passive:false});
       qv.img.addEventListener('touchend',   endPan);
 
-      /* ----- Touch: pinch to zoom + one-finger pan + swipe to change slide ----- */
       let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
 
-      // swipe state (only when not zoomed)
-      const SWIPE_THRESHOLD = 40;  // px
+      const SWIPE_THRESHOLD = 40;
       let swipeActive = false, swipeStartX = 0, swipeStartY = 0, swipeCurrX = 0, swipeCurrY = 0;
 
       function distance(t1, t2){
@@ -991,24 +966,21 @@
         return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
       }
 
-      // Override the container touch handlers to add pinch + swipe logic
       qv.main.addEventListener('touchstart', (e)=>{
         if(e.touches.length === 2){
           pinchActive = true;
           pinchStartDist = distance(e.touches[0], e.touches[1]);
           pinchStartScale = qv.zoom.scale;
-          swipeActive = false; // cancel swipe
+          swipeActive = false;
           e.preventDefault();
           return;
         }
         if(e.touches.length === 1){
           if (qv.zoom.scale <= MIN_ZOOM + 1e-3){
-            // not zoomed: prepare for swipe
             swipeActive = true;
             swipeStartX = swipeCurrX = e.touches[0].clientX;
             swipeStartY = swipeCurrY = e.touches[0].clientY;
           } else {
-            // zoomed: one-finger pan
             swipeActive = false;
             startPan(e);
           }
@@ -1032,10 +1004,8 @@
             swipeCurrY = e.touches[0].clientY;
             const dx = swipeCurrX - swipeStartX;
             const dy = swipeCurrY - swipeStartY;
-            // If mostly horizontal, prevent vertical page scroll during swipe
             if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
           } else {
-            // zoomed: keep panning
             doPan(e);
           }
         }
@@ -1048,9 +1018,8 @@
           const dx = swipeCurrX - swipeStartX;
           const dy = swipeCurrY - swipeStartY;
           if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)){
-            // swipe left -> next; swipe right -> previous
-            if (dx < 0) showSlide(qv.index - 1)
-            else        showSlide(qv.index + 1)
+            if (dx < 0) showSlide(qv.index + 1)
+            else        showSlide(qv.index - 1)
             e.preventDefault();
           }
           swipeActive = false;
@@ -1060,19 +1029,16 @@
         if(e.touches.length === 0) endPan();
       });
 
-      // Double‑click / double‑tap to cycle zoom at the tapped point
       qv.main.addEventListener('dblclick', (e) => {
         e.preventDefault();
         cycleZoomAt(e.clientX, e.clientY);
       });
 
-      // Prev/Next (stop propagation so clicks don't trigger zoom)
       const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
       const onNext = (e)=>{ e.stopPropagation(); showSlide(qv.index + 1); };
       qv.prev.addEventListener('click', onPrev);
       qv.next.addEventListener('click', onNext);
 
-      // expose helpers for other parts of the code
       qv._resetToFit = resetToFit;
       qv._applyTransform = applyTransform;
       qv._setZoom = setZoom;
@@ -1090,19 +1056,15 @@
       qv.condition.textContent = product.condition ? `Condition: ${product.condition}` : '';
       qv.stock.textContent = Number.isFinite(product.stock) ? `Stock: ${product.stock}` : '';
 
-      // Description with fallback + line breaks
-      // Description: show "-" if Column G is empty
       const desc = (product.description || "").trim();
       document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
 
-      // CTA + stock state (already matches main page)
       const out = safeNumber(product.stock, 0) <= 0;
       qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
       qv.addBtn.disabled = out;
       qv.addBtn.onclick = out ? null : () =>
         addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
 
-      // Thumbnails
       qv.thumbs.innerHTML = '';
       qv.images.forEach((src, i) => {
         const t = document.createElement('button');
@@ -1115,10 +1077,8 @@
 
       showSlide(0);
 
-      // Start at fit; users can scroll/pinch to zoom or click to cycle
       if(qv._resetToFit) qv._resetToFit();
 
-      // Open
       qv.backdrop.classList.add('open');
       qv.backdrop.setAttribute('aria-hidden', 'false');
       qv.open = true;
@@ -1144,7 +1104,6 @@
       [...qv.thumbs.children].forEach((el, idx)=> el.classList.toggle('active', idx===i));
     }
 
-    /* Delegate clicks from the grid to open Quickview */
     function attachImageClickDelegation(){
       const container = document.querySelector('.card-container');
       if(!container) return;
@@ -1159,23 +1118,20 @@
       });
     }
 
-    /* pick correct arrow assets for theme on load */
     function applyArrowThemeOnLoad(){
       applyArrowTheme();
     }
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyArrowThemeOnLoad);
 
-    /* Events */
     window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
     window.addEventListener("resize", () => { enforceResponsiveGrid(); fitCardTitles(document); });
     window.addEventListener("orientationchange", () => { enforceResponsiveGrid(); fitCardTitles(document); });
 
-    /* Init */
     updateCartCount();
     fetchInventoryFromSheet();
     setupQuickview();
     attachImageClickDelegation();
-    setToggleIcons(2); // default matches the "double active" button initially
+    setToggleIcons(2);
   </script>
 </body>
 </html>
