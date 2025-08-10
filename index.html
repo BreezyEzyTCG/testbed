@@ -255,11 +255,13 @@
     .qv-main{
       position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden;
       display:flex; align-items:center; justify-content:center; height:min(60vh, 520px);
-      touch-action:none;
+      touch-action:none; /* allows custom pan/pinch */
     }
     .qv-main img{
       max-width:100%; max-height:100%; object-fit:contain; display:block;
-      transition:transform .15s ease; cursor:zoom-in;
+      transition:transform .06s ease; cursor:zoom-in;
+      /* Important: we zoom from top-left to make the math stable */
+      transform-origin: 0 0;
     }
     .qv-main.zoomed img{ cursor:move; }
     .qv-thumbs{
@@ -380,7 +382,7 @@
         </button>
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
+            <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
           </svg>
         </button>
       </div>
@@ -719,15 +721,16 @@
 
     /* ================== QUICKVIEW ================== */
 
-    /* Preferred zoom factor (tweak to taste) */
-    const PREFERRED_ZOOM = 1.7;
+    /* Zoom settings */
+    const MIN_ZOOM = 1;            // fit to screen
+    const PREFERRED_ZOOM = 1.7;    // nice middle spot for cards
+    const MAX_ZOOM = 4;
 
     const qv = {
       open:false, index:0, images:[], product:null,
       backdrop:null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
       main:null, img:null, thumbs:null, prev:null, next:null, addBtn:null, closeBtn:null,
-      // preferred -> 2x -> 3x -> preferred
-      zoom:{ scale:PREFERRED_ZOOM, levels:[PREFERRED_ZOOM, 2, 3] }
+      zoom:{ scale: MIN_ZOOM, levels:[MIN_ZOOM, PREFERRED_ZOOM, 2.5, 3.5] }
     };
 
     function buildImagesArray(p){
@@ -786,33 +789,79 @@
         if(e.key === 'ArrowRight') showSlide(qv.index + 1);
       });
 
-      // Zoom/pan (preferred -> 2x -> 3x -> preferred)
-      qv.main.addEventListener('click', cycleZoom);
+      /* ---------- Zoom/Pan Core ---------- */
       let isPanning = false, startX=0, startY=0, transX=0, transY=0;
 
-      function setZoom(scale){
-        qv.zoom.scale = Math.max(scale, PREFERRED_ZOOM);
-        qv.main.classList.add('zoomed');
-        qv.img.style.cursor = 'move';
-        qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+      function applyTransform(){
+        if(qv.zoom.scale <= MIN_ZOOM + 1e-3){
+          qv.img.style.transform = `translate(0px,0px) scale(${MIN_ZOOM})`;
+          qv.main.classList.remove('zoomed');
+          qv.img.style.cursor = 'zoom-in';
+        }else{
+          qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+          qv.main.classList.add('zoomed');
+          qv.img.style.cursor = 'move';
+        }
       }
-      function resetToPreferred(){
+
+      function setZoomAtPoint(newScale, clientX, clientY){
+        const rect = qv.main.getBoundingClientRect();
+        const cx = clamp(clientX - rect.left, 0, rect.width);
+        const cy = clamp(clientY - rect.top,  0, rect.height);
+
+        const prev = qv.zoom.scale;
+        newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
+
+        // Keep the point under cursor fixed (transform-origin at 0 0)
+        const dx = (cx - transX) / prev;
+        const dy = (cy - transY) / prev;
+        transX = cx - dx * newScale;
+        transY = cy - dy * newScale;
+
+        qv.zoom.scale = newScale;
+        applyTransform();
+      }
+
+      function setZoom(newScale){
+        // Zoom to center if no point provided
+        const rect = qv.main.getBoundingClientRect();
+        setZoomAtPoint(newScale, rect.left + rect.width/2, rect.top + rect.height/2);
+      }
+
+      function resetToFit(){
         transX = 0; transY = 0;
-        qv.zoom.scale = PREFERRED_ZOOM;
-        qv.main.classList.add('zoomed');
-        qv.img.style.cursor = 'move';
-        qv.img.style.transform = `translate(0px,0px) scale(${PREFERRED_ZOOM})`;
+        qv.zoom.scale = MIN_ZOOM;
+        applyTransform();
       }
+
       function cycleZoom(){
-        const levels = qv.zoom.levels; // [preferred,2,3]
-        const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.001);
+        const levels = qv.zoom.levels; // [1, preferred, 2.5, 3.5]
+        const idx = levels.findIndex(v => Math.abs(v - qv.zoom.scale) < 0.01);
         const next = levels[(idx + 1) % levels.length];
         setZoom(next);
       }
 
+      /* ----- Mouse wheel zoom (desktop / trackpad) ----- */
+      qv.main.addEventListener('wheel', (e)=>{
+        // Ignore browser page zoom (ctrl/cmd + wheel)
+        if (e.ctrlKey) return;
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.12 : 0.89;
+        const targetScale = qv.zoom.scale * factor;
+        setZoomAtPoint(targetScale, e.clientX, e.clientY);
+      }, { passive:false });
+
+      /* ----- Pan with mouse (when zoomed) ----- */
+      function getPoint(e){
+        if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
+        return { x:e.clientX, y:e.clientY };
+      }
       function startPan(e){
-        if (e.target.closest('.qv-arrow')) return; // don't hijack arrow taps
-        if(qv.zoom.scale < PREFERRED_ZOOM) return;
+        // ignore clicks on arrows
+        if (e.target.closest('.qv-arrow')) return;
+        if(qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
         isPanning = true;
         const p = getPoint(e);
         startX = p.x - transX;
@@ -820,26 +869,67 @@
         e.preventDefault();
       }
       function doPan(e){
-        if(!isPanning || qv.zoom.scale < PREFERRED_ZOOM) return;
+        if(!isPanning || qv.zoom.scale <= MIN_ZOOM + 1e-3) return;
         const p = getPoint(e);
         transX = p.x - startX;
         transY = p.y - startY;
-        qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+        applyTransform();
         e.preventDefault();
       }
       function endPan(){ isPanning = false; }
-      function getPoint(e){
-        if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
-        return { x:e.clientX, y:e.clientY };
-      }
 
       qv.main.addEventListener('mousedown', startPan);
       qv.main.addEventListener('mousemove', doPan);
       qv.main.addEventListener('mouseup', endPan);
       qv.main.addEventListener('mouseleave', endPan);
-      qv.main.addEventListener('touchstart', startPan, {passive:false});
-      qv.main.addEventListener('touchmove', doPan, {passive:false});
-      qv.main.addEventListener('touchend', endPan);
+
+      /* ----- Touch: pinch to zoom + one-finger pan ----- */
+      let pinchActive = false, pinchStartDist = 0, pinchStartScale = MIN_ZOOM;
+
+      function distance(t1, t2){
+        const dx = t2.clientX - t1.clientX;
+        const dy = t2.clientY - t1.clientY;
+        return Math.hypot(dx, dy);
+      }
+      function midpoint(t1, t2){
+        return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
+      }
+
+      qv.main.addEventListener('touchstart', (e)=>{
+        if(e.touches.length === 2){
+          pinchActive = true;
+          pinchStartDist = distance(e.touches[0], e.touches[1]);
+          pinchStartScale = qv.zoom.scale;
+          e.preventDefault();
+        } else if(e.touches.length === 1){
+          startPan(e);
+        }
+      }, {passive:false});
+
+      qv.main.addEventListener('touchmove', (e)=>{
+        if(pinchActive && e.touches.length === 2){
+          const dist = distance(e.touches[0], e.touches[1]);
+          const factor = dist / pinchStartDist;
+          const target = clamp(pinchStartScale * factor, MIN_ZOOM, MAX_ZOOM);
+          const mid = midpoint(e.touches[0], e.touches[1]);
+          setZoomAtPoint(target, mid.x, mid.y);
+          e.preventDefault();
+        } else if(e.touches.length === 1){
+          doPan(e);
+        }
+      }, {passive:false});
+
+      qv.main.addEventListener('touchend', (e)=>{
+        if(e.touches.length < 2) pinchActive = false;
+        if(e.touches.length === 0) endPan();
+      });
+
+      // Click to cycle zoom levels
+      qv.main.addEventListener('click', (e)=>{
+        // Avoid cycling if you just clicked an arrow
+        if (e.target.closest('.qv-arrow')) return;
+        cycleZoom();
+      });
 
       // Prev/Next (stop propagation so clicks don't trigger zoom)
       const onPrev = (e)=>{ e.stopPropagation(); showSlide(qv.index - 1); };
@@ -847,8 +937,10 @@
       qv.prev.addEventListener('click', onPrev);
       qv.next.addEventListener('click', onNext);
 
-      // expose helper for slide/open/close
-      qv._resetToPreferred = resetToPreferred;
+      // expose helpers
+      qv._resetToFit = resetToFit;
+      qv._applyTransform = applyTransform;
+      qv._setZoom = setZoom;
     }
 
     function openQuickview(product){
@@ -886,7 +978,9 @@
       });
 
       showSlide(0);
-      if(qv._resetToPreferred) qv._resetToPreferred();
+
+      // Start at fit; users can scroll/pinch to zoom or click to cycle
+      if(qv._resetToFit) qv._resetToFit();
 
       // Open
       qv.backdrop.classList.add('open');
@@ -901,7 +995,7 @@
       qv.backdrop.classList.remove('open');
       qv.backdrop.setAttribute('aria-hidden','true');
       document.body.style.overflow='';
-      if(qv._resetToPreferred) qv._resetToPreferred();
+      if(qv._resetToFit) qv._resetToFit();
     }
 
     function showSlide(i){
@@ -910,7 +1004,7 @@
       if(i >= qv.images.length) i = 0;
       qv.index = i;
       qv.img.src = qv.images[i];
-      if(qv._resetToPreferred) qv._resetToPreferred();
+      if(qv._resetToFit) qv._resetToFit();
       [...qv.thumbs.children].forEach((el, idx)=> el.classList.toggle('active', idx===i));
     }
 
@@ -928,6 +1022,12 @@
         if(chosen) openQuickview(chosen);
       });
     }
+
+    /* pick correct arrow assets for theme on load */
+    function applyArrowThemeOnLoad(){
+      applyArrowTheme();
+    }
+    window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyArrowThemeOnLoad);
 
     /* Events */
     window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
