@@ -15,11 +15,33 @@
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#58747c;           /* header rim + blue area */
+      --shell:#58747c;
       --fg:#ffffff;
-      --chip-bg:#072a54;         /* cart button background */
+      --chip-bg:#072a54;
       --chip-fg:#fff;
-      --accent:#ef4444;          /* cart badge fill */
+      --accent:#ef4444;
+
+      /* Quickview (light) */
+      --qv-bg:#ffffff;
+      --qv-fg:#111827;
+      --qv-muted:#666;
+      --qv-border:#eee;
+      --qv-panel:#f7f7f7;
+      --qv-thumb-border:#789cac;
+      --qv-arrow-bg:rgba(255,255,255,.9);
+      --qv-close:#273135; /* requested */
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --qv-bg:#1f2937;
+        --qv-fg:#e5e7eb;
+        --qv-muted:#a3a3a3;
+        --qv-border:#374151;
+        --qv-panel:#0b0f14;
+        --qv-thumb-border:#93c5fd;
+        --qv-arrow-bg:rgba(31,41,55,.85);
+        /* keep close button as requested */
+      }
     }
 
     body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
@@ -30,15 +52,14 @@
       background:var(--shell);
       box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    .shell-pad{ padding:10px 12px 0; } /* remove bottom padding; filter bar adds its own */
+    .shell-pad{ padding:10px 12px 0; }
 
     .hero{
       position:relative;
       height:clamp(160px, 28vw, 260px);
       border-radius:14px; overflow:hidden;
       background-image:url("assets/images/Breezy%20Banner.png");
-      background-size:cover;
-      background-position:center 30%;
+      background-size:cover; background-position:center 30%;
     }
     .hero::before{
       content:""; position:absolute; inset:0;
@@ -49,31 +70,21 @@
     /* Cart chip on banner (top-right) */
     .topbar{
       position:absolute; top:10px; right:12px;
-      display:flex; align-items:center; gap:.5rem;
-      z-index:5;
+      display:flex; align-items:center; gap:.5rem; z-index:5;
     }
     .cart-link{
-      position:relative;
-      display:inline-flex; align-items:center; gap:.5rem;
-      color:var(--chip-fg); text-decoration:none;
-      background:var(--chip-bg);
-      padding:.55rem .85rem;
-      border-radius:.7rem; font-weight:700; white-space:nowrap;
+      position:relative; display:inline-flex; align-items:center; gap:.5rem;
+      color:var(--chip-fg); text-decoration:none; background:var(--chip-bg);
+      padding:.55rem .85rem; border-radius:.7rem; font-weight:700; white-space:nowrap;
     }
-    .cart-link img{
-      width:20px; height:20px; display:block;
+    .cart-link img{ width:20px; height:20px; display:block;
       filter: invert(98%) sepia(1%) saturate(76%) hue-rotate(180deg) brightness(104%) contrast(95%);
     }
     .cart-count{
-      position:absolute;
-      top:-6px; right:-6px;
-      min-width:10px; height:20px; padding:0 6px;
-      background:#1bb9df; color:#f5f5f5;
-      border:2px solid #ffffff; border-radius:999px;
-      font-size:.75rem; line-height:16px;
-      display:flex; align-items:center; justify-content:center;
-      font-weight:800; pointer-events:none;
-      box-shadow:0 2px 6px rgba(0,0,0,.18);
+      position:absolute; top:-6px; right:-6px; min-width:10px; height:20px; padding:0 6px;
+      background:#1bb9df; color:#f5f5f5; border:2px solid #ffffff; border-radius:999px;
+      font-size:.75rem; line-height:16px; display:flex; align-items:center; justify-content:center;
+      font-weight:800; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.18);
     }
     @media (min-width:768px){
       .cart-link img{ width:22px; height:22px; }
@@ -82,76 +93,44 @@
 
     /* Centered brand block */
     .brand-center{
-      position:absolute; inset:0; z-index:2;
-      display:flex; align-items:center; justify-content:center;
-      text-align:center; color:var(--fg); padding:0 12px;
-      pointer-events:none;
+      position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
+      text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
     }
     .brand-title{
       margin:0; line-height:1.1; font-weight:800;
       font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size:32px;
-      text-shadow:0 2px 10px rgba(0,0,0,.35);
+      font-size:32px; text-shadow:0 2px 10px rgba(0,0,0,.35);
     }
     .brand-subtitle{
-      margin:.35rem 0 0 0; opacity:.95;
-      font-size:clamp(1rem, 3vw, 1.2rem);
+      margin:.35rem 0 0 0; opacity:.95; font-size:clamp(1rem, 3vw, 1.2rem);
       text-shadow:0 1px 6px rgba(0,0,0,.35);
     }
 
-    /* ========= Filter/search bar under banner (inside the blue header) ========= */
-    .filter-bar{
-      background:var(--shell);
-      padding:12px 12px 14px;
-    }
-
-    /* NEW: search row centered above the dropdown grid */
-    .search-row{
-      max-width:1200px; margin:0 auto 10px;
-      display:flex; justify-content:center;
-    }
-    /* keep the same input styling/sizing as before */
+    /* ========= Filter/search bar ========= */
+    .filter-bar{ background:var(--shell); padding:12px 12px 14px; }
+    .search-row{ max-width:1200px; margin:0 auto 10px; display:flex; justify-content:center; }
     #search{
-      padding:0.5rem;
-      border-radius:5px;
-      border:1px solid #ccc;
-      background:#fff;
-      width:420px;             /* fixed width on desktop */
+      padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff; width:420px;
     }
     .filter-grid{
-      max-width:1200px; margin:0 auto;
-      display:grid; gap:0.5rem;
-      grid-template-columns: repeat(4, minmax(0, 1fr)); /* desktop: 4 in a row */
+      max-width:1200px; margin:0 auto; display:grid; gap:0.5rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .filter-grid select{
-      width:100%;
-      padding:0.55rem 0.65rem;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,.3);
-      background:#ffffff;
-      color:#111;
+      width:100%; padding:0.55rem 0.65rem; border-radius:8px;
+      border:1px solid rgba(255,255,255,.3); background:#ffffff; color:#111;
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
-    @media (max-width:1023.98px){
-      .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } /* tablet */
-    }
-    @media (max-width:767.98px){
-      /* keep the previous mobile width behavior for the search */
-      #search{ width:100%; max-width:60vw; }
-    }
+    @media (max-width:1023.98px){ .filter-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width:767.98px){ #search{ width:100%; max-width:60vw; } }
 
-    /* ================== Controls (grid toggle only now) ================== */
+    /* ================== Controls ================== */
     .controls{
-      display:flex; justify-content:flex-end; align-items:center;
-      gap:0.75rem; margin:0.75rem auto 0; max-width:1200px; padding:0 1rem;
-      flex-wrap:wrap;
+      display:flex; justify-content:flex-end; align-items:center; gap:0.75rem;
+      margin:0.75rem auto 0; max-width:1200px; padding:0 1rem; flex-wrap:wrap;
     }
     .grid-toggle{ display:flex; justify-content:flex-end; gap:0.5rem; margin:0; }
-    .layout-button{
-      background:transparent; border:none; padding:0.5rem; border-radius:6px;
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:transform .15s ease;
-    }
+    .layout-button{ background:transparent; border:none; padding:0.5rem; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; }
     .layout-button:active{ transform:scale(0.96); }
     .layout-button svg{ width:24px; height:24px; fill:var(--icon-color-default); transition:fill .2s; }
     .layout-button.single svg{ width:30px; height:30px; }
@@ -172,30 +151,14 @@
     }
     .card img{ width:100%; aspect-ratio:4/3; object-fit:contain; margin-bottom:0.5rem; border-radius:5px; cursor:zoom-in; }
 
-    /* --- Title block & title (updated) --- */
-    .title-block{ min-height:calc(2 * 1.2em + 3 * 1.3em); } /* room for 2 lines of title */
-
+    .title-block{ min-height:calc(2 * 1.2em + 3 * 1.3em); }
     .card-title{
-      /* desktop defaults */
       font-size:clamp(1.05rem, 1.2vw + .9rem, 1.20rem);
-      margin:0.25rem 0;
-      line-height:1.2;
-      display:-webkit-box;
-      -webkit-box-orient:vertical;
-      -webkit-line-clamp:1;         /* keep 1 line on desktop */
-      overflow:hidden;
-      min-height:1.2em;
-
-      /* prevent long words from trailing off */
-      overflow-wrap:anywhere;
-      word-break:break-word;
+      margin:0.25rem 0; line-height:1.2; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; min-height:1.2em;
+      overflow-wrap:anywhere; word-break:break-word;
     }
-
     @media (max-width:767.98px){
-      .card-title{
-        -webkit-line-clamp:2;                 /* up to two lines on mobile */
-        font-size:clamp(.95rem, 4.6vw, 1.10rem);
-      }
+      .card-title{ -webkit-line-clamp:2; font-size:clamp(.95rem, 4.6vw, 1.10rem); }
     }
 
     .series-name{
@@ -204,17 +167,11 @@
       line-height:1.3; min-height:calc(3 * 1.3em);
     }
 
-    /* Fixed 4-line meta block */
-    .card-info{
-      min-height: calc(4 * (1.3em + 0.5rem));
-      display:flex; flex-direction:column; justify-content:flex-start;
-    }
+    .card-info{ min-height: calc(4 * (1.3em + 0.5rem)); display:flex; flex-direction:column; justify-content:flex-start; }
     .price,.rarity,.condition,.stock{
-      font-size:0.88rem; line-height:1.3; margin:0.25rem 0;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      font-size:0.88rem; line-height:1.3; margin:0.25rem 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
-    /* Badges */
     .badge{
       position:absolute; top:0.5rem; left:0.5rem; padding:5px 10px; font-size:0.75rem; font-weight:bold;
       border-radius:4px; z-index:2; text-transform:uppercase; box-shadow:0 2px 5px rgba(0,0,0,.2); line-height:1;
@@ -224,7 +181,6 @@
     .badge.new{ background:#2fbf71; color:#f8f9fb; }
 
     .product-actions{ margin-top:auto; }
-
     button{
       margin-top:0.5rem; padding:0.5rem 1rem; background:#2b6cb0; color:#fff;
       border:none; border-radius:5px; cursor:pointer; transition:opacity .2s, transform .15s;
@@ -268,23 +224,25 @@
     }
     .qv-backdrop.open{ display:flex; }
     .qv-modal{
-      background:#fff; width:min(1000px, 96vw); max-height:92vh;
+      background:var(--qv-bg); color:var(--qv-fg);
+      width:min(1000px, 96vw); max-height:92vh;
       border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.25);
       display:grid; grid-template-columns:1fr; grid-template-rows:auto 1fr;
+      border:1px solid var(--qv-border);
     }
     .qv-header{
       display:flex; align-items:center; justify-content:space-between;
-      padding:10px 14px; border-bottom:1px solid #eee;
+      padding:10px 14px; border-bottom:1px solid var(--qv-border);
+      background:transparent;
     }
-    .qv-title{
-      margin:0; font-size:1.05rem; line-height:1.2;
-    }
+    .qv-title{ margin:0; font-size:1.05rem; line-height:1.2; }
     .qv-close{
       background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer;
+      color:var(--qv-close);
     }
     .qv-body{
       display:grid; grid-template-columns:1fr; gap:14px;
-      padding:12px; overflow:auto;
+      padding:12px; overflow:auto; background:transparent;
     }
     @media (min-width:900px){
       .qv-body{ grid-template-columns:58% 42%; }
@@ -293,7 +251,7 @@
     /* Gallery */
     .qv-gallery{ position:relative; user-select:none; }
     .qv-main{
-      position:relative; background:#f7f7f7; border-radius:10px; overflow:hidden;
+      position:relative; background:var(--qv-panel); border-radius:10px; overflow:hidden;
       display:flex; align-items:center; justify-content:center; height:min(60vh, 520px);
       touch-action:none;
     }
@@ -307,10 +265,12 @@
     }
     .qv-thumb{
       width:64px; height:64px; border:2px solid transparent; border-radius:6px;
-      background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;
-      flex:0 0 auto;
+      background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto;
     }
-    .qv-thumb.active{ border-color:#789cac; }
+    @media (prefers-color-scheme: dark){
+      .qv-thumb{ background:#111827; }
+    }
+    .qv-thumb.active{ border-color:var(--qv-thumb-border); }
     .qv-thumb img{ max-width:100%; max-height:100%; object-fit:contain; }
 
     .qv-nav{
@@ -318,20 +278,24 @@
       pointer-events:none;
     }
     .qv-arrow{
-      background:rgba(255,255,255,.9); border:none; width:38px; height:38px; border-radius:999px;
+      background:var(--qv-arrow-bg); border:none; width:38px; height:38px; border-radius:999px;
       display:grid; place-items:center; margin:0 8px; pointer-events:auto; cursor:pointer;
       box-shadow:0 2px 8px rgba(0,0,0,.15);
     }
 
     /* Info column */
-    .qv-meta small{ color:#666; }
+    .qv-meta small{ color:var(--qv-muted); }
     .qv-meta p{ margin:.35rem 0; }
     .qv-desc{
-      margin-top:.5rem; line-height:1.35; color:#333;
+      margin-top:.5rem; line-height:1.35; color:inherit;
       display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden;
     }
     .qv-cta{ margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .qv-price{ font-weight:700; font-size:1.1rem; margin-right:auto; }
+    .qv-cta button[disabled]{ background:#cbd5e1 !important; color:#6b7280 !important; cursor:not-allowed !important; }
+    @media (prefers-color-scheme: dark){
+      .qv-cta button[disabled]{ background:#374151 !important; color:#9ca3af !important; }
+    }
 
     /* Focus trap helper */
     .qv-sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
@@ -361,7 +325,6 @@
 
     <!-- Filter/search bar under the banner -->
     <div class="filter-bar">
-      <!-- NEW: centered search above the dropdowns -->
       <div class="search-row">
         <input type="text" id="search" placeholder="Search for a card..." oninput="applyFilters()" />
       </div>
@@ -387,17 +350,14 @@
   <div class="container-panel">
     <div class="controls">
       <div class="grid-toggle">
-        <!-- Single Pane (mobile only) -->
         <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" ry="3"/></svg>
         </button>
-        <!-- 2-Grid -->
         <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path fill-rule="evenodd" d="M5 2a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3H5Zm11 11a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-3Zm0-2a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3ZM5 22a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H5Z" clip-rule="evenodd"/>
           </svg>
         </button>
-        <!-- 3-Grid -->
         <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2ZM4 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H4Zm7 0a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2Zm7 6a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2Z" clip-rule="evenodd"/>
@@ -409,7 +369,7 @@
     <div class="card-container grid-2"></div>
   </div>
 
-  <!-- ===== Quickview Modal (single instance) ===== -->
+  <!-- ===== Quickview Modal ===== -->
   <div class="qv-backdrop" id="qvBackdrop" aria-hidden="true">
     <div class="qv-modal" role="dialog" aria-modal="true" aria-labelledby="qvTitle">
       <div class="qv-header">
@@ -505,19 +465,42 @@
       showToast(`${name} added to cart!`);
     }
 
+    /* -------- CSV parser that handles quotes/commas -------- */
+    function parseCSV(text){
+      const lines = text.replace(/\r/g,'').split('\n').filter(l => l.length);
+      return lines.map(line => {
+        const out = []; let cur = ''; let inQuotes = false;
+        for(let i=0;i<line.length;i++){
+          const c = line[i];
+          if(c === '"'){
+            if(inQuotes && line[i+1] === '"'){ cur+='"'; i++; }
+            else inQuotes = !inQuotes;
+          }else if(c === ',' && !inQuotes){
+            out.push(cur); cur='';
+          }else{
+            cur += c;
+          }
+        }
+        out.push(cur);
+        return out;
+      });
+    }
+
     async function fetchInventoryFromSheet(){
       try{
         const res = await fetch(SHEET_CSV);
         const csv = await res.text();
-        const rows = csv.trim().split("\n").map(r => r.split(","));
+
+        const rows = parseCSV(csv);
         const headers = rows.shift().map(h => h.trim().toLowerCase());
 
         allProducts = rows.map(row => {
           const obj = {};
           row.forEach((cell, i) => {
             const key = headers[i];
-            if (key === "price" || key === "stock") obj[key] = safeNumber(cell);
-            else obj[key] = (cell || "").trim();
+            const val = (cell || "").trim();
+            if (key === "price" || key === "stock") obj[key] = safeNumber(val);
+            else obj[key] = val;
           });
 
           /* Explicit fallbacks by index (0-based) */
@@ -527,7 +510,7 @@
           /* DESCRIPTION from Column G (index 6) */
           obj.description = (row[6] || obj.description || "").trim();
 
-          /* CONDITION fallback at Column H (index 7) */
+          /* CONDITION at Column H (index 7) */
           obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
 
           /* Extra images by header or index (L=11, M=12, N=13) */
@@ -600,31 +583,24 @@
     const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
     function populateAllDropdowns(){
-      // Category
       const catSel = document.getElementById("category-filter");
       catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c; opt.textContent = c; catSel.appendChild(opt);
+        const opt = document.createElement("option"); opt.value = c; opt.textContent = c; catSel.appendChild(opt);
       });
 
-      // Rarity
       const rarSel = document.getElementById("rarity-filter");
       rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
-        const opt = document.createElement("option");
-        opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
+        const opt = document.createElement("option"); opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
       });
 
-      // Condition
       const conSel = document.getElementById("condition-filter");
       conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c; opt.textContent = c; conSel.appendChild(opt);
+        const opt = document.createElement("option"); opt.value = c; opt.textContent = c; conSel.appendChild(opt);
       });
 
-      // Subcategory depends on current category
       updateSubcategoryOptions();
     }
 
@@ -632,27 +608,20 @@
       const cat = document.getElementById("category-filter").value;
       const subSel = document.getElementById("subcategory-filter");
 
-      const pool = (cat === "all")
-        ? allProducts
-        : allProducts.filter(p => p.category === cat);
-
+      const pool = (cat === "all") ? allProducts : allProducts.filter(p => p.category === cat);
       const subs = byUniqueSorted(pool.map(p => p.subcategory));
 
       const current = subSel.value;
       subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
       subs.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s; opt.textContent = s; subSel.appendChild(opt);
+        const opt = document.createElement("option"); opt.value = s; opt.textContent = s; subSel.appendChild(opt);
       });
 
       if (current !== "all" && subs.includes(current)) subSel.value = current;
       else subSel.value = "all";
     }
 
-    function onCategoryChange(){
-      updateSubcategoryOptions();
-      applyFilters();
-    }
+    function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
 
     /* ---------- Filtering ---------- */
     function applyFilters(){
@@ -679,15 +648,12 @@
       if(type === 3) document.querySelector(".layout-button.triple")?.classList.add("active");
     }
 
-    // Strict blocks: no 3-grid on mobile, no 1-grid on desktop
     function setGridView(type){
       if(isMobile() && type === 3) return;
       if(!isMobile() && type === 1) return;
-
       const cont = document.querySelector(".card-container");
       cont.classList.remove("grid-1","grid-2","grid-3");
       cont.classList.add(`grid-${type}`);
-
       activateButton(type);
       applyFilters();
     }
@@ -707,17 +673,14 @@
         const clamp = parseInt(style.getPropertyValue('-webkit-line-clamp') || '2', 10);
         const maxH = parseFloat(style.lineHeight) * clamp;
         el.style.maxHeight = maxH + 'px';
-
-        let current = parseFloat(style.fontSize);
-        const floor = 12;
+        let current = parseFloat(style.fontSize); const floor = 12;
         while ((el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) && current > floor){
-          current -= 0.5;
-          el.style.fontSize = current + 'px';
+          current -= 0.5; el.style.fontSize = current + 'px';
         }
       });
     }
 
-    /* === Wrap renderStore once: track list + fit titles === */
+    /* Wrap renderStore once: track list + fit titles */
     let __lastRendered = [];
     const __renderOriginal = renderStore;
     renderStore = function(list){
@@ -727,20 +690,17 @@
     };
     function getCurrentRenderedList(){ return __lastRendered; }
 
-    /* ================== QUICKVIEW LOGIC ================== */
+    /* ================== QUICKVIEW ================== */
     const qv = {
-      open:false,
-      index:0,
-      images:[],
-      product:null,
-      backdrop: null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
+      open:false, index:0, images:[], product:null,
+      backdrop:null, modal:null, title:null, price:null, series:null, rarity:null, condition:null, stock:null, desc:null,
       main:null, img:null, thumbs:null, prev:null, next:null, addBtn:null, closeBtn:null,
-      zoom:{ enabled:false, x:0, y:0, scale:1 }
+      zoom:{ scale:1, levels:[1,2,3] }
     };
 
     function buildImagesArray(p){
       const arr = [p.image_url, p.back, p.img2, p.img3].filter(Boolean);
-      return [...new Set(arr)]; // de-dupe
+      return [...new Set(arr)];
     }
 
     function setupQuickview(){
@@ -770,16 +730,60 @@
         if(e.key === 'ArrowRight') showSlide(qv.index + 1);
       });
 
-      // Zoom/pan basic
-      qv.main.addEventListener('click', toggleZoom);
+      // Zoom/pan basic (click cycles 1x->2x->3x->1x)
+      qv.main.addEventListener('click', cycleZoom);
+      let isPanning = false, startX=0, startY=0, transX=0, transY=0;
+
+      function startPan(e){
+        if(qv.zoom.scale === 1) return;
+        isPanning = true;
+        const p = getPoint(e);
+        startX = p.x - transX;
+        startY = p.y - transY;
+        e.preventDefault();
+      }
+      function doPan(e){
+        if(!isPanning || qv.zoom.scale === 1) return;
+        const p = getPoint(e);
+        transX = p.x - startX;
+        transY = p.y - startY;
+        qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+        e.preventDefault();
+      }
+      function endPan(){ isPanning = false; }
+      function resetZoom(){
+        qv.zoom.scale = 1; transX = 0; transY = 0;
+        qv.main.classList.remove('zoomed');
+        qv.img.style.transform = 'translate(0px,0px) scale(1)';
+        qv.img.style.cursor = 'zoom-in';
+      }
+      function cycleZoom(){
+        const idx = qv.zoom.levels.indexOf(qv.zoom.scale);
+        const nextScale = qv.zoom.levels[(idx + 1) % qv.zoom.levels.length];
+        qv.zoom.scale = nextScale;
+        if(nextScale === 1){
+          resetZoom();
+        }else{
+          qv.main.classList.add('zoomed');
+          qv.img.style.cursor = 'move';
+          qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
+        }
+      }
+      function getPoint(e){
+        if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
+        return { x:e.clientX, y:e.clientY };
+      }
+
       qv.main.addEventListener('mousedown', startPan);
       qv.main.addEventListener('mousemove', doPan);
       qv.main.addEventListener('mouseup', endPan);
       qv.main.addEventListener('mouseleave', endPan);
-      // touch
       qv.main.addEventListener('touchstart', startPan, {passive:false});
       qv.main.addEventListener('touchmove', doPan, {passive:false});
       qv.main.addEventListener('touchend', endPan);
+
+      // expose helpers for slide change
+      qv._resetZoom = resetZoom;
     }
 
     function openQuickview(product){
@@ -795,8 +799,15 @@
       qv.stock.textContent = Number.isFinite(product.stock) ? `Stock: ${product.stock}` : '';
       qv.desc.textContent = product.description || '';
 
-      // CTA
-      qv.addBtn.onclick = () => addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
+      // CTA + stock state
+      const out = safeNumber(product.stock, 0) <= 0;
+      qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
+      qv.addBtn.disabled = out;
+      if(!out){
+        qv.addBtn.onclick = () => addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
+      }else{
+        qv.addBtn.onclick = null;
+      }
 
       // Thumbnails
       qv.thumbs.innerHTML = '';
@@ -812,17 +823,13 @@
       qv.prev.onclick = ()=>showSlide(qv.index - 1);
       qv.next.onclick = ()=>showSlide(qv.index + 1);
 
-      showSlide(0, true);
+      showSlide(0);
 
       // Open
       qv.backdrop.classList.add('open');
       qv.backdrop.setAttribute('aria-hidden', 'false');
       qv.open = true;
-
-      // Lock scroll
       document.body.style.overflow='hidden';
-
-      // Focus start
       qv.closeBtn.focus();
     }
 
@@ -831,7 +838,7 @@
       qv.backdrop.classList.remove('open');
       qv.backdrop.setAttribute('aria-hidden','true');
       document.body.style.overflow='';
-      resetZoom();
+      if(qv._resetZoom) qv._resetZoom();
     }
 
     function showSlide(i){
@@ -839,48 +846,9 @@
       if(i < 0) i = qv.images.length - 1;
       if(i >= qv.images.length) i = 0;
       qv.index = i;
-
       qv.img.src = qv.images[i];
-      resetZoom();
+      if(qv._resetZoom) qv._resetZoom();
       [...qv.thumbs.children].forEach((el, idx)=> el.classList.toggle('active', idx===i));
-    }
-
-    /* ---- Zoom / Pan (basic) ---- */
-    let isPanning = false; let startX=0, startY=0, transX=0, transY=0;
-    function toggleZoom(){
-      if(!qv.img.src) return;
-      qv.zoom.enabled = !qv.zoom.enabled;
-      qv.zoom.scale = qv.zoom.enabled ? 2 : 1;
-      qv.main.classList.toggle('zoomed', qv.zoom.enabled);
-      qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
-      qv.img.style.cursor = qv.zoom.enabled ? 'move' : 'zoom-in';
-    }
-    function startPan(e){
-      if(!qv.zoom.enabled) return;
-      isPanning = true;
-      const p = getPoint(e);
-      startX = p.x - transX;
-      startY = p.y - transY;
-      e.preventDefault();
-    }
-    function doPan(e){
-      if(!isPanning || !qv.zoom.enabled) return;
-      const p = getPoint(e);
-      transX = p.x - startX;
-      transY = p.y - startY;
-      qv.img.style.transform = `translate(${transX}px, ${transY}px) scale(${qv.zoom.scale})`;
-      e.preventDefault();
-    }
-    function endPan(){ isPanning = false; }
-    function resetZoom(){
-      qv.zoom.enabled=false; qv.zoom.scale=1; transX=0; transY=0;
-      qv.main.classList.remove('zoomed');
-      qv.img.style.transform = 'translate(0px,0px) scale(1)';
-      qv.img.style.cursor = 'zoom-in';
-    }
-    function getPoint(e){
-      if(e.touches && e.touches[0]) return { x:e.touches[0].clientX, y:e.touches[0].clientY };
-      return { x:e.clientX, y:e.clientY };
     }
 
     /* Delegate clicks from the grid to open Quickview */
@@ -890,7 +858,6 @@
       container.addEventListener('click', (e)=>{
         const img = e.target.closest('img');
         if(!img || !container.contains(img)) return;
-        // Map image click to the same index in the currently rendered list
         const cards = [...container.querySelectorAll('.card img')];
         const clickIndex = cards.indexOf(img);
         const renderedList = getCurrentRenderedList();
@@ -899,19 +866,10 @@
       });
     }
 
-    /* Sync cart badge across tabs/windows */
-    window.addEventListener("storage", (e) => {
-      if (e.key === "cart") updateCartCount();
-    });
-
-    window.addEventListener("resize", () => {
-      enforceResponsiveGrid();
-      fitCardTitles(document);
-    });
-    window.addEventListener("orientationchange", () => {
-      enforceResponsiveGrid();
-      fitCardTitles(document);
-    });
+    /* Events */
+    window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
+    window.addEventListener("resize", () => { enforceResponsiveGrid(); fitCardTitles(document); });
+    window.addEventListener("orientationchange", () => { enforceResponsiveGrid(); fitCardTitles(document); });
 
     /* Init */
     updateCartCount();
