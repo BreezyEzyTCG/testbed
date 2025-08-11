@@ -186,7 +186,7 @@
   .cart-link {
     position: relative;
     right: 6px;  /* positive RIGHT moves the element left */
-    top: -5px;   /* nudge up/down */
+    top: -6px;   /* nudge up/down */
   }
 
   .cart-link img {
@@ -476,6 +476,118 @@
       user-select: none;
       pointer-events: auto;
     }
+    
+    /* ============ Mini Cart Dropdown ============ */
+.cart-wrap{ position:relative; }
+
+.mini-cart{
+  position:absolute;
+  right:0; top:calc(100% + 10px);
+  width:min(380px, 92vw);
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  overflow:hidden;
+  z-index:9999;
+  display:none;
+}
+.mini-cart.open{ display:block; }
+
+@media (prefers-color-scheme: dark){
+  .mini-cart{ background:#0f172a; border-color:#1f2937; }
+}
+
+.mini-cart .mc-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px; border-bottom:1px solid rgba(0,0,0,.08);
+  font-size:.95rem;
+}
+@media (prefers-color-scheme: dark){
+  .mini-cart .mc-head{ border-bottom-color:#1f2937; }
+}
+.mini-cart .mc-close{
+  background:transparent; border:none; font-size:20px; line-height:1; cursor:pointer; color:inherit;
+}
+
+.mini-cart .mc-items{
+  max-height:320px; overflow:auto;
+}
+.mini-cart .mc-empty{
+  padding:18px; text-align:center; color:#666; font-size:.95rem;
+}
+
+.mini-cart .mc-item{
+  display:grid; grid-template-columns:56px 1fr auto; gap:10px;
+  padding:10px 12px; border-bottom:1px solid rgba(0,0,0,.06);
+  align-items:center;
+}
+@media (prefers-color-scheme: dark){
+  .mini-cart .mc-item{ border-bottom-color:#1f2937; }
+}
+.mini-cart .mc-thumb{
+  width:56px; height:56px; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+@media (prefers-color-scheme: dark){
+  .mini-cart .mc-thumb{ background:#111827; }
+}
+.mini-cart .mc-thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
+
+.mini-cart .mc-meta{
+  min-width:0;
+}
+.mini-cart .mc-name{
+  font-size:.92rem; margin:0 0 4px; line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mini-cart .mc-price{
+  font-size:.85rem; color:#666; margin:0;
+}
+@media (prefers-color-scheme: dark){
+  .mini-cart .mc-price{ color:#a3a3a3; }
+}
+
+.mini-cart .mc-qty{
+  display:flex; align-items:center; gap:6px;
+}
+.mini-cart .mc-qty button{
+  width:26px; height:26px; border-radius:8px; border:1px solid rgba(0,0,0,.15); background:#fff; cursor:pointer;
+}
+.mini-cart .mc-qty span{ min-width:20px; text-align:center; font-size:.9rem; }
+@media (prefers-color-scheme: dark){
+  .mini-cart .mc-qty button{ background:#111827; border-color:#374151; color:#e5e7eb; }
+}
+
+.mini-cart .mc-remove{
+  background:transparent; border:none; cursor:pointer; font-size:.95rem; opacity:.7;
+}
+.mini-cart .mc-remove:hover{ opacity:1; }
+
+.mini-cart .mc-foot{
+  padding:10px 12px 12px;
+}
+.mini-cart .mc-sub{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+}
+.mini-cart .mc-actions{
+  display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;
+}
+.mini-cart .mc-actions .mc-view{
+  background:#e5e7eb; border:none; border-radius:8px; padding:8px 10px; cursor:pointer;
+}
+.mini-cart .mc-actions .mc-checkout{
+  background:#2b6cb0; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;
+}
+
+@media (max-width:767.98px){
+  .mini-cart{
+    top:calc(100% + 6px);
+    right:-6px;
+    width:92vw;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -496,11 +608,32 @@
 </div>
 
           <!-- Cart (right) -->
-         <a class="cart-link" href="cart.html" aria-label="Cart">
-  <img src="assets/images/cart%20icon.svg" alt="Cart" />
-  <span class="cart-count" id="cartCount">0</span>
-</a>
-        </div>
+         <!-- Cart (right) -->
+<div class="cart-wrap">
+  <a class="cart-link" href="#" aria-label="Cart" id="cartLink">
+    <img src="assets/images/cart%20icon.svg" alt="Cart" />
+    <span class="cart-count" id="cartCount">0</span>
+  </a>
+
+  <!-- Mini Cart Dropdown -->
+  <div id="miniCart" class="mini-cart" role="dialog" aria-modal="false" aria-labelledby="mcTitle" aria-hidden="true">
+    <div class="mc-head">
+      <strong id="mcTitle">Your Cart</strong>
+      <button type="button" class="mc-close" aria-label="Close">×</button>
+    </div>
+    <div class="mc-items" id="mcItems"></div>
+    <div class="mc-foot">
+      <div class="mc-sub">
+        <span>Subtotal</span>
+        <strong id="mcSubtotal">$0.00</strong>
+      </div>
+      <div class="mc-actions">
+        <button type="button" class="mc-view" id="mcView">View Cart</button>
+        <button type="button" class="mc-checkout" id="mcCheckout">Checkout</button>
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Brand in the middle -->
         <div class="brand-center">
@@ -657,6 +790,7 @@ function playSfx(){
       const el = document.getElementById("cartCount");
       if (el) el.textContent = String(getCartCount());
     }
+    
 
     function addToCart(name, price, image_url){
   const cart = getCart();
@@ -666,7 +800,117 @@ function playSfx(){
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
 
-  showToast(`${name} is in your PC!`);
+  showToast(`${name} is now in your PC!`);
+}
+      /* ===== Mini Cart (Dropdown) ===== */
+const mc = {
+  wrap: null,
+  dropdown: null,
+  items: null,
+  subtotal: null,
+  viewBtn: null,
+  checkoutBtn: null,
+  closeBtn: null,
+};
+
+function getCartTotal(){
+  return getCart().reduce((sum, i) => sum + safeNumber(i.price,0) * safeNumber(i.quantity,0), 0);
+}
+
+function setQty(name, qty){
+  const cart = getCart();
+  const item = cart.find(i => i.name === name);
+  if(!item) return;
+  item.quantity = Math.max(1, safeNumber(qty, 1));
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  renderMiniCart();
+}
+
+function incQty(name){ const cart = getCart(); const it = cart.find(i=>i.name===name); if(!it) return; it.quantity += 1; localStorage.setItem("cart", JSON.stringify(cart)); updateCartCount(); renderMiniCart(); }
+function decQty(name){ const cart = getCart(); const it = cart.find(i=>i.name===name); if(!it) return; it.quantity = Math.max(1, it.quantity - 1); localStorage.setItem("cart", JSON.stringify(cart)); updateCartCount(); renderMiniCart(); }
+
+function removeFromCart(name){
+  const cart = getCart().filter(i => i.name !== name);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  renderMiniCart();
+}
+
+function renderMiniCart(){
+  if(!mc.dropdown) return;
+  const cart = getCart();
+  mc.items.innerHTML = "";
+
+  if(cart.length === 0){
+    mc.items.innerHTML = `<div class="mc-empty">Your cart is empty.</div>`;
+  } else {
+    cart.forEach(({name, price, quantity, image}) => {
+      const row = document.createElement("div");
+      row.className = "mc-item";
+      row.innerHTML = `
+        <div class="mc-thumb"><img src="${image || ''}" alt=""></div>
+        <div class="mc-meta">
+          <p class="mc-name" title="${name || ''}">${name || ''}</p>
+          <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
+          <div class="mc-qty">
+            <button type="button" aria-label="Decrease" onclick="decQty('${String(name).replace(/'/g,"\\'")}')">−</button>
+            <span>${safeNumber(quantity,1)}</span>
+            <button type="button" aria-label="Increase" onclick="incQty('${String(name).replace(/'/g,"\\'")}')">+</button>
+            <button type="button" class="mc-remove" aria-label="Remove" onclick="removeFromCart('${String(name).replace(/'/g,"\\'")}')">Remove</button>
+          </div>
+        </div>
+        <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
+      `;
+      mc.items.appendChild(row);
+    });
+  }
+
+  mc.subtotal.textContent = `$${getCartTotal().toFixed(2)}`;
+}
+
+function openMiniCart(){
+  if(!mc.dropdown) return;
+  mc.dropdown.classList.add("open");
+  mc.dropdown.setAttribute("aria-hidden", "false");
+}
+
+function closeMiniCart(){
+  if(!mc.dropdown) return;
+  mc.dropdown.classList.remove("open");
+  mc.dropdown.setAttribute("aria-hidden", "true");
+}
+
+function toggleMiniCart(){
+  if(!mc.dropdown) return;
+  const isOpen = mc.dropdown.classList.contains("open");
+  if(isOpen) closeMiniCart(); else { renderMiniCart(); openMiniCart(); }
+}
+
+function setupMiniCart(){
+  mc.wrap = document.querySelector(".cart-wrap");
+  mc.dropdown = document.getElementById("miniCart");
+  if(!mc.wrap || !mc.dropdown) return;
+  mc.items = document.getElementById("mcItems");
+  mc.subtotal = document.getElementById("mcSubtotal");
+  mc.viewBtn = document.getElementById("mcView");
+  mc.checkoutBtn = document.getElementById("mcCheckout");
+  mc.closeBtn = mc.dropdown.querySelector(".mc-close");
+
+  // buttons
+  mc.closeBtn?.addEventListener("click", closeMiniCart);
+  mc.viewBtn?.addEventListener("click", () => { window.location.href = "cart.html"; });
+  mc.checkoutBtn?.addEventListener("click", () => { window.location.href = "cart.html#checkout"; });
+
+  // close on outside click
+  document.addEventListener("click", (e)=>{
+    if(!mc.dropdown.classList.contains("open")) return;
+    if(!mc.wrap.contains(e.target)) closeMiniCart();
+  });
+  // close on ESC
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape" && mc.dropdown.classList.contains("open")) closeMiniCart();
+  });
 }
 
     /* -------- CSV parser that handles quotes/commas -------- */
@@ -1304,17 +1548,14 @@ function playSfx(){
   });
 })();
 
-    // Sound on cart icon click (and still navigate)
+    // Cart icon: play sfx + toggle dropdown (no redirect)
 (() => {
-  const cart = document.querySelector('.cart-link');
-  if (!cart) return;
-  const href = cart.getAttribute('href');
-  cart.addEventListener('click', (e) => {
+  const cartBtn = document.getElementById('cartLink');
+  if(!cartBtn) return;
+  cartBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
     playSfx();
-    if (href) {
-      e.preventDefault();
-      setTimeout(() => { window.location.href = href; }, 180); // 150–250ms is good
-    }
+    toggleMiniCart();
   });
 })();
 
