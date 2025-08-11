@@ -172,72 +172,63 @@
 }
 .search-icon-btn img{ width:30px; height:30px; display:block; }
 
-    @media (max-width:767.98px){
-     /* --- Mobile search: icon-only by default, expandable glass input --- */
-.search-icon-btn {
-  display:inline-flex;
-  position: relative;       /* allows nudging */
-  left: -5px;                /* negative = move more to the left */
-  top: -10px;                 /* negative = move higher */
-}
-      /* Adjust cart icon position (mobile only) */
-   /* Mobile (<=767.98px): move icon + bubble as a group */
-@media (max-width: 767.98px) {
-  .cart-link {
+   /* ---- Mobile (<=767.98px) ---- */
+@media (max-width:767.98px){
+  .search-icon-btn {
+    display:inline-flex;
     position: relative;
-    right: 6px;  /* positive RIGHT moves the element left */
-    top: -6px;   /* nudge up/down */
+    left: -5px;
+    top: -10px;
   }
 
+  /* Move icon + bubble as a group */
+  .cart-link {
+    position: relative;
+    right: 6px;   /* positive RIGHT moves the element left */
+    top: -6px;    /* nudge up/down */
+  }
   .cart-link img {
     width: 32px;
     height: 32px;
   }
-
   .cart-count {
-    position: absolute; /* ensure it anchors to .cart-link */
+    position: absolute;
     font-size: 0.7rem;
     height: 18px;
     min-width: 10px;
     line-height: 14px;
-    right: -13px;   /* stays aligned to the icon */
-    top: -7px;      /* tweak if needed */
+    right: -13px;
+    top: -7px;
     padding: 0 4px;
   }
+
+  /* Search collapsed by default on mobile */
+  #search{
+    width:0;
+    opacity:0;
+    padding:0.5rem;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.35);
+    color:#fff;
+    background:rgba(255,255,255,.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: width .25s ease, opacity .2s ease, padding .25s ease, margin-left .25s ease;
+    pointer-events:none;
+    margin-left:0;
+  }
+  .search-toggle.open #search{
+    width:50vw;
+    opacity:1;
+    pointer-events:auto;
+    margin-left:4px;
+    margin-top:-13px;
+  }
+
+  /* Tidy layout on small screens */
+  .banner-bar{ gap:8px; }
 }
-      
-#search{
-  /* collapsed by default on mobile */
-  width:0;
-  opacity:0;
-  padding:0.5rem;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,.35);
-  color:#fff;
-  background:rgba(255,255,255,.14);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: width .25s ease, opacity .2s ease, padding .25s ease, margin-left .25s ease;
-  pointer-events:none;       /* prevent focus while closed */
-  margin-left:0;
-}
 
-/* When open, reveal the input to the right of the icon */
-.search-toggle.open #search{
-  width:50vw;                /* visible width on mobile */
-  opacity:1;
-  pointer-events:auto;
-  margin-left:4px;
-  margin-top:-13px; 
-}
-
-/* Improve placeholder contrast on glass background */
-#search::placeholder{ color:rgba(255,255,255,.9); }
-
-/* Keep brand/cart layout tidy on small screens */
-.banner-bar{ gap:8px; }
-
-    }
 /* ========= Filter selects (adjusted) ========= */
 .filter-bar{
   background:var(--shell);
@@ -608,7 +599,6 @@
 </div>
 
           <!-- Cart (right) -->
-         <!-- Cart (right) -->
 <div class="cart-wrap">
   <a class="cart-link" href="#" aria-label="Cart" id="cartLink">
     <img src="assets/images/cart%20icon.svg" alt="Cart" />
@@ -1559,11 +1549,12 @@ function setupMiniCart(){
   });
 })();
 
-    updateCartCount();
+updateCartCount();
 fetchInventoryFromSheet();
 setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2); // default matches the "double active" button initially
+setupMiniCart();   // ← ADD THIS
   </script>
 </body>
 </html>
