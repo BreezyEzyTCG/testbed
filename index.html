@@ -553,27 +553,42 @@
 @media (prefers-color-scheme: dark){
   .mini-cart .mc-item{ border-bottom-color: rgba(255,255,255,0.12); }
 }
-.mini-cart .mc-remove {
-  display: flex;
-  align-items: center;     /* vertical centering */
-  justify-content: center; /* horizontal centering */
-  width: 35px;              /* button area width */
-  height: 35px;             /* button area height */
-  border: none;
-  cursor: pointer;
-  opacity: .85;
+.mini-cart .mc-remove{
+  display:flex;
+  align-items:center;
+  justify-content:center;
 
-  /* Placement tweaks */
-  justify-self: center;     /* center it in the grid cell horizontally */
-  align-self: center;       /* center it vertically */
-  margin-top: 0;            /* adjust up/down */
-  margin-left: -10;           /* adjust left/right */
+  width:30px;
+  height:30px;
+  margin-left:-15px; /* move left, negative = left, positive = right */
+  margin-top:-2px;  /* move up, negative = up, positive = down */
+
+
+  /* reset global button styles */
+  background:transparent !important;
+  color:inherit;
+  padding:0;
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  appearance:none;
+  -webkit-appearance:none;
+
+  cursor:pointer;
+  opacity:.85;
+
+  /* optional placement tweaks */
+  justify-self:center;
+  align-self:center;
+  margin-left:-4px; /* nudge left if you want */
 }
 
-.mini-cart .mc-remove img {
-  width: 30px;   /* icon size */
-  height: 30px;
+.mini-cart .mc-remove img{
+  width:22px;
+  height:22px;
+  display:block;
 }
+
 .mini-cart .mc-thumb{
   width:56px; height:56px; border-radius:6px;
   background: rgba(255,255,255,0.65);
