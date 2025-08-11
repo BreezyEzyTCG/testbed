@@ -22,7 +22,7 @@
       --accent:#ef4444;
 
       --hero-h: clamp(160px, 28vw, 260px);
-      --hero-h-shrink: clamp(120px, 18vw, 200px);
+      --hero-h-shrink: clamp(90px, 14vw, 120px);
 
       /* Quickview (light) */
       --qv-bg:#ffffff;
@@ -95,17 +95,15 @@
   transition: transform .28s ease, opacity .28s ease;
 }
 
-/* Desktop tweak: move up a touch & scale down slightly when shrunk */
+/* WHEN SHRUNK — pull the brand up and scale slightly */
 @media (min-width:768px){
   .site-shell.shrink .brand-center > div{
-    transform: translateY(50px) scale(.92);
+    transform: translateY(8px) scale(.9);   /* was 50px */
   }
 }
-
-/* Mobile tweak: smaller nudge & scale */
 @media (max-width:767.98px){
   .site-shell.shrink .brand-center > div{
-    transform: translateY(35px) scale(.92);
+    transform: translateY(6px) scale(.9);   /* was 35px */
   }
 }
 
