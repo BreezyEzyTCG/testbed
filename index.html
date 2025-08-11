@@ -914,15 +914,11 @@ function renderMiniCart(){
           <p class="mc-name" title="${name || ''}">${name || ''}</p>
           <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
           <div class="mc-qty">
-            <button type="button" class="mc-btn btn-dec" aria-label="Decrease"
-              onclick="decQty('${String(name).replace(/'/g,"\\'")}')">
-              <img src="assets/images/minus%20button.svg" alt="">
-            </button>
+            <img src="assets/images/minus%20button.svg" alt="Decrease"
+                 onclick="decQty('${String(name).replace(/'/g,"\\'")}')" />
             <span>${safeNumber(quantity,1)}</span>
-            <button type="button" class="mc-btn btn-inc" aria-label="Increase"
-              onclick="incQty('${String(name).replace(/'/g,"\\'")}')">
-              <img src="assets/images/plus%20button.svg" alt="">
-            </button>
+            <img src="assets/images/plus%20button.svg" alt="Increase"
+                 onclick="incQty('${String(name).replace(/'/g,"\\'")}')" />
           </div>
         </div>
         <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
