@@ -887,16 +887,20 @@ function normalizeCart(arr){
     }
     
 
-    function addToCart(name, price, image_url){
+    function addToCart(name, price, image_url, series, rarity, condition){
   const cart = getCart();
-  const found = cart.find(i => i.name === name);
-  if(found) found.quantity += 1;
-  else cart.push({ name, price, quantity:1, image:image_url });
+  const key = makeKey({name, series, price, rarity, condition});
+  const found = cart.find(i => i.key === key);
+  if(found){
+    found.quantity += 1;
+  }else{
+    cart.push({ key, name, series, rarity, condition, price, quantity:1, image:image_url });
+  }
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
-
   showToast(`${name} is now in your PC!`);
 }
+
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
   wrap: null,
@@ -912,24 +916,30 @@ function getCartTotal(){
   return getCart().reduce((sum, i) => sum + safeNumber(i.price,0) * safeNumber(i.quantity,0), 0);
 }
 
-function setQty(name, qty){
+function setQty(key, qty){
   const cart = getCart();
-  const item = cart.find(i => i.name === name);
+  const item = cart.find(i => i.key === key);
   if(!item) return;
-  item.quantity = Math.max(1, safeNumber(qty, 1));
+  item.quantity = Math.max(1, safeNumber(qty,1));
   localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount();
-  renderMiniCart();
+  updateCartCount(); renderMiniCart();
 }
-
-function incQty(name){ const cart = getCart(); const it = cart.find(i=>i.name===name); if(!it) return; it.quantity += 1; localStorage.setItem("cart", JSON.stringify(cart)); updateCartCount(); renderMiniCart(); }
-function decQty(name){ const cart = getCart(); const it = cart.find(i=>i.name===name); if(!it) return; it.quantity = Math.max(1, it.quantity - 1); localStorage.setItem("cart", JSON.stringify(cart)); updateCartCount(); renderMiniCart(); }
-
-function removeFromCart(name){
-  const cart = getCart().filter(i => i.name !== name);
+function incQty(key){
+  const cart = getCart(); const it = cart.find(i=>i.key===key);
+  if(!it) return; it.quantity += 1;
   localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount();
-  renderMiniCart();
+  updateCartCount(); renderMiniCart();
+}
+function decQty(key){
+  const cart = getCart(); const it = cart.find(i=>i.key===key);
+  if(!it) return; it.quantity = Math.max(1, it.quantity-1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount(); renderMiniCart();
+}
+function removeFromCart(key){
+  const cart = getCart().filter(i => i.key !== key);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount(); renderMiniCart();
 }
 
 function renderMiniCart(){
