@@ -917,6 +917,9 @@ function normalizeCart(arr){
   }
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
+
+  playSfx(); // 🔊 fire SFX on successful add
+
   showToast(`${name} is now in your PC!`);
 }
 
