@@ -985,6 +985,7 @@ function setupMiniCart(){
   mc.wrap = document.querySelector(".cart-wrap");
   mc.dropdown = document.getElementById("miniCart");
   if(!mc.wrap || !mc.dropdown) return;
+
   mc.items = document.getElementById("mcItems");
   mc.subtotal = document.getElementById("mcSubtotal");
   mc.viewBtn = document.getElementById("mcView");
@@ -996,11 +997,22 @@ function setupMiniCart(){
   mc.viewBtn?.addEventListener("click", () => { window.location.href = "cart.html"; });
   mc.checkoutBtn?.addEventListener("click", () => { window.location.href = "cart.html#checkout"; });
 
-  // close on outside click
-  document.addEventListener("click", (e)=>{
-    if(!mc.dropdown.classList.contains("open")) return;
-    if(!mc.wrap.contains(e.target)) closeMiniCart();
+  // ✅ keep clicks inside the panel from bubbling up
+  mc.dropdown.addEventListener("click", (e) => e.stopPropagation());
+  mc.dropdown.addEventListener("touchstart", (e) => e.stopPropagation(), {passive:true});
+
+  // ✅ close only when clicking truly outside miniCart AND the cart link
+  document.addEventListener("click", (e) => {
+    if (!mc.dropdown.classList.contains("open")) return;
+
+    if (e.target.closest("#miniCart") || e.target.closest("#cartLink")) return;
+
+    const path = e.composedPath ? e.composedPath() : null;
+    if (path && (path.includes(mc.dropdown) || path.includes(mc.wrap))) return;
+
+    closeMiniCart();
   });
+
   // close on ESC
   document.addEventListener("keydown", (e)=>{
     if(e.key === "Escape" && mc.dropdown.classList.contains("open")) closeMiniCart();
