@@ -181,24 +181,30 @@
   top: -10px;                 /* negative = move higher */
 }
       /* Adjust cart icon position (mobile only) */
-   .cart-link {
-  position: relative;
-  right: 6px; /* moves icon LEFT by 6px */
-  top: -5px;  /* adjust up/down as needed */
-}
-    .cart-link img {
-      width: 32px;   /* adjust size here */
-      height: 32px;
-    }
-      
-  .cart-count {
-    font-size: 0.7rem;  /* smaller text */
-    height: 18px;        /* smaller bubble height */
-    min-width: 10px;      /* smaller bubble width */
-    line-height: 14px;   /* centers text vertically */
-    right: -13px;        /* your existing offset */
-    padding: 0 4px;      /* adjust bubble padding */
+   /* Mobile (<=767.98px): move icon + bubble as a group */
+@media (max-width: 767.98px) {
+  .cart-link {
+    position: relative;
+    right: 6px;  /* positive RIGHT moves the element left */
+    top: -3px;   /* nudge up/down */
   }
+
+  .cart-link img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cart-count {
+    position: absolute; /* ensure it anchors to .cart-link */
+    font-size: 0.7rem;
+    height: 18px;
+    min-width: 10px;
+    line-height: 14px;
+    right: -13px;   /* stays aligned to the icon */
+    top: -7px;      /* tweak if needed */
+    padding: 0 4px;
+  }
+}
       
 #search{
   /* collapsed by default on mobile */
