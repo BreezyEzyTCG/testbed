@@ -841,26 +841,24 @@ sfx.preload = 'auto';
 sfx.volume = 0.6;
 
     // === Add-to-Cart SFX (separate from cart-link) ===
-const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // match your actual file name
+const ADD_SFX_PATH = 'assets/audio/add-to-cart.mp3'; // ← change to your file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
 addSfx.volume = 0.6;
 
-addSfx.addEventListener('error', () => {
-  console.warn('Add-to-Cart SFX failed to load:', ADD_SFX_PATH);
-});
-
 function playAddSfx(){
   try {
-    // Clone so rapid clicks can overlap without cutting off
+    // clone so rapid clicks can overlap without cutting off
     const node = addSfx.cloneNode();
     node.volume = addSfx.volume;
-    const p = node.play();
-    if (p && typeof p.catch === 'function') p.catch(() => { /* ignore autoplay warnings */ });
-  } catch(e){
-    console.warn('Add-to-Cart SFX failed to play:', e);
-  }
+    node.play();
+  } catch(e){}
 }
+
+function playSfx(){
+  try { sfx.currentTime = 0; sfx.play(); } catch(e){}
+}
+
     const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
 
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
