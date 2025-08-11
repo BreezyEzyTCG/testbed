@@ -840,6 +840,21 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
+    // === Add-to-Cart SFX (separate from cart-link) ===
+const ADD_SFX_PATH = 'assets/audio/add-to-cart.mp3'; // ← change to your file name
+const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
+addSfx.preload = 'auto';
+addSfx.volume = 0.6;
+
+function playAddSfx(){
+  try {
+    // clone so rapid clicks can overlap without cutting off
+    const node = addSfx.cloneNode();
+    node.volume = addSfx.volume;
+    node.play();
+  } catch(e){}
+}
+
 function playSfx(){
   try { sfx.currentTime = 0; sfx.play(); } catch(e){}
 }
@@ -906,7 +921,7 @@ function normalizeCart(arr){
     }
     
 
-    function addToCart(name, price, image_url, series, rarity, condition){
+   function addToCart(name, price, image_url, series, rarity, condition){
   const cart = getCart();
   const key = makeKey({name, series, price, rarity, condition});
   const found = cart.find(i => i.key === key);
@@ -918,7 +933,7 @@ function normalizeCart(arr){
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
 
-  playSfx(); // 🔊 fire SFX on successful add
+  playAddSfx(); // 🔊 dedicated SFX for Add to Cart (not the cart-link sound)
 
   showToast(`${name} is now in your PC!`);
 }
