@@ -575,21 +575,36 @@
 }
 .mini-cart .mc-price{ font-size:.85rem; opacity:.9; margin:0; }
 
-.mini-cart .mc-qty{ display:flex; align-items:center; gap:6px; }
-.mini-cart .mc-qty button{
-  width:26px; height:26px; border-radius:8px;
+.mini-cart .mc-qty{
+  display:flex; align-items:center; gap:6px;
+}
+
+.mini-cart .mc-qty .mc-btn{
+  width:28px; height:28px; border-radius:8px;
   border:1px solid rgba(255,255,255,0.5);
   background: rgba(255,255,255,0.55);
   cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:0;
 }
-.mini-cart .mc-qty span{ min-width:20px; text-align:center; font-size:.9rem; }
+.mini-cart .mc-qty .mc-btn img{
+  width:18px; height:18px; display:block;
+}
+
+.mini-cart .mc-qty span{
+  min-width:22px; text-align:center; font-size:.9rem;
+}
+
+/* Dark theme */
 @media (prefers-color-scheme: dark){
-  .mini-cart .mc-qty button{
+  .mini-cart .mc-qty .mc-btn{
     background: rgba(255,255,255,0.08);
     border-color: rgba(255,255,255,0.18);
     color:#e5e7eb;
   }
 }
+
+/* (Optional) You can keep the old .mc-remove styles or delete them; it's no longer used */
 
 .mini-cart .mc-remove{
   background:transparent; border:none; cursor:pointer; font-size:.95rem; opacity:.8;
@@ -904,10 +919,15 @@ function renderMiniCart(){
           <p class="mc-name" title="${name || ''}">${name || ''}</p>
           <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
           <div class="mc-qty">
-            <button type="button" aria-label="Decrease" onclick="decQty('${String(name).replace(/'/g,"\\'")}')">−</button>
+            <button type="button" class="mc-btn btn-dec" aria-label="Decrease"
+              onclick="decQty('${String(name).replace(/'/g,"\\'")}')">
+              <img src="assets/images/minus%20button.svg" alt="">
+            </button>
             <span>${safeNumber(quantity,1)}</span>
-            <button type="button" aria-label="Increase" onclick="incQty('${String(name).replace(/'/g,"\\'")}')">+</button>
-            <button type="button" class="mc-remove" aria-label="Remove" onclick="removeFromCart('${String(name).replace(/'/g,"\\'")}')">Remove</button>
+            <button type="button" class="mc-btn btn-inc" aria-label="Increase"
+              onclick="incQty('${String(name).replace(/'/g,"\\'")}')">
+              <img src="assets/images/plus%20button.svg" alt="">
+            </button>
           </div>
         </div>
         <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
