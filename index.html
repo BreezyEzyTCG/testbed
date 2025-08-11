@@ -542,51 +542,36 @@
 .mini-cart .mc-items{ max-height:320px; overflow:auto; }
 .mini-cart .mc-empty{ padding:18px; text-align:center; color:inherit; opacity:.9; font-size:.95rem; }
 
+/* tighten the columns a bit if you want */
 .mini-cart .mc-item{
   display:grid;
-  grid-template-columns:56px 1fr 32px auto; /* + 32px column for the bin */
+  grid-template-columns:56px 1fr 32px auto; /* keep this if you like the width */
   gap:10px;
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,0.25);
   align-items:center;
 }
-@media (prefers-color-scheme: dark){
-  .mini-cart .mc-item{ border-bottom-color: rgba(255,255,255,0.12); }
-}
+
 .mini-cart .mc-remove{
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:flex; align-items:center; justify-content:center;
+  width:33px; height:33px;
 
-  width:33px;
-  height:33px;
-  margin-left:-30px; /* move left, negative = left, positive = right */
-  margin-top:-1px;  /* move up, negative = up, positive = down */
-
-
-  /* reset global button styles */
   background:transparent !important;
-  color:inherit;
-  padding:0;
-  border:none;
-  border-radius:0;
-  box-shadow:none;
-  appearance:none;
-  -webkit-appearance:none;
+  border:none; padding:0; box-shadow:none; appearance:none;
 
-  cursor:pointer;
-  opacity:.85;
+  cursor:pointer; opacity:.85;
 
-  /* optional placement tweaks */
-  justify-self:center;
+  /* placement — this is the part that matters */
+  justify-self:start;     /* ← anchor to the LEFT edge of its grid cell */
   align-self:center;
-  margin-left:-4px; /* nudge left if you want */
+  margin-left:-12px;      /* ← nudge further left (tweak as needed) */
+  margin-top:-1px;        /* ← nudge up/down */
+
+  /* remove the duplicate margin-left line! */
 }
 
 .mini-cart .mc-remove img{
-  width:22px;
-  height:22px;
-  display:block;
+  width:22px; height:22px; display:block;
 }
 
 .mini-cart .mc-thumb{
