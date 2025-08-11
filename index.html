@@ -189,9 +189,17 @@
       width: 35px;   /* adjust size here */
       height: 35px;
     }
-      .cart-count {
-  right: -15px; /* less negative moves bubble closer to icon’s center */
+      
+  .cart-count {
+    font-size: 0.65rem;  /* smaller text */
+    height: 112px;        /* smaller bubble height */
+    min-width: 5px;      /* smaller bubble width */
+    line-height: 14px;   /* centers text vertically */
+    right: -15px;        /* your existing offset */
+    padding: 0 4px;      /* adjust bubble padding */
+  }
 }
+
       
 #search{
   /* collapsed by default on mobile */
