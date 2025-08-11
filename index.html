@@ -553,20 +553,27 @@
 @media (prefers-color-scheme: dark){
   .mini-cart .mc-item{ border-bottom-color: rgba(255,255,255,0.12); }
 }
-.mini-cart .mc-remove{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:28px; height:28px;
-  background:transparent;
-  border:none;
-  cursor:pointer;
-  opacity:.85;
-}
-.mini-cart .mc-remove:hover,
-.mini-cart .mc-remove:focus{ opacity:1; }
-.mini-cart .mc-remove img{ width:22px; height:22px; display:block; }
+.mini-cart .mc-remove {
+  display: flex;
+  align-items: center;     /* vertical centering */
+  justify-content: center; /* horizontal centering */
+  width: 35px;              /* button area width */
+  height: 35px;             /* button area height */
+  border: none;
+  cursor: pointer;
+  opacity: .85;
 
+  /* Placement tweaks */
+  justify-self: center;     /* center it in the grid cell horizontally */
+  align-self: center;       /* center it vertically */
+  margin-top: 0;            /* adjust up/down */
+  margin-left: -10;           /* adjust left/right */
+}
+
+.mini-cart .mc-remove img {
+  width: 30px;   /* icon size */
+  height: 30px;
+}
 .mini-cart .mc-thumb{
   width:56px; height:56px; border-radius:6px;
   background: rgba(255,255,255,0.65);
