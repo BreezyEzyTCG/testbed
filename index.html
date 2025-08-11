@@ -179,7 +179,7 @@
   display:inline-flex;
   position: relative;       /* allows nudging */
   left: -5px;                /* negative = move more to the left */
-  top: -10px;                 /* negative = move higher */
+  top: -13px;                 /* negative = move higher */
 }
       /* Adjust cart icon position (mobile only) */
    .cart-link {
@@ -599,6 +599,16 @@
   <script>
     let allProducts = [];
 
+    // === Cart / Add-to-Cart sound ===
+const SFX_PATH = 'assets/audio/Pokémon RedBlueYellow - PC Turning On - Sound Effect.mp3';
+const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
+sfx.preload = 'auto';
+sfx.volume = 0.6;
+
+function playSfx(){
+  try { sfx.currentTime = 0; sfx.play(); } catch(e){}
+}
+
     const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
 
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
@@ -644,14 +654,16 @@
     }
 
     function addToCart(name, price, image_url){
-      const cart = getCart();
-      const found = cart.find(i => i.name === name);
-      if(found) found.quantity += 1;
-      else cart.push({ name, price, quantity:1, image:image_url });
-      localStorage.setItem("cart", JSON.stringify(cart));
-      updateCartCount();
-      showToast(`${name} added to cart!`);
-    }
+  const cart = getCart();
+  const found = cart.find(i => i.name === name);
+  if(found) found.quantity += 1;
+  else cart.push({ name, price, quantity:1, image:image_url });
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+
+  playSfx();                 // ← add this line
+  showToast(`${name} added to cart!`);
+}
 
     /* -------- CSV parser that handles quotes/commas -------- */
     function parseCSV(text){
