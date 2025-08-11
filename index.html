@@ -64,7 +64,7 @@
 
    .hero{
   position:relative;
-  height:clamp(160px, 28vw, 260px);
+  height: var(--hero-h); /* <-- REPLACED */
   max-width: 1200px;
   margin: 0 auto;
   border-radius:14px;
@@ -72,6 +72,7 @@
   background-image:url("assets/images/Breezy%20Banner.png");
   background-size:cover;
   background-position:center 30%;
+  transition: height .28s ease, background-position .28s ease; /* <-- ADDED */   
 }
     .hero::before{
   content:"";
@@ -136,6 +137,48 @@
   .cart-link {
     margin-right: 8px; /* nudge slightly left */
     /* or position: relative; right: 8px; */
+  }
+
+  /* ==== Shrink-on-scroll variables + transitions ==== */
+:root{
+  --hero-h: clamp(160px, 28vw, 260px);
+  --hero-h-compact: 90px;           /* <- tune this */
+  --shell-pad-top: 10px;            /* default padding you already use */
+  --shell-pad-top-compact: 6px;     /* tighter when shrunk */
+}
+
+/* optional: ease the top padding so the shell compresses a hair */
+.shell-pad{
+  padding-top: var(--shell-pad-top);
+  transition: padding .28s ease;
+}
+
+/* Brand block tweaks during compact state */
+.brand-center > div{
+  transition: transform .28s ease, opacity .2s ease;
+}
+
+/* ===== When scrolled (class toggled by JS) ===== */
+body.is-scrolled .hero{
+  height: var(--hero-h-compact);
+  background-position: center 20%; /* nudges the focal point */
+}
+
+body.is-scrolled .shell-pad{
+  padding-top: var(--shell-pad-top-compact);
+}
+
+/* Desktop nudge stays, but reduce it slightly when compact */
+@media (min-width: 768px){
+  body.is-scrolled .brand-center > div{
+    transform: translateY(40px); /* was 80px; feel free to tune */
+  }
+}
+
+/* Mobile: likewise, nudge a bit less when compact */
+@media (max-width: 767.98px){
+  body.is-scrolled .brand-center > div{
+    transform: translateY(28px);
   }
 }
 /* Centered brand block */
@@ -1748,6 +1791,23 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2); // default matches the "double active" button initially
 setupMiniCart();   // ← ADD THIS
+
+    // ===== Shrink hero on scroll (compact state) =====
+(() => {
+  const THRESHOLD = 40; // px
+  let applied = false;
+
+  function onScroll() {
+    const shouldCompact = window.scrollY > THRESHOLD;
+    if (shouldCompact !== applied) {
+      document.body.classList.toggle('is-scrolled', shouldCompact);
+      applied = shouldCompact;
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll(); // set initial state on load
+})();
   </script>
 </body>
 </html>
