@@ -505,9 +505,9 @@
   width:min(380px, 92vw);
 
   /* glass background + blur */
-  background: rgba(255,255,255,0.22);
-  backdrop-filter: blur(14px) saturate(1.12);
-  -webkit-backdrop-filter: blur(14px) saturate(1.12);
+  background: #FBFAF5
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
 
   /* subtle border + shadow */
   border:1px solid rgba(255,255,255,0.35);
@@ -537,6 +537,11 @@
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,0.35);
   font-size:.95rem;
+}
+
+/* New: bump font size only for "Your Items" */
+.mini-cart .mc-head strong {
+  font-size: 15px;
 }
 @media (prefers-color-scheme: dark){
   .mini-cart .mc-head{ border-bottom-color: rgba(255,255,255,0.12); }
@@ -710,7 +715,7 @@
   <!-- Mini Cart Dropdown -->
   <div id="miniCart" class="mini-cart" role="dialog" aria-modal="false" aria-labelledby="mcTitle" aria-hidden="true">
     <div class="mc-head">
-      <strong id="mcTitle">Your ItemsC</strong>
+      <strong id="mcTitle">Your Items</strong>
       <button type="button" class="mc-close" aria-label="Close">×</button>
     </div>
     <div class="mc-items" id="mcItems"></div>
