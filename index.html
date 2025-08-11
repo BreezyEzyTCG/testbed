@@ -21,6 +21,9 @@
       --chip-fg:#fff;
       --accent:#ef4444;
 
+      --hero-h: clamp(160px, 28vw, 260px);
+      --hero-h-shrink: clamp(120px, 18vw, 200px);
+
       /* Quickview (light) */
       --qv-bg:#ffffff;
       --qv-fg:#111827;
@@ -64,7 +67,7 @@
 
    .hero{
   position:relative;
-  height:clamp(160px, 28vw, 260px);
+  height: var(--hero-h);              /* was: clamp(...) */
   max-width: 1200px;
   margin: 0 auto;
   border-radius:14px;
@@ -72,6 +75,7 @@
   background-image:url("assets/images/Breezy%20Banner.png");
   background-size:cover;
   background-position:center 30%;
+  transition: height .28s ease, background-position .28s ease;
 }
     .hero::before{
   content:"";
@@ -80,6 +84,36 @@
   pointer-events:none;
   border-radius: inherit;      /* <-- clip overlay to rounded corners */
 }
+    /* When the page is scrolled, shrink the banner a bit */
+.site-shell.shrink .hero{
+  height: var(--hero-h-shrink);
+  background-position: center 35%;
+}
+
+/* smooth scale/nudge for the centered brand block */
+.brand-center > div{
+  transition: transform .28s ease, opacity .28s ease;
+}
+
+/* Desktop tweak: move up a touch & scale down slightly when shrunk */
+@media (min-width:768px){
+  .site-shell.shrink .brand-center > div{
+    transform: translateY(50px) scale(.92);
+  }
+}
+
+/* Mobile tweak: smaller nudge & scale */
+@media (max-width:767.98px){
+  .site-shell.shrink .brand-center > div{
+    transform: translateY(35px) scale(.92);
+  }
+}
+
+/* Optional: reduce motion if user prefers */
+@media (prefers-reduced-motion: reduce){
+  .hero, .brand-center > div{ transition: none !important; }
+}
+
     /* NEW: banner top row (search left, cart right) */
     .banner-bar{
       position:absolute; top:10px; left:12px; right:12px;
@@ -1740,6 +1774,17 @@ const byUniqueSorted = (arr) => {
     playSfx();
     toggleMiniCart();
   });
+})();
+
+    // Shrink banner on scroll
+(() => {
+  const shell = document.querySelector('.site-shell');
+  if(!shell) return;
+  const onScroll = () => {
+    shell.classList.toggle('shrink', window.scrollY > 20);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll(); // set initial state if the page loads scrolled
 })();
 
 updateCartCount();
