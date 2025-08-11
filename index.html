@@ -129,7 +129,12 @@
 
     @media (max-width:767.98px){
      /* --- Mobile search: icon-only by default, expandable glass input --- */
-.search-icon-btn{ display:inline-flex; }
+.search-icon-btn {
+  display:inline-flex;
+  position: relative;       /* allows nudging */
+  left: -3px;                /* negative = move more to the left */
+  top: -3px;                 /* negative = move higher */
+}
 
 #search{
   /* collapsed by default on mobile */
