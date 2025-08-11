@@ -841,7 +841,6 @@ sfx.preload = 'auto';
 sfx.volume = 0.6;
 
    <!-- === Add-to-Cart SFX (separate from cart-link) === -->
-<script>
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -858,7 +857,6 @@ function playAddSfx(){
     console.warn('Add-to-cart SFX failed:', e);
   }
 }
-</script>
 
 function playSfx(){
   try { sfx.currentTime = 0; sfx.play(); } catch(e){}
