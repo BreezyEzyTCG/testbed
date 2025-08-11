@@ -51,7 +51,7 @@
     /* ================== HERO HEADER ================== */
     .site-shell{
       position:sticky; top:0; z-index:20;
-      background:var(--shell);
+      .site-shell { background: transparent; /* or match page bg */ }
       box-shadow: none;
     }
     .shell-pad{ padding:10px 12px 3px; }
@@ -68,11 +68,12 @@
   background-position:center 30%;
 }
     .hero::before{
-      content:""; position:absolute; inset:0;
-      background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
-      pointer-events:none;
-    }
-
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
+  pointer-events:none;
+  border-radius: inherit;      /* <-- clip overlay to rounded corners */
+}
     /* NEW: banner top row (search left, cart right) */
     .banner-bar{
       position:absolute; top:10px; left:12px; right:12px;
