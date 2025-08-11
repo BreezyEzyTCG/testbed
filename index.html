@@ -1192,7 +1192,19 @@ const btnAttrs = out
     }
 
     /* ---------- Dropdown population ---------- */
-    const byUniqueSorted = (arr) => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    // Case-insensitive, trimmed, de-duplicated, alphabetically sorted
+const byUniqueSorted = (arr) => {
+  const map = new Map(); // keep first-seen original casing
+  arr.forEach(v => {
+    const s = String(v || '').trim();
+    if (!s) return;
+    const key = s.toLocaleLowerCase(); // normalize for uniqueness
+    if (!map.has(key)) map.set(key, s);
+  });
+  return [...map.values()].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base' })
+  );
+};
 
     function populateAllDropdowns(){
       const catSel = document.getElementById("category-filter");
