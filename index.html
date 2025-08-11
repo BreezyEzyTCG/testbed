@@ -927,13 +927,13 @@ function normalizeCart(arr){
   const found = cart.find(i => i.key === key);
   if(found){
     found.quantity += 1;
-  }else{
+  } else {
     cart.push({ key, name, series, rarity, condition, price, quantity:1, image:image_url });
   }
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
 
-  playAddSfx(); // 🔊 dedicated SFX for Add to Cart (not the cart-link sound)
+  playAddSfx(); // 🔊 Play dedicated Add-to-Cart SFX
 
   showToast(`${name} is now in your PC!`);
 }
