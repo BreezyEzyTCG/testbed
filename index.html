@@ -133,10 +133,19 @@
 }
 
     /* Centered brand block */
-    .brand-center{
-      position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
-      text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
-    }
+.brand-center{
+  position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
+  text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
+}
+
+/* Hard-center the brand horizontally regardless of side content */
+.hero .brand-center{
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: max-content;
+}
+
     .brand-title {
   margin:0; 
   line-height:1.1; 
