@@ -56,15 +56,17 @@
     }
     .shell-pad{ padding:10px 12px 3px; }
 
-    .hero{
-      position:relative;
-      height:clamp(160px, 28vw, 260px);
-      max-width: 1200px;  /* limit width */
-      margin: 0 auto;     /* center banner */
-      border-radius:14px; overflow:hidden;
-      background-image:url("assets/images/Breezy%20Banner.png");
-      background-size:cover; background-position:center 30%;
-    }
+   .hero{
+  position:relative;
+  height:clamp(160px, 28vw, 260px);
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius:14px;
+  overflow:visible;      /* <-- allow mini-cart to overlay outside the banner */
+  background-image:url("assets/images/Breezy%20Banner.png");
+  background-size:cover;
+  background-position:center 30%;
+}
     .hero::before{
       content:""; position:absolute; inset:0;
       background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
