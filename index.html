@@ -133,19 +133,33 @@
 }
 
     /* Centered brand block */
-.brand-center{
-  position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
-  text-align:center; color:var(--fg); padding:0 12px; pointer-events:none;
+/* Centered brand block */
+.brand-center {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--fg);
+  padding: 0 12px;
+  pointer-events: none;
 }
 
-/* Hard-center the brand horizontally regardless of side content */
-.hero .brand-center{
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: max-content;
+/* Nudge the entire text block down */
+.brand-center > div {
+  transform: translateY(14px); /* adjust value as needed */
 }
 
+.brand-title {
+  margin: 0;
+  line-height: 1.1;
+  font-weight: 800;
+  font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 45px; /* desktop size */
+  text-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
     .brand-title {
   margin:0; 
   line-height:1.1; 
@@ -608,6 +622,33 @@
 }
 .mini-cart .mc-actions .mc-checkout{
   background:#2b6cb0; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;
+}
+    .mini-cart .mc-remove{
+  background:transparent; border:none; cursor:pointer; font-size:.95rem; opacity:.8;
+}
+.mini-cart .mc-remove:hover{ opacity:1; }
+
+.mini-cart .mc-foot{
+  padding:10px 12px 12px;
+  background: linear-gradient(to top, rgba(255,255,255,0.18), rgba(255,255,255,0.00));
+}
+@media (prefers-color-scheme: dark){
+  .mini-cart .mc-foot{
+    background: linear-gradient(to top, rgba(255,255,255,0.06), rgba(255,255,255,0.00));
+  }
+}
+.mini-cart .mc-sub{ ... }
+.mini-cart .mc-actions{ ... }
+.mini-cart .mc-actions .mc-view{ ... }
+.mini-cart .mc-actions .mc-checkout{ ... }
+
+/* ← INSERT THE SNIPPET RIGHT BEFORE THIS MOBILE QUERY */
+@media (max-width:767.98px){
+  .mini-cart{
+    top:calc(100% + 6px);
+    right:-6px;
+    width:92vw;
+  }
 }
 
 @media (max-width:767.98px){
