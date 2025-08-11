@@ -15,8 +15,8 @@
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#58747c;
-      --fg:#ffffff;
+      --shell:#7a9ba8;
+      --fg:#FBFAF5;
       --chip-bg:#072a54;
       --chip-fg:#fff;
       --accent:#ef4444;
@@ -46,14 +46,20 @@
       }
     }
 
-    body{ font-family:Arial,sans-serif; margin:0; background:#f0f4f8; }
+    body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: var(--shell); /* ✅ now tied to your --shell variable */
+}
 
     /* ================== HERO HEADER ================== */
-    .site-shell{
-      position:sticky; top:0; z-index:20;
-      .site-shell { background: transparent; /* or match page bg */ }
-      box-shadow: none;
-    }
+    .site-shell {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--shell); /* ✅ use variable so it matches body */
+  box-shadow: none;
+}
     .shell-pad{ padding:10px 12px 3px; }
 
    .hero{
@@ -565,8 +571,8 @@
   /* placement — this is the part that matters */
   justify-self:start;     /* ← anchor to the LEFT edge of its grid cell */
   align-self:center;
-  margin-left:-12px;      /* ← nudge further left (tweak as needed) */
-  margin-top:-1px;        /* ← nudge up/down */
+  margin-left:-15px;      /* ← nudge further left (tweak as needed) */
+  margin-top:1px;        /* ← nudge up/down */
 
   /* remove the duplicate margin-left line! */
 }
