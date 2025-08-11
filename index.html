@@ -851,8 +851,9 @@ function playAddSfx(){
     // clone so rapid clicks can overlap without cutting off
     const node = addSfx.cloneNode();
     node.volume = addSfx.volume;
-    node.play();
-  } catch(e){}
+    const p = node.play();
+    if (p && typeof p.catch === 'function') p.catch(() => { /* ignore autoplay warnings */ });
+  } catch(e){
 }
 
 function playSfx(){
