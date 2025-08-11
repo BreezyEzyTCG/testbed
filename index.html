@@ -580,76 +580,65 @@
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .mini-cart .mc-price{ font-size:.85rem; opacity:.9; margin:0; }
-
-.mini-cart .mc-qty{
-  display:flex; align-items:center; gap:6px;
+.mini-cart .mc-qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.mini-cart .mc-qty .mc-btn{
-  width:28px; height:28px; border-radius:8px;
-  border:1px solid rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.55);
-  cursor:pointer;
-  display:inline-flex; align-items:center; justify-content:center;
-  padding:0;
-}
-.mini-cart .mc-qty .mc-btn img{
-  width:18px; height:18px; display:block;
+.mini-cart .mc-qty img {
+  width: 25px;
+  height: 25px;
+  cursor: pointer;
+  display: block;
 }
 
-.mini-cart .mc-qty span{
-  min-width:22px; text-align:center; font-size:.9rem;
+.mini-cart .mc-qty span {
+  min-width: 22px;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
-/* Dark theme */
-@media (prefers-color-scheme: dark){
-  .mini-cart .mc-qty .mc-btn{
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.18);
-    color:#e5e7eb;
-  }
-}
-
-/* (Optional) You can keep the old .mc-remove styles or delete them; it's no longer used */
-
-.mini-cart .mc-remove{
-  background:transparent; border:none; cursor:pointer; font-size:.95rem; opacity:.8;
-}
-.mini-cart .mc-remove:hover{ opacity:1; }
-
-.mini-cart .mc-foot{
-  padding:10px 12px 12px;
+.mini-cart .mc-foot {
+  padding: 10px 12px 12px;
   background: linear-gradient(to top, rgba(255,255,255,0.18), rgba(255,255,255,0.00));
 }
-@media (prefers-color-scheme: dark){
-  .mini-cart .mc-foot{
+
+@media (prefers-color-scheme: dark) {
+  .mini-cart .mc-foot {
     background: linear-gradient(to top, rgba(255,255,255,0.06), rgba(255,255,255,0.00));
   }
 }
-.mini-cart .mc-sub{
-  display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
-}
-.mini-cart .mc-actions{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
-.mini-cart .mc-actions .mc-view{
-  background:rgba(255,255,255,0.65); border:none; border-radius:8px; padding:8px 10px; cursor:pointer;
-}
-.mini-cart .mc-actions .mc-checkout{
-  background:#2b6cb0; color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;
+
+.mini-cart .mc-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
-/* === Light theme: darker font for + / − and "Remove" === */
-@media (prefers-color-scheme: light){
-  .mini-cart .mc-qty button{
-    color:#0b1220;      /* darker glyphs */
-    font-weight:700;    /* clearer symbols */
-  }
-  .mini-cart .mc-qty button:hover{ color:#000; }
+.mini-cart .mc-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
 
-  .mini-cart .mc-remove{
-    color:#0b1220;      /* darker text */
-    opacity:1;          /* override base .8 */
-  }
-  .mini-cart .mc-remove:hover{ color:#000; }
+.mini-cart .mc-actions .mc-view {
+  background: rgba(255,255,255,0.65);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.mini-cart .mc-actions .mc-checkout {
+  background: #2b6cb0;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
 }
 
 /* Mobile position/width */
