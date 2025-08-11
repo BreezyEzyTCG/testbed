@@ -497,6 +497,10 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+/* show/hide via JS */
+.mini-cart{ display:none; }
+.mini-cart.open{ display:block; }
+
 /* inherit theme ink + border tokens */
 .mini-cart{
   color: var(--qv-fg);
@@ -543,6 +547,15 @@
 .mini-cart .mc-items{
   max-height: 320px;  /* keep your value */
   overflow: auto;
+}
+
+/* dark-mode glass for the mini-cart panel */
+@media (prefers-color-scheme: dark){
+  .mini-cart{
+    background: rgba(20, 24, 28, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 }
   </style>
 </head>
@@ -1309,7 +1322,7 @@ function setupMiniCart(){
         return Math.hypot(dx, dy);
       }
       function midpoint(t1, t2){
-        return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientY + t2.clientY)/2 };
+        return { x:(t1.clientX + t2.clientX)/2, y:(t1.clientX + t2.clientY)/2 };
       }
 
       qv.main.addEventListener('touchstart', (e)=>{
