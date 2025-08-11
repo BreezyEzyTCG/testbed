@@ -131,8 +131,6 @@
     /* or position: relative; right: 8px; */
   }
 }
-
-    /* Centered brand block */
 /* Centered brand block */
 .brand-center {
   position: absolute;
@@ -146,10 +144,11 @@
   padding: 0 12px;
   pointer-events: none;
 }
-    
+
+/* Desktop-only nudge (won’t affect mobile) */
 @media (min-width: 768px){
   .brand-center > div {
-    transform: translateY(80px); /* adjust value as needed */
+    transform: translateY(80px); /* adjust as needed */
   }
 }
 
@@ -161,30 +160,20 @@
   font-size: 45px; /* desktop size */
   text-shadow: 0 2px 10px rgba(0,0,0,.35);
 }
-    .brand-title {
-  margin:0; 
-  line-height:1.1; 
-  font-weight:800;
-  font-family:"Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size:45px; /* desktop size */
-  text-shadow:0 2px 10px rgba(0,0,0,.35);
-}
 
 /* Mobile override */
 @media (max-width: 767.98px){
-  .brand-title {
-    font-size: 32px; /* mobile size in px */
-  }
-
-  /* cancel Y-shift on mobile */
-  .brand-center > div {
-    transform: 50px;
-  }
+  .brand-title { font-size: 32px; }  /* mobile size */
+  .brand-center > div { transform: none; } /* reset any shift on mobile */
 }
-    .brand-subtitle{
-      margin:.35rem 0 0 0; opacity:.95; font-size:clamp(1rem, 3vw, 1.2rem);
-      text-shadow:0 1px 6px rgba(0,0,0,.35);
-    }
+
+/* Subtitle */
+.brand-subtitle{
+  margin:.35rem 0 0 0;
+  opacity:.95;
+  font-size:clamp(1rem, 3vw, 1.2rem);
+  text-shadow:0 1px 6px rgba(0,0,0,.35);
+}
 
     /* ========= Search input now lives in banner ========= */
     #search{
