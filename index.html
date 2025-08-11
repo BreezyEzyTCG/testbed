@@ -1300,6 +1300,19 @@ function playSfx(){
   });
 })();
 
+    // Sound on cart icon click (and still navigate)
+(() => {
+  const cart = document.querySelector('.cart-link');
+  if (!cart) return;
+  const href = cart.getAttribute('href');
+  cart.addEventListener('click', (e) => {
+    playSfx();
+    if (href) {
+      e.preventDefault();
+      setTimeout(() => { window.location.href = href; }, 180); // 150–250ms is good
+    }
+  });
+})();
 
     updateCartCount();
 fetchInventoryFromSheet();
