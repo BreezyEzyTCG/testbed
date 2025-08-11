@@ -149,7 +149,7 @@
     
 @media (min-width: 768px){
   .brand-center > div {
-    transform: translateY(65px); /* adjust value as needed */
+    transform: translateY(80px); /* adjust value as needed */
   }
 }
 
@@ -171,9 +171,14 @@
 }
 
 /* Mobile override */
-@media (max-width:767.98px){
+@media (max-width: 767.98px){
   .brand-title {
-    font-size:32px; /* mobile size in px */
+    font-size: 32px; /* mobile size in px */
+  }
+
+  /* cancel Y-shift on mobile */
+  .brand-center > div {
+    transform: 50px;
   }
 }
     .brand-subtitle{
