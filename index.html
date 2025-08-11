@@ -112,7 +112,6 @@
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(0,0,0,.18);
 }
-    }
    @media (min-width:768px){
   .cart-link img {
     width: 60px;
@@ -599,7 +598,7 @@
   <script>
     let allProducts = [];
 
-    // === Cart / Add-to-Cart sound ===
+    // === Cart / Header Cart Sound===
 const SFX_PATH = 'assets/audio/Pokémon RedBlueYellow - PC Turning On - Sound Effect.mp3';
 const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
@@ -661,8 +660,7 @@ function playSfx(){
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
 
-  playSfx();                 // ← add this line
-  showToast(`${name} added to cart!`);
+  showToast(`${name} is in your PC!`);
 }
 
     /* -------- CSV parser that handles quotes/commas -------- */
