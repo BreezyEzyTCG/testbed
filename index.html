@@ -14,8 +14,8 @@
     :root{
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
-
-      --shell:#7a9ba8;
+      
+      --shell:#608491;
       --fg:#FBFAF5;
       --chip-bg:#072a54;
       --chip-fg:#fff;
@@ -855,12 +855,29 @@ function playSfx(){
       const n = parseFloat(val);
       return Number.isFinite(n) ? n : fallback;
     }
+    function makeKey({name, series, price, rarity, condition}){
+  return [name, series, price, rarity, condition]
+    .map(v => String(v ?? '').trim())
+    .join('|');
+}
+function normalizeCart(arr){
+  return arr.map(i => ({
+    ...i,
+    key: i.key || makeKey({
+      name:i.name, series:i.series, price:i.price, rarity:i.rarity, condition:i.condition
+    })
+  }));
+}
 
     /* ---- Cart helpers ---- */
     function getCart(){
-      try{ return JSON.parse(localStorage.getItem("cart") || "[]"); }
-      catch{ return []; }
-    }
+  try{
+    const raw = JSON.parse(localStorage.getItem("cart") || "[]");
+    return normalizeCart(Array.isArray(raw) ? raw : []);
+  }catch{
+    return [];
+  }
+}
     function getCartCount(){
       return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
     }
