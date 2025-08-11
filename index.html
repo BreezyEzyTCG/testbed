@@ -950,35 +950,29 @@ function renderMiniCart(){
   if(cart.length === 0){
     mc.items.innerHTML = `<div class="mc-empty">Your cart is empty.</div>`;
   } else {
-    cart.forEach(({name, price, quantity, image}) => {
+    cart.forEach(({key, name, price, quantity, image}) => {
       const row = document.createElement("div");
       row.className = "mc-item";
+      const safeKey = String(key).replace(/'/g,"\\'");
       row.innerHTML = `
-  <div class="mc-thumb"><img src="${image || ''}" alt=""></div>
-
-  <div class="mc-meta">
-    <p class="mc-name" title="${name || ''}">${name || ''}</p>
-    <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
-    <div class="mc-qty">
-      <img src="assets/images/minus%20button.svg" alt="Decrease"
-           onclick="decQty('${String(name).replace(/'/g,"\\'")}')" />
-      <span>${safeNumber(quantity,1)}</span>
-      <img src="assets/images/plus%20button.svg" alt="Increase"
-           onclick="incQty('${String(name).replace(/'/g,"\\'")}')" />
-    </div>
-  </div>
-
-  <button class="mc-remove" aria-label="Remove item"
-          onclick="removeFromCart('${String(name).replace(/'/g,"\\'")}')">
-    <img src="assets/images/bin.svg" alt="">
-  </button>
-
-  <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
-`;
+        <div class="mc-thumb"><img src="${image||''}" alt=""></div>
+        <div class="mc-meta">
+          <p class="mc-name" title="${name||''}">${name||''}</p>
+          <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
+          <div class="mc-qty">
+            <img src="assets/images/minus%20button.svg" alt="Decrease" onclick="decQty('${safeKey}')" />
+            <span>${safeNumber(quantity,1)}</span>
+            <img src="assets/images/plus%20button.svg" alt="Increase" onclick="incQty('${safeKey}')" />
+          </div>
+        </div>
+        <button class="mc-remove" aria-label="Remove item" onclick="removeFromCart('${safeKey}')">
+          <img src="assets/images/bin.svg" alt="">
+        </button>
+        <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
+      `;
       mc.items.appendChild(row);
     });
   }
-
   mc.subtotal.textContent = `$${getCartTotal().toFixed(2)}`;
 }
 
@@ -1125,9 +1119,14 @@ function setupMiniCart(){
         const safeName = String(p.name || "").replace(/'/g, "\\'");
         const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
 
-        const btnAttrs = out
-          ? `disabled aria-disabled="true" tabindex="-1"`
-          : `onclick="addToCart('${safeName}', ${price}, '${safeImg}')"`;
+       const esc = s => String(s||'').replace(/'/g,"\\'");
+       const safeSeries = esc(p["series name"]);
+       const safeRarity = esc(p.rarity);
+       const safeCondition = esc(p.condition);
+
+const btnAttrs = out
+  ? `disabled aria-disabled="true" tabindex="-1"`
+  : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}')"`; 
 
         const card = document.createElement("div");
         card.className = "card";
@@ -1576,10 +1575,17 @@ function setupMiniCart(){
       document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
 
       const out = safeNumber(product.stock, 0) <= 0;
-      qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
-      qv.addBtn.disabled = out;
-      qv.addBtn.onclick = out ? null : () =>
-        addToCart(product.name || 'Item', safeNumber(product.price, 0), product.image_url || '');
+    qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
+    qv.addBtn.disabled = out;
+    qv.addBtn.onclick = out ? null : () =>
+  addToCart(
+    product.name || 'Item',
+    safeNumber(product.price, 0),
+    product.image_url || '',
+    product['series name'] || '',
+    product.rarity || '',
+    product.condition || ''
+  );
 
       qv.thumbs.innerHTML = '';
       qv.images.forEach((src, i) => {
