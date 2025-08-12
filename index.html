@@ -8,7 +8,7 @@
   <!-- Google Font: Poetsen One (for brand title) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet"></style>
+  <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -686,25 +686,6 @@
     width:92vw;
   }
 }
-    /* === Shrink-on-scroll (banner only) === */
-.hero { transition: height .25s ease; }
-
-/* Scale the center title stack only (not search/cart) */
-.brand-center {
-  transform-origin: center top;
-  transition: transform .25s ease;
-}
-
-/* Make the banner shorter on scroll */
-.hero.shrink { height: 90px; }                 /* desktop/tablet */
-@media (max-width: 767.98px){
-  .hero.shrink { height: 75px; }               /* mobile */
-}
-
-/* When shrunk, gently scale the brand stack and reduce the nudge */
-.hero.shrink .brand-center > div {
-  transform: translateY(10px) scale(.84);      /* tweak to taste */
-}
   </style>
 </head>
 <body>
@@ -859,7 +840,7 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
-   // === Add-to-Cart SFX (separate from cart-link) ===
+   <!-- === Add-to-Cart SFX (separate from cart-link) === -->
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -1767,19 +1748,6 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2); // default matches the "double active" button initially
 setupMiniCart();   // ← ADD THIS
-
-// === Shrink hero on scroll ===
-(function(){
-  const hero = document.querySelector('.hero');
-  if(!hero) return;
-  const threshold = 80; // px before shrinking
-  function onScroll(){
-    if (window.scrollY > threshold) hero.classList.add('shrink');
-    else hero.classList.remove('shrink');
-  }
-  document.addEventListener('scroll', onScroll, { passive:true });
-  onScroll();
-})();
-</script>
+  </script>
 </body>
 </html>
