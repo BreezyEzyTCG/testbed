@@ -8,7 +8,7 @@
   <!-- Google Font: Poetsen One (for brand title) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet"></style?
 
   <style>
     :root{
@@ -693,6 +693,17 @@
 .brand-center {
   transform-origin: center top;
   transition: transform .25s ease, opacity .25s ease;
+}
+
+/* Compact state: make the banner shorter */
+.hero.shrink { height: 90px; }                 /* desktop/tablet */
+@media (max-width: 767.98px){
+  .hero.shrink { height: 75px; }               /* mobile */
+}
+
+/* Scale the whole brand stack together */
+.hero.shrink .brand-center { 
+  transform: translateY(0) scale(.72);
 }
 
 /* When hero is compact, cancel the desktop nudge so text isn’t too low */
