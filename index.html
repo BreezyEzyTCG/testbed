@@ -53,15 +53,22 @@
 }
 
     /* ================== HERO HEADER ================== */
-    <div class="site-shell">
-  <div class="shell-pad">
-    <div class="hero"> ... </div>  <!-- banner content -->
-  </div>
-  <div class="filter-bar"> ... </div> <!-- filters below banner -->
-</div>
+   
+.site-shell{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--shell);
+  width: 100%;
+  box-shadow: none;
+}
+    
+    /* Spacer below the fixed header (height set by JS) */
+:root{ --heroH: 0px; }
+.page-spacer{ height: var(--heroH); }
 
-    .shell-pad{ padding:10px 12px 3px; }
-
+.shell-pad{ padding:10px 12px 3px; }
+  
    .hero{
   position:relative;
   height:clamp(160px, 28vw, 260px);
@@ -803,6 +810,8 @@
       </div>
     </div>
   </div>
+
+    <div class="page-spacer" id="shellSpacer"></div>
 
   <!-- ===== Content Panel (grid toggle + cards) ===== -->
   <div class="container-panel">
@@ -1791,6 +1800,15 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
+updateShellOffset();
+
+    /* ===== Fixed-header spacer updater ===== */
+function updateShellOffset(){
+  const shell = document.querySelector('.site-shell');
+  if(!shell) return;
+  const h = shell.offsetHeight;
+  document.documentElement.style.setProperty('--heroH', h + 'px');
+}
 
 /* === Collapsible banner controller === */
 (function(){
@@ -1803,7 +1821,12 @@ setupMiniCart();
     hero.classList.toggle('collapsed', isCollapsed);
     btn.setAttribute('aria-expanded', String(!isCollapsed));
     label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-  }
+
+    // Update spacer height right after change
+    updateShellOffset();
+    // And again after the banner’s collapse/expand transition finishes
+    setTimeout(updateShellOffset, 320); // adjust if your CSS transition is longer/shorter
+}
 
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
