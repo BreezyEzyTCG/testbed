@@ -14,6 +14,9 @@
     :root{
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
+
+      /* ADD inside :root */
+--heroH: 0px;   /* will be set by JS to the current hero height */
       
       --shell:#85adb8;
       --fg:#FBFAF5;
@@ -54,21 +57,21 @@
 
     /* ================== HERO HEADER ================== */
     .site-shell {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--shell); /* ✅ use variable so it matches body */
+  position: relative;          /* no sticky here */
+  background: var(--shell);
   box-shadow: none;
 }
     .shell-pad{ padding:10px 12px 3px; }
 
    .hero{
-  position:relative;
+  position: sticky;             /* was relative; make it sticky */
+  top: 0;                       /* pin to top */
+  z-index: 30;                  /* above filters */
   height:clamp(160px, 28vw, 260px);
   max-width: 1200px;
   margin: 0 auto;
   border-radius:14px;
-  overflow:visible;      /* <-- allow mini-cart to overlay outside the banner */
+  overflow:visible;
   background-image:url("assets/images/Breezy%20Banner.png");
   background-size:cover;
   background-position:center 30%;
@@ -258,9 +261,12 @@
 
 /* ========= Filter selects (adjusted) ========= */
 .filter-bar{
+  position: sticky;            /* stick in place */
+  top: var(--heroH);           /* offset so it sits right below the hero */
+  z-index: 29;                 /* ensure it's above content */
   background:var(--shell);
-  margin-top:1.2px;                  /* add space under banner */
-  padding:14px 12px 10px;          /* increase top/bottom padding */
+  margin-top:1.2px;            /* add space under banner */
+  padding:14px 12px 10px;      /* increase top/bottom padding */
 }
 
 .filter-grid{
@@ -1791,6 +1797,16 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
+
+ // === Sticky offsets (measure hero) ===
+  const rootStyle = document.documentElement.style;
+  function setHeroOffset(){
+    const heroEl = document.querySelector('.hero');
+    rootStyle.setProperty('--heroH', heroEl ? heroEl.offsetHeight + 'px' : '0px');
+  }
+  window.addEventListener('DOMContentLoaded', setHeroOffset);
+  window.addEventListener('load', setHeroOffset);
+  window.addEventListener('resize', setHeroOffset);
 
 /* === Collapsible banner controller === */
 (function(){
