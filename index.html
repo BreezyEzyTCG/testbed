@@ -883,7 +883,7 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
-   <!-- === Add-to-Cart SFX (separate from cart-link) === -->
+    // === Add-to-Cart SFX (separate from cart-link) ===
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -1791,14 +1791,6 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
-// --- Keep content below the sticky header (auto height) ---
-function padForHeader() {
-  const shell = document.querySelector('.site-shell');
-  if (!shell) return;
-  document.body.style.paddingTop = shell.offsetHeight + 'px';
-}
-window.addEventListener('load', padForHeader);
-window.addEventListener('resize', padForHeader);
 
 // === Collapsible banner controller ===
 (function(){
