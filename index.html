@@ -1816,13 +1816,14 @@ setupMiniCart();
   if(!hero || !btn || !label) return;
 
   function apply(isCollapsed){
-    hero.classList.toggle('collapsed', isCollapsed);
-    btn.setAttribute('aria-expanded', String(!isCollapsed));
-    label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-  }
+  hero.classList.toggle('collapsed', isCollapsed);
+  btn.setAttribute('aria-expanded', String(!isCollapsed));
+  label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
+  requestAnimationFrame(setHeroOffset); // ← recalc sticky offset after height changes
+}
 
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
-  apply(saved);
+  requestAnimationFrame(setHeroOffset);
 
   btn.addEventListener('click', (e)=>{
     e.preventDefault();
