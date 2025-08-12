@@ -686,29 +686,25 @@
     width:92vw;
   }
 }
-    /* Smooth hero height change */
+    /* === Shrink-on-scroll (banner only) === */
 .hero { transition: height .25s ease; }
 
-/* Scale the title+subtitle stack as a unit */
+/* Scale the center title stack only (not search/cart) */
 .brand-center {
   transform-origin: center top;
-  transition: transform .25s ease, opacity .25s ease;
+  transition: transform .25s ease;
 }
 
-/* Compact state: make the banner shorter */
+/* Make the banner shorter on scroll */
 .hero.shrink { height: 90px; }                 /* desktop/tablet */
 @media (max-width: 767.98px){
   .hero.shrink { height: 75px; }               /* mobile */
 }
 
-/* Scale the whole brand stack together */
-.hero.shrink .brand-center { 
-  transform: translateY(0) scale(.72);
+/* When shrunk, gently scale the brand stack and reduce the nudge */
+.hero.shrink .brand-center > div {
+  transform: translateY(10px) scale(.84);      /* tweak to taste */
 }
-
-/* When hero is compact, cancel the desktop nudge so text isn’t too low */
-.hero.shrink .brand-center > div { transform: none; }
-
   </style>
 </head>
 <body>
