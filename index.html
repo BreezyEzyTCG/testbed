@@ -50,14 +50,17 @@
   font-family: Arial, sans-serif;
   margin: 0;
   background: var(--shell); /* ✅ now tied to your --shell variable */
+  padding-top: 180px; /* adjust to match header total height */
 }
 
     /* ================== HERO HEADER ================== */
     .site-shell {
-  position: sticky;
+  position: fixed;   /* ✅ stays in place on scroll */
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
-  background: var(--shell); /* ✅ use variable so it matches body */
+  background: var(--shell);
   box-shadow: none;
 }
     .shell-pad{ padding:10px 12px 3px; }
