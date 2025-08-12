@@ -892,7 +892,7 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
-   <!-- === Add-to-Cart SFX (separate from cart-link) === -->
+   // === Add-to-Cart SFX (separate from cart-link) ===
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -1801,6 +1801,8 @@ attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
 updateShellOffset();
+window.addEventListener('load', updateShellOffset); // ← add here
+
 
     /* ===== Fixed-header spacer updater ===== */
 function updateShellOffset(){
