@@ -50,15 +50,12 @@
   font-family: Arial, sans-serif;
   margin: 0;
   background: var(--shell); /* ✅ now tied to your --shell variable */
-  padding-top: 180px; /* adjust to match header total height */
 }
 
-    /* ================== HERO HEADER ================== */
-    .site-shell {
-  position: fixed;   /* ✅ stays in place on scroll */
+   /* ================== HERO HEADER ================== */
+.site-shell {
+  position: sticky;   /* back to sticky */
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 20;
   background: var(--shell);
   box-shadow: none;
@@ -1816,6 +1813,17 @@ setupMiniCart();
     const willCollapse = !hero.classList.contains('collapsed');
     apply(willCollapse);
     sessionStorage.setItem('heroCollapsed', willCollapse ? '1' : '0');
+    // --- Keep content below the sticky header (auto height) ---
+
+    function padForHeader() {
+  const shell = document.querySelector('.site-shell');
+  if (!shell) return;
+  document.body.style.paddingTop = shell.offsetHeight + 'px';
+}
+// run on load + resize
+window.addEventListener('load', padForHeader);
+window.addEventListener('resize', padForHeader);
+
   });
 })();
 </script>
