@@ -53,13 +53,13 @@
 }
 
     /* ================== HERO HEADER ================== */
-    .site-shell {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--shell); /* ✅ use variable so it matches body */
-  box-shadow: none;
-}
+    <div class="site-shell">
+  <div class="shell-pad">
+    <div class="hero"> ... </div>  <!-- banner content -->
+  </div>
+  <div class="filter-bar"> ... </div> <!-- filters below banner -->
+</div>
+
     .shell-pad{ padding:10px 12px 3px; }
 
    .hero{
