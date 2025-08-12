@@ -686,6 +686,40 @@
     width:92vw;
   }
 }
+    /* === Collapsible hero: hide ONLY the center brand block (#2) === */
+.hero { transition: height .28s ease; }
+.brand-center { transition: opacity .25s ease, transform .25s ease; }
+
+/* Collapsed state keeps the top row visible */
+.hero.collapsed { height: 72px; }
+.hero.collapsed .brand-center {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+/* Mobile collapsed height */
+@media (max-width: 767.98px){
+  .hero.collapsed { height: 62px; }
+}
+
+/* Small glassy toggle pill */
+.hero-toggle{
+  position:absolute; right:12px; bottom:8px; z-index:6;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border:1px solid rgba(255,255,255,.35);
+  border-radius:999px; background:rgba(255,255,255,.28);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color:#0f172a; font-size:.85rem; cursor:pointer;
+}
+@media (prefers-color-scheme: dark){
+  .hero-toggle{
+    background:rgba(2,6,23,.5); color:#e5e7eb; border-color:rgba(255,255,255,.12);
+  }
+}
+.hero-toggle svg{ width:16px; height:16px; transition:transform .2s ease; }
+.hero.collapsed .hero-toggle svg{ transform: rotate(180deg); }
+
   </style>
 </head>
 <body>
@@ -704,6 +738,12 @@
   </button>
   <input type="text" id="search" placeholder="Search for a product..." oninput="applyFilters()" />
 </div>
+      <button type="button" class="hero-toggle" id="heroToggle" aria-expanded="true" aria-controls="hero">
+  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+    <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.17l3.71-2.94a.75.75 0 1 1 .94 1.16l-4.24 3.36a.75.75 0 0 1-.94 0L5.21 8.39a.75.75 0 0 1 .02-1.18z"/>
+  </svg>
+  <span id="heroToggleLabel">Hide banner</span>
+</button>    
 
           <!-- Cart (right) -->
 <div class="cart-wrap">
@@ -1746,8 +1786,33 @@ updateCartCount();
 fetchInventoryFromSheet();
 setupQuickview();
 attachImageClickDelegation();
-setToggleIcons(2); // default matches the "double active" button initially
-setupMiniCart();   // ← ADD THIS
-  </script>
+setToggleIcons(2);
+setupMiniCart();
+
+/* === Collapsible banner controller === */
+(function(){
+  const hero  = document.querySelector('.hero');
+  const btn   = document.getElementById('heroToggle');
+  const label = document.getElementById('heroToggleLabel');
+  if(!hero || !btn || !label) return;
+
+  function apply(isCollapsed){
+    hero.classList.toggle('collapsed', isCollapsed);
+    btn.setAttribute('aria-expanded', String(!isCollapsed));
+    label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
+  }
+
+  const saved = sessionStorage.getItem('heroCollapsed') === '1';
+  apply(saved);
+
+  btn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const willCollapse = !hero.classList.contains('collapsed');
+    apply(willCollapse);
+    sessionStorage.setItem('heroCollapsed', willCollapse ? '1' : '0');
+  });
+})();
+</script>
 </body>
 </html>
+
