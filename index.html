@@ -1791,6 +1791,19 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
+// --- Keep content below the sticky header (auto height) ---
+function padForHeader() {
+  const shell = document.querySelector('.site-shell');
+  if (!shell) return;
+  document.body.style.paddingTop = shell.offsetHeight + 'px';
+}
+window.addEventListener('load', padForHeader);
+window.addEventListener('resize', padForHeader);
+
+// === Collapsible banner controller ===
+(function(){
+  // your existing hero toggle code
+})();
 
 /* === Collapsible banner controller === */
 (function(){
@@ -1800,10 +1813,11 @@ setupMiniCart();
   if(!hero || !btn || !label) return;
 
   function apply(isCollapsed){
-    hero.classList.toggle('collapsed', isCollapsed);
-    btn.setAttribute('aria-expanded', String(!isCollapsed));
-    label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-  }
+  hero.classList.toggle('collapsed', isCollapsed);
+  btn.setAttribute('aria-expanded', String(!isCollapsed));
+  label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
+  padForHeader(); // ✅ call it here so padding updates after collapse/expand
+}
 
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
