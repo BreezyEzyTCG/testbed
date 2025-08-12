@@ -686,6 +686,18 @@
     width:92vw;
   }
 }
+    /* Smooth hero height change */
+.hero { transition: height .25s ease; }
+
+/* Scale the title+subtitle stack as a unit */
+.brand-center {
+  transform-origin: center top;
+  transition: transform .25s ease, opacity .25s ease;
+}
+
+/* When hero is compact, cancel the desktop nudge so text isn’t too low */
+.hero.shrink .brand-center > div { transform: none; }
+
   </style>
 </head>
 <body>
@@ -840,7 +852,7 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
-   <!-- === Add-to-Cart SFX (separate from cart-link) === -->
+   // === Add-to-Cart SFX (separate from cart-link) ===
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -1748,6 +1760,19 @@ setupQuickview();
 attachImageClickDelegation();
 setToggleIcons(2); // default matches the "double active" button initially
 setupMiniCart();   // ← ADD THIS
-  </script>
+
+// === Shrink hero on scroll ===
+(function(){
+  const hero = document.querySelector('.hero');
+  if(!hero) return;
+  const threshold = 80; // px before shrinking
+  function onScroll(){
+    if (window.scrollY > threshold) hero.classList.add('shrink');
+    else hero.classList.remove('shrink');
+  }
+  document.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+})();
+</script>
 </body>
 </html>
