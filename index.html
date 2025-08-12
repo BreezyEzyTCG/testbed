@@ -52,12 +52,12 @@
   background: var(--shell); /* ✅ now tied to your --shell variable */
 }
 
-   /* ================== HERO HEADER ================== */
-.site-shell {
-  position: sticky;   /* back to sticky */
+    /* ================== HERO HEADER ================== */
+    .site-shell {
+  position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--shell);
+  background: var(--shell); /* ✅ use variable so it matches body */
   box-shadow: none;
 }
     .shell-pad{ padding:10px 12px 3px; }
@@ -883,7 +883,7 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
-    // === Add-to-Cart SFX (separate from cart-link) ===
+   <!-- === Add-to-Cart SFX (separate from cart-link) === -->
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -1792,11 +1792,6 @@ attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
 
-// === Collapsible banner controller ===
-(function(){
-  // your existing hero toggle code
-})();
-
 /* === Collapsible banner controller === */
 (function(){
   const hero  = document.querySelector('.hero');
@@ -1805,11 +1800,10 @@ setupMiniCart();
   if(!hero || !btn || !label) return;
 
   function apply(isCollapsed){
-  hero.classList.toggle('collapsed', isCollapsed);
-  btn.setAttribute('aria-expanded', String(!isCollapsed));
-  label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-  padForHeader(); // ✅ call it here so padding updates after collapse/expand
-}
+    hero.classList.toggle('collapsed', isCollapsed);
+    btn.setAttribute('aria-expanded', String(!isCollapsed));
+    label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
+  }
 
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
@@ -1819,20 +1813,8 @@ setupMiniCart();
     const willCollapse = !hero.classList.contains('collapsed');
     apply(willCollapse);
     sessionStorage.setItem('heroCollapsed', willCollapse ? '1' : '0');
-    // --- Keep content below the sticky header (auto height) ---
-
-    function padForHeader() {
-  const shell = document.querySelector('.site-shell');
-  if (!shell) return;
-  document.body.style.paddingTop = shell.offsetHeight + 'px';
-}
-// run on load + resize
-window.addEventListener('load', padForHeader);
-window.addEventListener('resize', padForHeader);
-
   });
 })();
 </script>
 </body>
 </html>
-
