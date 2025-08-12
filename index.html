@@ -53,13 +53,12 @@
 }
 
     /* ================== HERO HEADER ================== */
-   .site-shell{
-  position: fixed;      /* was sticky */
+    .site-shell {
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;        /* keep it above the page */
-  background: var(--shell);
+  z-index: 20;
+  background: var(--shell); /* ✅ use variable so it matches body */
+  box-shadow: none;
 }
     .shell-pad{ padding:10px 12px 3px; }
 
@@ -1794,46 +1793,28 @@ setToggleIcons(2);
 setupMiniCart();
 
 /* === Collapsible banner controller === */
-(function () {
-  const shell = document.querySelector('.site-shell');   // header wrapper
+(function(){
   const hero  = document.querySelector('.hero');
   const btn   = document.getElementById('heroToggle');
   const label = document.getElementById('heroToggleLabel');
-  if (!shell || !hero || !btn || !label) return;
+  if(!hero || !btn || !label) return;
 
-  // When header is position:fixed, push the page down by its height.
-  function updateBodyOffset() {
-    // Only needed if you switched .site-shell to position: fixed
-    const isFixed = getComputedStyle(shell).position === 'fixed';
-    document.body.style.paddingTop = isFixed ? shell.offsetHeight + 'px' : '';
-  }
-
-  function apply(isCollapsed) {
+  function apply(isCollapsed){
     hero.classList.toggle('collapsed', isCollapsed);
     btn.setAttribute('aria-expanded', String(!isCollapsed));
     label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-
-    // Wait for the collapse animation to finish, then measure
-    setTimeout(updateBodyOffset, 300);
   }
 
-  // Restore state
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
 
-  // Toggle
-  btn.addEventListener('click', (e) => {
+  btn.addEventListener('click', (e)=>{
     e.preventDefault();
     const willCollapse = !hero.classList.contains('collapsed');
     apply(willCollapse);
     sessionStorage.setItem('heroCollapsed', willCollapse ? '1' : '0');
   });
-
-  // On load and on resize, keep the body offset correct
-  updateBodyOffset();
-  window.addEventListener('resize', updateBodyOffset);
 })();
-
 </script>
 </body>
 </html>
