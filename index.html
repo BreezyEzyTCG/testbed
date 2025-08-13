@@ -62,15 +62,17 @@
 }
     .shell-pad{ padding:10px 12px 3px; }
 
-  body.fixed-header {
-  padding-top: 140px; /* Adjust to match collapsed header + filters height */
-}
+  /* allow page to scroll normally */
+html, body{ overflow-y:auto; }
 
-body.fixed-header .site-shell {
+/* we’ll set --headerH from JS after toggle */
+body.fixed-header { padding-top: var(--headerH, 140px); }
+
+body.fixed-header .site-shell{
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
+  /* width: 100%;  // uncomment if you ever see a 1px gap */
+  z-index: 20;     /* keep it above content */
 }
 
    .hero{
@@ -1803,32 +1805,52 @@ attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
 
-/* === Collapsible banner controller === */
+/* === Collapsible banner controller (with dynamic offset) === */
 (function(){
   const hero  = document.querySelector('.hero');
+  const shell = document.querySelector('.site-shell');   // ⬅️ NEW: we measure this
   const btn   = document.getElementById('heroToggle');
   const label = document.getElementById('heroToggleLabel');
-  if(!hero || !btn || !label) return;
+  if(!hero || !btn || !label || !shell) return;
 
- function apply(isCollapsed){
-  hero.classList.toggle('collapsed', isCollapsed);
-  btn.setAttribute('aria-expanded', String(!isCollapsed));
-  label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
+  // ⬅️ NEW: measure header height (hero + filters) and store as CSS var
+  function setHeaderOffset(){
+    const h = shell.offsetHeight;
+    document.documentElement.style.setProperty('--headerH', h + 'px');
+  }
 
-  // NEW: keep banner+filters fixed when collapsed
-  document.body.classList.toggle('fixed-header', isCollapsed);
-}
+  function apply(isCollapsed){
+    hero.classList.toggle('collapsed', isCollapsed);
+    btn.setAttribute('aria-expanded', String(!isCollapsed));
+    label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
 
+    // keep banner+filters fixed when collapsed
+    document.body.classList.toggle('fixed-header', isCollapsed);
+
+    // ensure page can scroll (in case something left body overflow hidden)
+    document.body.style.overflow = '';
+
+    // wait a tick so the hero height transition settles, then measure
+    requestAnimationFrame(setHeaderOffset);
+  }
+
+  // initial state from session
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
 
+  // toggle handler
   btn.addEventListener('click', (e)=>{
     e.preventDefault();
     const willCollapse = !hero.classList.contains('collapsed');
     apply(willCollapse);
     sessionStorage.setItem('heroCollapsed', willCollapse ? '1' : '0');
   });
+
+  // re-measure on resize/orientation
+  window.addEventListener('resize', setHeaderOffset);
+  window.addEventListener('orientationchange', setHeaderOffset);
 })();
+
 </script>
 </body>
 </html>
