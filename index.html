@@ -61,19 +61,23 @@
   box-shadow: none;
 }
     .shell-pad{ padding:10px 12px 3px; }
-
-  /* allow page to scroll normally */
-html, body{ overflow-y:auto; }
-
-/* we’ll set --headerH from JS after toggle */
-body.fixed-header { padding-top: var(--headerH, 140px); }
-
+    
+/* Header behavior */
 body.fixed-header .site-shell{
   position: fixed;
   top: 0; left: 0; right: 0;
-  /* width: 100%;  // uncomment if you ever see a 1px gap */
-  z-index: 20;     /* keep it above content */
+  z-index: 20;
 }
+
+/* Push ONLY the main content below the fixed header */
+body.fixed-header .container-panel{
+  margin-top: var(--headerH, 140px);
+}
+
+/* (optional) avoid sideways scrollbars from fixed header widths */
+body { overflow-x: hidden; }
+
+ 
 
    .hero{
   position:relative;
@@ -1806,14 +1810,14 @@ setToggleIcons(2);
 setupMiniCart();
 
 /* === Collapsible banner controller (with dynamic offset) === */
+/* === Collapsible banner controller (with dynamic offset) === */
 (function(){
   const hero  = document.querySelector('.hero');
-  const shell = document.querySelector('.site-shell');   // ⬅️ NEW: we measure this
+  const shell = document.querySelector('.site-shell');
   const btn   = document.getElementById('heroToggle');
   const label = document.getElementById('heroToggleLabel');
   if(!hero || !btn || !label || !shell) return;
 
-  // ⬅️ NEW: measure header height (hero + filters) and store as CSS var
   function setHeaderOffset(){
     const h = shell.offsetHeight;
     document.documentElement.style.setProperty('--headerH', h + 'px');
@@ -1827,12 +1831,17 @@ setupMiniCart();
     // keep banner+filters fixed when collapsed
     document.body.classList.toggle('fixed-header', isCollapsed);
 
-    // ensure page can scroll (in case something left body overflow hidden)
+    // make sure no leftover modal lock blocks scrolling
     document.body.style.overflow = '';
 
-    // wait a tick so the hero height transition settles, then measure
+    // measure once now, then again when the height transition ends
     requestAnimationFrame(setHeaderOffset);
   }
+
+  // 🔹 NEW: when hero finishes height transition, re-measure
+  hero.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'height') setHeaderOffset();
+  });
 
   // initial state from session
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
