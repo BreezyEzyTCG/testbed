@@ -62,6 +62,17 @@
 }
     .shell-pad{ padding:10px 12px 3px; }
 
+  body.fixed-header {
+  padding-top: 140px; /* Adjust to match collapsed header + filters height */
+}
+
+body.fixed-header .site-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
    .hero{
   position:relative;
   height:clamp(160px, 28vw, 260px);
@@ -1799,11 +1810,14 @@ setupMiniCart();
   const label = document.getElementById('heroToggleLabel');
   if(!hero || !btn || !label) return;
 
-  function apply(isCollapsed){
-    hero.classList.toggle('collapsed', isCollapsed);
-    btn.setAttribute('aria-expanded', String(!isCollapsed));
-    label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-  }
+ function apply(isCollapsed){
+  hero.classList.toggle('collapsed', isCollapsed);
+  btn.setAttribute('aria-expanded', String(!isCollapsed));
+  label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
+
+  // NEW: keep banner+filters fixed when collapsed
+  document.body.classList.toggle('fixed-header', isCollapsed);
+}
 
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
