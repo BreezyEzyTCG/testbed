@@ -61,17 +61,6 @@
   box-shadow: none;
 }
     .shell-pad{ padding:10px 12px 3px; }
-    
-/* Header behavior */
-body.fixed-header .site-shell{
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 20;
-}
-
-/* Push ONLY the main content below the fixed header */
-body.fixed-header { padding-top: var(--headerH, 50px); }
- 
 
    .hero{
   position:relative;
@@ -1803,57 +1792,29 @@ attachImageClickDelegation();
 setToggleIcons(2);
 setupMiniCart();
 
-/* === Collapsible banner controller (with dynamic offset) === */
-/* === Collapsible banner controller (with dynamic offset) === */
+/* === Collapsible banner controller === */
 (function(){
   const hero  = document.querySelector('.hero');
-  const shell = document.querySelector('.site-shell');
   const btn   = document.getElementById('heroToggle');
   const label = document.getElementById('heroToggleLabel');
-  if(!hero || !btn || !label || !shell) return;
-
-  function setHeaderOffset(){
-    const h = shell.offsetHeight;
-    document.documentElement.style.setProperty('--headerH', h + 'px');
-  }
+  if(!hero || !btn || !label) return;
 
   function apply(isCollapsed){
     hero.classList.toggle('collapsed', isCollapsed);
     btn.setAttribute('aria-expanded', String(!isCollapsed));
     label.textContent = isCollapsed ? 'Show banner' : 'Hide banner';
-
-    // keep banner+filters fixed when collapsed
-    document.body.classList.toggle('fixed-header', isCollapsed);
-
-    // make sure no leftover modal lock blocks scrolling
-    document.body.style.overflow = '';
-
-    // measure once now, then again when the height transition ends
-    requestAnimationFrame(setHeaderOffset);
   }
 
-  // 🔹 NEW: when hero finishes height transition, re-measure
-  hero.addEventListener('transitionend', (e) => {
-    if (e.propertyName === 'height') setHeaderOffset();
-  });
-
-  // initial state from session
   const saved = sessionStorage.getItem('heroCollapsed') === '1';
   apply(saved);
 
-  // toggle handler
   btn.addEventListener('click', (e)=>{
     e.preventDefault();
     const willCollapse = !hero.classList.contains('collapsed');
     apply(willCollapse);
     sessionStorage.setItem('heroCollapsed', willCollapse ? '1' : '0');
   });
-
-  // re-measure on resize/orientation
-  window.addEventListener('resize', setHeaderOffset);
-  window.addEventListener('orientationchange', setHeaderOffset);
 })();
-
 </script>
 </body>
 </html>
