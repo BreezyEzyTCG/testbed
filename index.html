@@ -718,8 +718,9 @@
     top: calc(100% + 6px);
     right: -6px;
     width: 92vw;
-  }
- 
+  }           /* ← close .mini-cart */
+}             /* ← close @media */
+
   </style>
 </head>
 <body>
@@ -874,7 +875,7 @@ const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
 sfx.preload = 'auto';
 sfx.volume = 0.6;
 
-   <!-- === Add-to-Cart SFX (separate from cart-link) === -->
+   //-- === Add-to-Cart SFX (separate from cart-link) === //
 const ADD_SFX_PATH = 'assets/audio/add to cart.mp3'; // ← use the actual file name
 const addSfx = new Audio(encodeURI(ADD_SFX_PATH));
 addSfx.preload = 'auto';
@@ -1800,6 +1801,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 });
-    
+</script>
+
+<!-- Scroll to Top Button -->
+<button id="scrollTopBtn" type="button" aria-label="Scroll to top">
+  <img src="assets/images/return to top.svg" alt="Back to top" />
+</button>
 </body>
 </html>
+
