@@ -12,6 +12,7 @@
 
   <style>
     :root{
+      
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
       
@@ -21,6 +22,13 @@
       --chip-fg:#fff;
       --accent:#ef4444;
 
+      --scroll-btn-size-desktop: 64px;      /* desktop button size */
+      --scroll-btn-size-mobile: 48px;       /* mobile button size */
+      --scroll-btn-right-desktop: calc((100% - 1200px) / 2 + 16px); /* desktop alignment */
+      --scroll-btn-right-mobile: 12px;      /* mobile alignment from right edge */
+      --scroll-btn-bottom-desktop: 24px;    /* desktop bottom offset */
+      --scroll-btn-bottom-mobile: 16px;     /* mobile bottom offset */
+    
       /* Quickview (light) */
       --qv-bg:#ffffff;
       --qv-fg:#111827;
@@ -679,12 +687,13 @@
 }
 
 /* === Scroll-to-Top (GLOBAL) === */
+/* === Scroll-to-Top (GLOBAL) === */
 #scrollTopBtn {
   position: fixed;
-  right: calc((100% - 1200px) / 2 + 16px); /* keeps inside product container */
-  bottom: 24px;
-  width: 65px;
-  height: 65px;
+  right: var(--scroll-btn-right-desktop);
+  bottom: var(--scroll-btn-bottom-desktop);
+  width: var(--scroll-btn-size-desktop);
+  height: var(--scroll-btn-size-desktop);
   z-index: 9999;
   background: transparent;
   border: none;
@@ -707,9 +716,14 @@
   pointer-events: none;
 }
 
-/* Tweak size/position on mobile only */
+/* Mobile overrides */
 @media (max-width:767.98px){
-  #scrollTopBtn { right:12px; bottom:12px; width:44px; height:44px; }
+  #scrollTopBtn {
+    right: var(--scroll-btn-right-mobile);
+    bottom: var(--scroll-btn-bottom-mobile);
+    width: var(--scroll-btn-size-mobile);
+    height: var(--scroll-btn-size-mobile);
+  }
 }
 
 /* Mobile position/width */
