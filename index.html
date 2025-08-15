@@ -318,8 +318,8 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-width: 60px;
-  height: 60px;
+  min-width: 40px;
+  height: 40px;
   padding: 0 10px;
   border-radius: 10px;
   border:1px solid rgba(0,0,0,.12);
@@ -333,10 +333,19 @@
 .pager .pg-btn[disabled]{
   opacity:.45; cursor:not-allowed; transform:none;
 }
+  
+/* Make only the arrow glyphs bigger */
+.pager .pg-btn[data-action="first"],
+.pager .pg-btn[data-action="prev"],
+.pager .pg-btn[data-action="next"],
+.pager .pg-btn[data-action="last"] {
+  font-size: 24px;   /* bigger arrows */
+  line-height: 1;    /* keeps them centered */
+}
 
 .pager .pg-label {
   font-weight: 400;
-  padding: 6px 6px; /* 4px top/bottom, 6px left/right */
+  padding: 10px 6px; /* 4px top/bottom, 6px left/right */
   color: #111;
 }
 
