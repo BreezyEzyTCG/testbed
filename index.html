@@ -301,6 +301,51 @@
     .layout-button img{ width:24px; height:24px; }
     .layout-button.single img{ width:30px; height:30px; }
 
+    /* ======= Pagination ======= */
+.pager{
+  max-width:1200px;
+  margin: 0.5rem auto 0.75rem;
+  padding: 0 1rem;
+  display:flex;
+  justify-content:center;
+  gap: 6px;
+  align-items:center;
+  flex-wrap:wrap;
+  user-select:none;
+}
+
+.pager .pg-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff;
+  color:#111;
+  font-weight:600;
+  cursor:pointer;
+  transition: transform .12s ease, background .15s ease, opacity .15s ease;
+}
+.pager .pg-btn:hover{ transform: translateY(-1px); }
+.pager .pg-btn[disabled]{
+  opacity:.45; cursor:not-allowed; transform:none;
+}
+
+.pager .pg-label{
+  font-weight:600; 
+  padding: 0 6px;
+  color:#111;
+}
+
+/* Mobile: keep it compact */
+@media (max-width: 767.98px){
+  .pager{ gap:4px; }
+  .pager .pg-btn{ min-width:36px; height:36px; border-radius:9px; }
+}
+
     /* ================== Cards ================== */
     .card-container{
       display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
@@ -816,25 +861,31 @@
   </div>
 
   <!-- ===== Content Panel (grid toggle + cards) ===== -->
-  <div class="container-panel">
-    <div class="controls">
-      <div class="grid-toggle">
-        <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
-          <img alt="Single grid" />
-        </button>
+<div class="container-panel">
+  <div class="controls">
+    <div class="grid-toggle">
+      <button class="layout-button single" type="button" onclick="setGridView(1)" aria-label="Single column">
+        <img alt="Single grid" />
+      </button>
 
-        <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
-          <img alt="Two grid" />
-        </button>
+      <button class="layout-button double active" type="button" onclick="setGridView(2)" aria-label="Two columns">
+        <img alt="Two grid" />
+      </button>
 
-        <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
-          <img alt="Three grid" />
-        </button>
-      </div>
+      <button class="layout-button triple" type="button" onclick="setGridView(3)" aria-label="Three columns">
+        <img alt="Three grid" />
+      </button>
     </div>
-
-    <div class="card-container grid-2"></div>
   </div>
+
+  <!-- TOP pager (centered) -->
+  <nav id="pagerTop" class="pager" aria-label="Pagination (top)"></nav>
+
+  <div class="card-container grid-2"></div>
+
+  <!-- BOTTOM pager (centered) -->
+  <nav id="pagerBottom" class="pager" aria-label="Pagination (bottom)"></nav>
+</div>
 
   <!-- ===== Quickview Modal ===== -->
   <div class="qv-backdrop" id="qvBackdrop" aria-hidden="true">
@@ -1183,7 +1234,9 @@ function setupMiniCart(){
         });
 
         populateAllDropdowns();
-        renderStore(allProducts);
+        filteredProducts = allProducts.slice(); // store the full list for paging
+        paging.page = 1;                         // start on page 1
+        renderPage();                            // slice + render + draw pager
         enforceResponsiveGrid();
       } catch(e) {
         console.error(e);
@@ -1309,15 +1362,18 @@ const byUniqueSorted = (arr) => {
       const rar  = document.getElementById("rarity-filter").value;
       const cond = document.getElementById("condition-filter").value;
 
-      const filtered = allProducts.filter(p =>
-        (p.name || "").toLowerCase().includes(kw) &&
-        (cat === "all" || p.category === cat) &&
-        (sub === "all" || p.subcategory === sub) &&
-        (rar === "all" || p.rarity === rar) &&
-        (cond === "all" || p.condition === cond)
-      );
-      renderStore(filtered);
-    }
+     const filtered = allProducts.filter(p =>
+  (p.name || "").toLowerCase().includes(kw) &&
+  (cat === "all" || p.category === cat) &&
+  (sub === "all" || p.subcategory === sub) &&
+  (rar === "all" || p.rarity === rar) &&
+  (cond === "all" || p.condition === cond)
+);
+
+// update global list + reset to page 1
+filteredProducts = filtered;
+paging.page = 1;
+renderPage();
 
     /* ---------- Grid toggle icons (new) ---------- */
     const ICONS = {
@@ -1388,6 +1444,62 @@ const byUniqueSorted = (arr) => {
     };
     function getCurrentRenderedList(){ return __lastRendered; }
 
+    // ======= PAGING (number-based) =======
+let filteredProducts = [];        // the full, filtered list to paginate
+let paging = { page: 1 };
+
+function perPage(){
+  // tune these if you prefer different counts
+  return isMobile() ? 12 : 24;
+}
+function totalPages(){
+  return Math.max(1, Math.ceil(filteredProducts.length / perPage()));
+}
+function clampPage(p){
+  return Math.min(Math.max(p, 1), totalPages());
+}
+
+  function renderPagers(){
+  const top = document.getElementById('pagerTop');
+  const bottom = document.getElementById('pagerBottom');
+  if(!top || !bottom) return;
+
+  const p = paging.page;
+  const t = totalPages();
+
+  const btn = (label, disabled, on, title) =>
+    `<button type="button" class="pg-btn" ${disabled?'disabled':''} title="${title}" data-action="${on}">${label}</button>`;
+
+  const html = `
+    ${btn('«', p===1, 'first', 'First page')}
+    ${btn('‹', p===1, 'prev',  'Previous page')}
+    <span class="pg-label">Page ${p} of ${t}</span>
+    ${btn('›', p===t, 'next',  'Next page')}
+    ${btn('»', p===t, 'last',  'Last page')}
+  `;
+
+  top.innerHTML = html;
+  bottom.innerHTML = html;
+
+  const wire = (root) => root.querySelectorAll('.pg-btn:not([disabled])')
+    .forEach(el => el.addEventListener('click', () => {
+      const act = el.getAttribute('data-action');
+      if(act === 'first') paging.page = 1;
+      if(act === 'prev')  paging.page = clampPage(paging.page - 1);
+      if(act === 'next')  paging.page = clampPage(paging.page + 1);
+      if(act === 'last')  paging.page = totalPages();
+      renderPage();
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // jump user to top for convenience
+    }));
+
+  wire(top); wire(bottom);
+}
+  function renderPage(){
+  const start = (paging.page - 1) * perPage();
+  const pageItems = filteredProducts.slice(start, start + perPage());
+  renderStore(pageItems);       // <- uses your existing override (title fitting etc.)
+  renderPagers();
+}
     /* ================== QUICKVIEW ================== */
 
     const MIN_ZOOM = 1;
@@ -1752,8 +1864,16 @@ const byUniqueSorted = (arr) => {
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyArrowThemeOnLoad);
 
     window.addEventListener("storage", (e) => { if (e.key === "cart") updateCartCount(); });
-    window.addEventListener("resize", () => { enforceResponsiveGrid(); fitCardTitles(document); });
-    window.addEventListener("orientationchange", () => { enforceResponsiveGrid(); fitCardTitles(document); });
+    window.addEventListener("resize", () => {
+  enforceResponsiveGrid();
+  paging.page = clampPage(paging.page); // keep within bounds if perPage changed
+  renderPage();
+});
+window.addEventListener("orientationchange", () => {
+  enforceResponsiveGrid();
+  paging.page = clampPage(paging.page);
+  renderPage();
+});
 
     /* --- Mobile search toggle --- */
 (function(){
