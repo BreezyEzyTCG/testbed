@@ -1808,18 +1808,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const scrollBtn = document.getElementById('scrollTopBtn');
   if (!scrollBtn) return;
 
+  let scrollTimeout;
+
   const toggleBtn = () => {
-    if (window.scrollY > 300) scrollBtn.classList.add('show');
-    else scrollBtn.classList.remove('show');
+    if (window.scrollY > 300) {
+      scrollBtn.classList.add('show');
+    } else {
+      scrollBtn.classList.remove('show');
+    }
   };
 
-  window.addEventListener('scroll', toggleBtn, { passive: true });
-  toggleBtn(); // set initial state
+  window.addEventListener('scroll', () => {
+    toggleBtn();
+
+    if (scrollBtn.classList.contains('show')) {
+      // While scrolling
+      scrollBtn.classList.add('scrolling');
+
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        // User stopped scrolling
+        scrollBtn.classList.remove('scrolling');
+      }, 200); // adjust delay for "stop" detection
+    }
+  }, { passive: true });
+
+  toggleBtn();
 
   scrollBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 });
+
 </script>
 
 <!-- Scroll to Top Button -->
