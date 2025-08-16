@@ -146,6 +146,33 @@
     }
     .back-btn{ background:#2b6cb0; color:#FBFAF5; }
 
+    /* === qty & remove controls (match mini-cart look) === */
+.icon-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:8px;
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff; cursor:pointer;
+  transition: transform .12s ease, background .15s ease, opacity .15s ease;
+}
+.icon-btn:hover{ transform: translateY(-2px); }
+.icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
+
+.qty-controls{ display:inline-flex; align-items:center; gap:6px; }
+.qty-controls .pill{
+  min-width:28px; text-align:center; padding:4px 8px;
+  border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
+  font-weight:600;
+}
+
+.remove-btn{
+  margin-left:10px;
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:.85rem; opacity:.9; cursor:pointer;
+  background:transparent; border:none; padding:4px 6px; border-radius:8px;
+}
+.remove-btn:hover{ background:rgba(0,0,0,.05); }
+
+
     /* Cart layout: items | summary */
     .cart-layout{
       display:grid; gap:16px;
@@ -265,7 +292,7 @@
 
     .ci-attrs {
   margin: 2px 0 6px;
-  font-size: .75rem;
+  font-size: .70rem;
   line-height: 1.3;
   max-height: calc(1.3em * 3); /* clamp to 3 lines */
   overflow: hidden;
@@ -371,8 +398,57 @@
       <div id="order-total" style="font-weight:700;">Order Total: $0.00</div>
     </div>
   </div>
-
+  
   <script>
+/* ===== Helpers: stable key for each unique cart line ===== */
+function itemKey(it){
+  return [
+    it.name ?? '',
+    String(Number(it.price) || 0),
+    it.series ?? '',
+    it.rarity ?? '',
+    it.condition ?? ''
+  ].join('||');
+}
+function escapeKey(it){
+  // safe for inline onclick=""
+  return itemKey(it).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+/* ===== Cart IO ===== */
+function getCart(){
+  try{
+    const raw = JSON.parse(localStorage.getItem("cart") || "[]");
+    return Array.isArray(raw) ? raw : [];
+  }catch{ return []; }
+}
+function saveCart(cart){
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+/* ===== Mutators used by + / − / remove buttons ===== */
+function incQty(key){
+  const cart = getCart();
+  const i = cart.findIndex(it => itemKey(it) === key);
+  if(i >= 0){
+    cart[i].quantity = (Number(cart[i].quantity)||0) + 1;
+    saveCart(cart); renderCart();
+  }
+}
+function decQty(key){
+  const cart = getCart();
+  const i = cart.findIndex(it => itemKey(it) === key);
+  if(i >= 0){
+    const q = (Number(cart[i].quantity)||0) - 1;
+    if(q <= 0){ cart.splice(i,1); } else { cart[i].quantity = q; }
+    saveCart(cart); renderCart();
+  }
+}
+function removeItem(key){
+  const cart = getCart().filter(it => itemKey(it) !== key);
+  saveCart(cart); renderCart();
+}
+
   function renderCart() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const cartContainer = document.getElementById("cart-items");
@@ -442,10 +518,26 @@
               </div>
             </div>
           </td>
-          <td>${qty}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
-        `;
+          <td>
+  <div class="qty-controls">
+    <button class="icon-btn" aria-label="Reduce">
+      <img src="assets/images/minus%20button.svg" alt="-" 
+           onclick="decQty('${escapeKey(item)}')">
+    </button>
+    <span class="pill">${qty}</span>
+    <button class="icon-btn" aria-label="Add">
+      <img src="assets/images/plus%20button.svg" alt="+" 
+           onclick="incQty('${escapeKey(item)}')">
+    </button>
+
+    <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">
+      Remove
+    </button>
+  </div>
+</td>
+<td>$${unit.toFixed(2)}</td>
+<td><strong>$${line.toFixed(2)}</strong></td>
+
 
       cartContainer.appendChild(row);
 
@@ -475,11 +567,24 @@
             <p class="ci-sub">$${unit.toFixed(2)}</p>
 
             <!-- Quantity -->
-            <div class="ci-qty">
-              <span>Qty</span>
-              <span class="pill">${qty}</span>
-            </div>
-          </div>
+           <div class="ci-qty">
+  <span>Qty</span>
+  <div class="qty-controls">
+    <button class="icon-btn" aria-label="Reduce">
+      <img src="assets/images/minus%20button.svg" alt="-" 
+           onclick="decQty('${escapeKey(item)}')">
+    </button>
+    <span class="pill">${qty}</span>
+    <button class="icon-btn" aria-label="Add">
+      <img src="assets/images/plus%20button.svg" alt="+" 
+           onclick="incQty('${escapeKey(item)}')">
+    </button>
+  </div>
+  <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">
+    Remove
+  </button>
+</div>
+
 
           <!-- Line total -->
           <div class="ci-right">$${line.toFixed(2)}</div>
