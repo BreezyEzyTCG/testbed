@@ -501,8 +501,10 @@ function removeItem(key){
           <td>${qty}</td>
           <td>$${unit.toFixed(2)}</td>
           <td><strong>$${line.toFixed(2)}</strong></td>
-        `
-        : `
+`;
+      
+      cartContainer.appendChild(row)
+        
           <td>
             <div style="display:flex; gap:10px; align-items:center; min-width:0;">
               <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
