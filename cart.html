@@ -318,7 +318,7 @@
     /* One row = [thumb] [meta] [line-total] */
 .cart-item{
   display:grid;
-  grid-template-columns: 56px minmax(0,1fr) 80px; /* 👈 give totals more room */
+  grid-template-columns: 56px minmax(0,1fr) 60px; /* 👈 give totals more room */
   gap:10px;
   align-items:center;
   padding:10px 12px;
@@ -376,15 +376,22 @@
     }
 
   .ci-right{
-  grid-column: 3;        /* 👈 force into the 3rd grid column */
-  align-self: center;    /* vertical center in the row */
-  justify-self: end;     /* stick to far right edge of its column */
+  grid-column: 3;              /* stay in 3rd column */
+  align-self: stretch;         /* 👈 fill the row’s height */
+  justify-self: stretch;       /* fill the column width */
+
+  display: flex;               /* 👇 use flex to center vertically */
+  align-items: center;         /* 👈 vertical center */
+  justify-content: flex-end;   /* keep it right-aligned */
+
   font-weight:700;
   font-size:.95rem;
   white-space:nowrap;
   text-align:right;
   overflow:hidden;
   text-overflow:ellipsis;
+
+  line-height: 1.2;            /* reset; no need to match height */
 }
 @media (max-width: 480px){
   .ci-right{ font-size:.9rem; }
