@@ -264,14 +264,18 @@
     .cart-list { padding: 8px; }
 
     /* One row = [thumb] [meta] [line-total] */
-    .cart-item{
-      display: grid;
-      grid-template-columns: 56px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      padding: 10px 12px;
-      border-bottom: 1px solid #eee;
-    }
+.cart-item{
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 10px;
+  align-items: center;       /* already present */
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+
+  /* 👇 ADD these two lines */
+  min-height: 64px;          /* matches your 56px thumb, gives breathing room */
+  grid-auto-rows: minmax(64px, auto);
+}
 
     .ci-thumb{
       width:56px; height:56px; border-radius:6px;
@@ -330,20 +334,18 @@
   text-align:right; 
   overflow:hidden; 
   text-overflow:ellipsis;
-  align-self:center;
+
+  /* 👇 ADD/ADJUST */
+  display:flex;              /* make vertical centering obvious */
+  align-items:center;        /* vertically center inside the cell */
+  justify-content:flex-end;  /* right-edge alignment */
+  place-self:center end;     /* center vertically in row, stick to right horizontally */
 }
 
 @media (max-width: 480px){
   .ci-name{ font-size:.9rem; }
   .ci-sub{ font-size:.8rem; }
-  .ci-right{
-    display:flex;             /* keep flex on mobile too */
-    align-items:center;
-    justify-content:flex-end;
-    font-size:.9rem;
-  }
 }
-
   </style>
 </head>
 <body>
