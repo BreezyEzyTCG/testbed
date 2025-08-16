@@ -147,26 +147,26 @@
     .back-btn{ background:#2b6cb0; color:#FBFAF5; }
 
     /* === qty & remove controls (match mini-cart look) === */
-.icon-btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:28px; height:28px; border-radius:8px;
-  border:1px solid rgba(0,0,0,.12);
-  background:#fff; cursor:pointer;
-  transition: transform .12s ease, background .15s ease, opacity .15s ease;
-}
-.icon-btn:hover{ transform: translateY(-2px); }
-.icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:28px; height:28px; border-radius:8px;
+      border:1px solid rgba(0,0,0,.12);
+      background:#fff; cursor:pointer;
+      transition: transform .12s ease, background .15s ease, opacity .15s ease;
+    }
+    .icon-btn:hover{ transform: translateY(-2px); }
+    .icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
 
-.qty-controls{
-  display:inline-flex; align-items:center; gap:6px;
-  flex-wrap: nowrap;   /* 👈 ensure on one line */
-}
+    .qty-controls{
+      display:inline-flex; align-items:center; gap:6px;
+      flex-wrap: nowrap;   /* 👈 ensure on one line */
+    }
 
-.qty-controls .pill{
-  min-width:28px; text-align:center; padding:4px 8px;
-  border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
-  font-weight:600;
-}
+    .qty-controls .pill{
+      min-width:28px; text-align:center; padding:4px 8px;
+      border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
+      font-weight:600;
+    }
 
     /* Cart layout: items | summary */
     .cart-layout{
@@ -182,39 +182,40 @@
       box-shadow:0 8px 20px rgba(0,0,0,.05);
       overflow:hidden;
     }
-  .cart-table{ 
-  width: 100%; 
-  border-collapse: collapse; 
-}
+    .cart-table{ 
+      width: 100%; 
+      border-collapse: collapse; 
+    }
 
-.cart-table th,
-.cart-table td {
-  border-bottom: 1px solid #eee;
-  padding: 12px;
-  text-align: center;        /* default center */
-  vertical-align: middle;
-}
+    .cart-table th,
+    .cart-table td {
+      border-bottom: 1px solid #eee;
+      padding: 12px;
+      text-align: center;        /* default center */
+      vertical-align: middle;
+    }
 
-/* Item column: left align */
-.cart-table th:first-child,
-.cart-table td:first-child {
-  text-align: left;
-  font-weight: 700;
-}
+    /* Item column: left align */
+    .cart-table th:first-child,
+    .cart-table td:first-child {
+      text-align: left;
+      font-weight: 700;
+    }
 
-/* Nudge Qty, Unit, Total cells a bit left */
-.cart-table td.col-qty,
-.cart-table td.col-unit,
-.cart-table td.col-total {
-  text-align: center;       /* keep content centered */
-  padding-left: 6px;        /* ⬅ adjust this to shift group left */
-}
+    /* Nudge Qty, Unit, Total cells a bit left */
+    .cart-table td.col-qty,
+    .cart-table td.col-unit,
+    .cart-table td.col-total {
+      text-align: center;       /* keep content centered */
+      padding-left: 6px;        /* ⬅ adjust this to shift group left */
+    }
+
     /* OPTIONAL: force-shift the entire Qty column */
-.cart-table td.col-qty,
-.cart-table th.col-qty {
-  position: relative;
-  left: -25px;   /* ⬅ try -6px, -8px, etc. */
-}
+    .cart-table td.col-qty,
+    .cart-table th.col-qty {
+      position: relative;
+      left: -25px;   /* ⬅ try -6px, -8px, etc. */
+    }
 
     .thumb{
       width:64px; height:64px; border-radius:6px; background:#fff;
@@ -227,50 +228,46 @@
     @media (max-width:767.98px){
       .cart-table td, .cart-table th { font-size: 0.65rem; padding: 8px; }
     }
-    /* Prevent any numeric overflow in the desktop table */
+
+    /* Prevent any numeric overflow in the desktop table (single definition) */
     .cart-table td{
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      white-space:nowrap; 
+      overflow:hidden; 
+      text-overflow:ellipsis;
     }
 
-    /* Prevent any numeric overflow in the desktop table */
-.cart-table td{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
+    /* === NEW: column widths & attribute clamp === */
+    .cart-table { table-layout: fixed; }
 
-/* === NEW: column widths & attribute clamp === */
-.cart-table { table-layout: fixed; }
+    .cart-table col.col-item  { width: auto; max-width: 300px; } /* takes leftover, capped */
+    .cart-table col.col-qty   { width: 160px; }   /* was 84px */
+    .cart-table col.col-unit  { width: 80px; }
+    .cart-table col.col-total { width: 90px; }
 
-.cart-table col.col-item  { width: auto; max-width: 300px; } /* takes leftover, capped */
-.cart-table col.col-qty { width: 160px; }   /* was 84px */
-.cart-table col.col-unit  { width: 80px; }
-.cart-table col.col-total { width: 90px; }
+    /* Allow wrapping inside the first (Item) column only */
+    .cart-table td.col-item { white-space: normal; }
 
-/* Allow wrapping inside the first (Item) column only */
-.cart-table td.col-item { white-space: normal; }
+    /* Product name single line with ellipsis */
+    .item-name{
+      font-weight:700;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
 
-/* Product name single line with ellipsis */
-.item-name{
-  font-weight:700;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-
-/* Attributes: clamp to 2 lines */
-.item-attrs{
-  opacity:.8;
-  font-size:.85rem;
-  line-height:1.3;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-  white-space:normal;
-  word-break:break-word;
-  max-width:320px;   /* adjust to taste */
-}
+    /* Attributes: clamp to 2 lines */
+    .item-attrs{
+      opacity:.8;
+      font-size:.85rem;
+      line-height:1.3;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      white-space:normal;
+      word-break:break-word;
+      max-width:320px;   /* adjust to taste */
+    }
 
     /* ===== Summary (glass) ===== */
     .summary.glass{
@@ -304,98 +301,98 @@
 
     /* ========= Mini-cart style rows for MOBILE ========= */
 
-/* Default: show table panel, hide list panel */
-#cart-list-panel { display: none; }
+    /* Default: show table panel, hide list panel */
+    #cart-list-panel { display: none; }
 
-/* Mobile: hide table, show list */
-@media (max-width: 767.98px){
-  .cart-table { display: none; }
-  #cart-list-panel { display: block; }
-}
+    /* Mobile: hide table, show list */
+    @media (max-width: 767.98px){
+      .cart-table { display: none; }
+      #cart-list-panel { display: block; }
+    }
 
-.cart-list { padding: 8px; }
+    .cart-list { padding: 8px; }
 
-/* Grid: [thumb] | [stack: name → attrs → unit price → qty] | [total] */
-.cart-item{
-  display:grid;
-  grid-template-columns: 56px minmax(0,1fr) 90px; /* widen last track if needed */
-  gap:10px;
-  align-items:center;
-  padding:10px 12px;
-  border-bottom:1px solid #eee;
-}
+    /* Grid: [thumb] | [stack: name → attrs → unit price → qty] | [total] */
+    .cart-item{
+      display:grid;
+      grid-template-columns: 56px minmax(0,1fr) 90px; /* widen last track if needed */
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      border-bottom:1px solid #eee;
+    }
 
-.ci-thumb{
-  width:56px; height:56px; border-radius:6px;
-  background:#fff; display:flex; align-items:center; justify-content:center;
-  overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.05);
-}
-.ci-thumb img{ max-width:100%; max-height:100%; object-fit:contain; display:block; }
+    .ci-thumb{
+      width:56px; height:56px; border-radius:6px;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.05);
+    }
+    .ci-thumb img{ max-width:100%; max-height:100%; object-fit:contain; display:block; }
 
-/* Middle column becomes a vertical stack */
-.ci-meta{
-  min-width:0;
-  display:flex;              /* stack children vertically */
-  flex-direction: column;
-  gap:6px;                   /* spacing between rows */
-}
+    /* Middle column becomes a vertical stack */
+    .ci-meta{
+      min-width:0;
+      display:flex;
+      flex-direction: column;
+      gap:6px;
+    }
 
-/* Order inside the middle stack: name → attrs → unit price → qty */
-.ci-name{
-  order:0;
-  margin:0;
-  font-weight:700; font-size:.95rem; line-height:1.2;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.ci-attrs{
-  order:1;
-  margin:0;                  /* remove old margins; gap handles spacing */
-  font-size:.70rem; line-height:1.3;
-  max-height: calc(1.3em * 3);            /* clamp to 3 lines */
-  overflow:hidden; display:-webkit-box;
-  -webkit-line-clamp:3; -webkit-box-orient:vertical;
-  max-width:120px; white-space:normal; word-break:break-word;
-  opacity:.8; padding:0;
-}
-.ci-sub{
-  order:2;
-  margin:0;
-  font-size:.85rem; line-height:1.25;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  opacity:.9; font-weight:600;
-}
-.ci-qty{
-  order:3;
-  margin:0;
-  display:inline-flex; align-items:center; gap:6px;
-  font-size:.9rem;
-}
-.ci-qty .pill{
-  min-width:22px; text-align:center; padding:2px 8px;
-  border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
-}
+    /* Order inside the middle stack: name → attrs → unit price → qty */
+    .ci-name{
+      order:0;
+      margin:0;
+      font-weight:700; font-size:.95rem; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .ci-attrs{
+      order:1;
+      margin:0;
+      font-size:.70rem; line-height:1.3;
+      max-height: calc(1.3em * 3);
+      overflow:hidden; display:-webkit-box;
+      -webkit-line-clamp:3; -webkit-box-orient:vertical;
+      max-width:120px; white-space:normal; word-break:break-word;
+      opacity:.8; padding:0;
+    }
+    .ci-sub{
+      order:2;
+      margin:0;
+      font-size:.85rem; line-height:1.25;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      opacity:.9; font-weight:600;
+    }
+    .ci-qty{
+      order:3;
+      margin:0;
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:.9rem;
+    }
+    .ci-qty .pill{
+      min-width:22px; text-align:center; padding:2px 8px;
+      border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
+    }
 
-/* Total (right column) */
-.ci-right{
-  grid-column: 3;               /* right column = total */
-  align-self: center;           /* vertical center */
-  justify-self: stretch;
+    /* Total (right column) */
+    .ci-right{
+      grid-column: 3;
+      align-self: center;
+      justify-self: stretch;
 
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;     /* change to center if you want centered totals */
-  text-align:right;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      text-align:right;
 
-  font-weight:700;
-  font-size:.95rem;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  line-height:1.2;
-  padding-right:6px;            /* breathing room from edge */
-}
+      font-weight:700;
+      font-size:.95rem;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      line-height:1.2;
+      padding-right:6px;
+    }
 
-@media (max-width: 480px){
-  .ci-right{ font-size:.9rem; }
-}
+    @media (max-width: 480px){
+      .ci-right{ font-size:.9rem; }
+    }
   </style>
 </head>
 <body>
@@ -427,12 +424,12 @@
       <!-- LEFT: items -->
       <div class="card-panel">
         <table class="cart-table">
-  <colgroup>
-    <col class="col-item">
-    <col class="col-qty">
-    <col class="col-unit">
-    <col class="col-total">
-  </colgroup>
+          <colgroup>
+            <col class="col-item">
+            <col class="col-qty">
+            <col class="col-unit">
+            <col class="col-total">
+          </colgroup>
           <thead>
             <tr class="head-desktop">
               <th>Item</th><th>Qty</th><th>Price</th><th>Total</th>
@@ -582,18 +579,18 @@
         `
         : `
           <td class="col-item">
-  <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-    <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-    <div style="min-width:0;">
-      <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
-      <div class="item-attrs">
-        ${(item.series ? `${item.series}` : '')}
-        ${(item.rarity ? ` · ${item.rarity}` : '')}
-        ${(item.condition ? ` · ${item.condition}` : '')}
-      </div>
-    </div>
-  </div>
-</td>
+            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+              <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+              <div style="min-width:0;">
+                <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
+                <div class="item-attrs">
+                  ${(item.series ? `${item.series}` : '')}
+                  ${(item.rarity ? ` · ${item.rarity}` : '')}
+                  ${(item.condition ? ` · ${item.condition}` : '')}
+                </div>
+              </div>
+            </div>
+          </td>
           <td>
             <div class="qty-controls">
               <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
@@ -625,53 +622,33 @@
           (item.condition ? ` · ${item.condition}` : '')
         ].join('').replace(/^ · /,'');
 
-     li.innerHTML = `
-  <div class="ci-thumb">
-    <img src="${imagePath}" alt="${item.name || 'Item'}">
-  </div>
+        /* FIXED: single, self-contained template string */
+        li.innerHTML = `
+          <div class="ci-thumb">
+            <img src="${imagePath}" alt="${item.name || 'Item'}">
+          </div>
 
-  <div class="ci-meta">
-    <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
-    ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
-    <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
+          <div class="ci-meta">
+            <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
+            ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
+            <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
 
-    <div class="ci-qty">
-      <div class="qty-controls">
-        <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-          <img src="assets/images/minus%20button.svg" alt="-">
-        </button>
-        <span class="pill">${qty}</span>
-        <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-          <img src="assets/images/plus%20button.svg" alt="+">
-        </button>
-        <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
-          <img src="assets/images/bin.svg" alt="Remove">
-        </button>
-      </div>
-    </div>
-  </div>  <!-- closes .ci-meta -->
+            <div class="ci-qty">
+              <div class="qty-controls">
+                <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+                  <img src="assets/images/minus%20button.svg" alt="-">
+                </button>
+                <span class="pill">${qty}</span>
+                <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
+                  <img src="assets/images/plus%20button.svg" alt="+">
+                </button>
+                <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
+                  <img src="assets/images/bin.svg" alt="Remove">
+                </button>
+              </div>
+            </div>
+          </div>  <!-- closes .ci-meta -->
 
-  <div class="ci-right">$${line.toFixed(2)}</div>
-`;
-
-<div class="ci-qty">
-  <div class="qty-controls">
-    <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-      <img src="assets/images/minus%20button.svg" alt="-">
-    </button>
-    <span class="pill">${qty}</span>
-    <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-      <img src="assets/images/plus%20button.svg" alt="+">
-    </button>
-    <!-- NEW: bin button (same style as index mini-cart) -->
-    <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
-      <img src="assets/images/bin.svg" alt="Remove">
-    </button>
-  </div>
-</div>
-
-
-          <!-- Line total -->
           <div class="ci-right">$${line.toFixed(2)}</div>
         `;
         cartList.appendChild(li);
@@ -696,6 +673,6 @@
 
   // Initial load
   renderCart();
-</script>
+  </script>
 </body>
 </html>
