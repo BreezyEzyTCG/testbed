@@ -1071,6 +1071,13 @@ function updateCheckoutDisabled(){
 
     // Initial render after wiring (ensures totals consider restored selections)
     renderCart();
+
+    // === Bind disclaimer toggles ===
+document.getElementById('disc1')?.addEventListener('change', updateCheckoutDisabled);
+document.getElementById('disc2')?.addEventListener('change', updateCheckoutDisabled);
+
+// Initialize button state on load
+updateCheckoutDisabled();
   });
 
   // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
@@ -1173,8 +1180,6 @@ function updateCheckoutDisabled(){
       if(!isMobile()){
         siteShell.classList.remove('is-collapsed');
       }
-      document.getElementById('disc1')?.addEventListener('change', updateCheckoutDisabled);
-document.getElementById('disc2')?.addEventListener('change', updateCheckoutDisabled);
 
 // Initialize button state on load
 updateCheckoutDisabled();
