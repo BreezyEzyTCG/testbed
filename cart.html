@@ -146,19 +146,37 @@
     }
     .back-btn{ background:#2b6cb0; color:#FBFAF5; }
 
-    /* === Mobile: collapsible header on scroll === */
+    /* === Mobile: collapsible hero/header on scroll === */
 @media (max-width: 767.98px){
-  .site-shell{
-    transition: height .25s ease, padding .25s ease;
-    overflow: hidden;
-  }
-  .site-shell.is-collapsed{
-    height: 0 !important;
-    padding: 0 !important;
-  }
+  /* Let the header clip its contents when collapsing */
+  .site-shell { overflow: hidden; }
+
+  /* Animate just the hero: smoother than collapsing the whole shell */
   .hero{
-    height: 200px; /* tweak if you want, just for smooth collapse */
+    /* Pick a realistic max height for your banner on mobile */
+    max-height: 200px;              /* adjust to your actual visual height */
+    transition: max-height .25s ease, opacity .2s ease;
   }
+
+  /* Reduce padding so there’s no leftover gap during collapse */
+  .shell-pad{
+    transition: padding .25s ease;
+  }
+
+  /* Collapsed state toggled by JS */
+  .site-shell.is-collapsed .hero{
+    max-height: 0;
+    opacity: 0;
+  }
+  .site-shell.is-collapsed .shell-pad{
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+    
+/* 👇 add this right after */
+@media (max-width: 767.98px){
+  .hero{ will-change: max-height; }  /* smoother animation */
 }
 
     /* === qty & remove controls (match mini-cart look) === */
@@ -565,7 +583,6 @@
     const cart = getCart();
     const cartContainer = document.getElementById("cart-items");
     const cartList = document.getElementById("cart-list"); // mobile list
-    const totalDisplay = document.getElementById("order-total");
     const sumSubtotal = document.getElementById("sumSubtotal");
     const sumTotal = document.getElementById("sumTotal");
 
@@ -582,7 +599,6 @@
             <div style="opacity:.75;">Your cart is empty.</div>
           </div>`;
       }
-      totalDisplay.innerText = "Order Total: $0.00";
       if (sumSubtotal) sumSubtotal.textContent = "$0.00";
       if (sumTotal) sumTotal.textContent = "$0.00";
       return;
@@ -713,46 +729,93 @@
   // Initial load
   renderCart();
 
-    // === Hide header on scroll (mobile only) ===
+    // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
 (function(){
   const siteShell = document.querySelector('.site-shell');
   if(!siteShell) return;
 
-  let lastY = window.scrollY;
-  let locked = false;
   const MOBILE_MAX = 767.98;
-  const DOWN_THRESHOLD = 20;
-  const UP_THRESHOLD = 10;
+  const DOWN_THRESHOLD = 20;  // how much to scroll down before hiding
+  const UP_THRESHOLD   = 10;  // how much to scroll up before showing
+  let lastYByEl = new WeakMap();
+  let locked = false;
 
   function isMobile(){
     return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
   }
 
-  window.addEventListener('scroll', () => {
-    if(!isMobile() || locked) { lastY = window.scrollY; return; }
+  // Get the active scroll containers you use
+  function getScrollSources(){
+    const sources = [];
+    // Mobile list (your main mobile scroller)
+    const mobileList = document.querySelector('#cart-list-panel .cart-list');
+    if (mobileList) sources.push(mobileList);
 
-    const y = window.scrollY;
-    const delta = y - lastY;
+    // Desktop/table scroller (kept for completeness)
+    const tableScroll = document.querySelector('.items-panel .cart-scroll');
+    if (tableScroll) sources.push(tableScroll);
 
-    if(delta > DOWN_THRESHOLD && y > 0){
-      siteShell.classList.add('is-collapsed');
-      locked = true;
-      setTimeout(() => locked = false, 180);
+    // Fallback to window (in case neither exists)
+    sources.push(window);
+    return sources;
+  }
+
+  function onScrollFactory(el){
+    return function onScroll(){
+      // Only act on mobile
+      if(!isMobile()){
+        siteShell.classList.remove('is-collapsed');
+        return;
+      }
+
+      // Current scroll position for this source
+      const y = (el === window) ? window.scrollY : el.scrollTop;
+      const last = lastYByEl.get(el) ?? y;
+      const delta = y - last;
+
+      if(locked){
+        lastYByEl.set(el, y);
+        return;
+      }
+
+      // Hide on downward scroll
+      if(delta > DOWN_THRESHOLD && y > 0){
+        siteShell.classList.add('is-collapsed');
+        locked = true; setTimeout(()=> locked = false, 160);
+      }
+      // Show on upward scroll
+      else if(delta < -UP_THRESHOLD){
+        siteShell.classList.remove('is-collapsed');
+        locked = true; setTimeout(()=> locked = false, 160);
+      }
+
+      lastYByEl.set(el, y);
+    };
+  }
+
+  // Attach listeners to each source that actually scrolls
+  const sources = getScrollSources();
+  const handlers = [];
+  for (const el of sources){
+    const handler = onScrollFactory(el);
+    handlers.push({ el, handler });
+    const opts = { passive: true };
+    if (el === window){
+      window.addEventListener('scroll', handler, opts);
+    }else{
+      el.addEventListener('scroll', handler, opts);
+      // seed initial position so first delta is correct
+      lastYByEl.set(el, el.scrollTop);
     }
-    else if(delta < -UP_THRESHOLD){
-      siteShell.classList.remove('is-collapsed');
-      locked = true;
-      setTimeout(() => locked = false, 180);
-    }
+  }
 
-    lastY = y;
-  }, { passive: true });
-
+  // Keep behavior correct if layout switches between mobile/desktop
   window.addEventListener('resize', () => {
     if(!isMobile()){
       siteShell.classList.remove('is-collapsed');
     }
   });
+
 })();
 
   </script>
