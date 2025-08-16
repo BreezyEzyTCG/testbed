@@ -270,16 +270,16 @@
     }
 
     /* === ADDED: Numeric column alignment & fixed widths === */
-    .cart-table{ /* keep existing styles above; add fixed layout for stable columns */
-      table-layout: fixed; /* === ADDED === */
-    }
-    .cart-table th.num,
-    .cart-table td.num{
-      text-align: right;            /* === ADDED === */
-      white-space: nowrap;          /* === ADDED === */
-      font-variant-numeric: tabular-nums; /* === ADDED === */
-      padding-right: 16px;          /* === ADDED: slightly tighter right pad */
-    }
+    /* keep this */
+.cart-table { table-layout: fixed; }
+
+/* change this block: remove th.num */
+.cart-table td.num{
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  padding-right: 16px;
+}
     .cart-table td.total{           /* === ADDED: stronger total column */
       font-weight: 700;
     }
@@ -325,33 +325,29 @@
   <div class="container page-wrap">
 
     <div class="cart-layout">
-      <!-- LEFT: items table (keeps your IDs) -->
-     <div class="card-panel">
+     <!-- LEFT: items table -->
+<div class="card-panel">
   <div class="table-scroll">
     <table class="cart-table">
-      ...
+      <colgroup>
+        <col class="col-item">
+        <col class="col-qty">
+        <col class="col-unit">
+        <col class="col-total">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="cart-items"></tbody>
     </table>
   </div>
 </div>
 
-          <!-- === ADDED: fixed column widths === -->
-          <colgroup>
-            <col class="col-item">
-            <col class="col-qty">
-            <col class="col-unit">
-            <col class="col-total">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th class="num">Qty</th>         <!-- === ADDED class === -->
-              <th class="num">Unit Price</th>  <!-- === ADDED class === -->
-              <th class="num">Total</th>       <!-- === ADDED class === -->
-            </tr>
-          </thead>
-          <tbody id="cart-items"></tbody>
-        </table>
-      </div>
 
       <!-- RIGHT: glass summary (new IDs to mirror totals if you want) -->
       <aside class="summary glass">
