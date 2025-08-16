@@ -677,7 +677,6 @@
           (item.condition ? ` · ${item.condition}` : '')
         ].join('').replace(/^ · /,'');
 
-        /* FIXED: single, self-contained template string */
         li.innerHTML = `
           <div class="ci-thumb">
             <img src="${imagePath}" alt="${item.name || 'Item'}">
@@ -712,7 +711,6 @@
 
     // Totals
     const money = v => `$${(Number(v)||0).toFixed(2)}`;
-    totalDisplay.innerText = `Order Total: ${money(total)}`;
     if (sumSubtotal) sumSubtotal.textContent = money(total);
     if (sumTotal) sumTotal.textContent = money(total);
   }
@@ -729,95 +727,108 @@
   // Initial load
   renderCart();
 
-    // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
-(function(){
-  const siteShell = document.querySelector('.site-shell');
-  if(!siteShell) return;
+  // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
+  (function(){
+    const siteShell = document.querySelector('.site-shell');
+    if(!siteShell) return;
 
-  const MOBILE_MAX = 767.98;
-  const DOWN_THRESHOLD =  10;// how much to scroll down before hiding
-  const UP_THRESHOLD   = 10;  // how much to scroll up before showing
-  let lastYByEl = new WeakMap();
-  let locked = false;
+    const MOBILE_MAX = 767.98;
+    const DOWN_THRESHOLD = 60;  // hide after ~60px downward scroll
+    const UP_THRESHOLD   = 10;  // show after 10px upward scroll
+    let lastYByEl = new WeakMap();
+    let locked = false;
 
-  function isMobile(){
-    return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
-  }
+    function isMobile(){
+      return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
+    }
 
-  // Get the active scroll containers you use
-  function getScrollSources(){
-    const sources = [];
-    // Mobile list (your main mobile scroller)
-    const mobileList = document.querySelector('#cart-list-panel .cart-list');
-    if (mobileList) sources.push(mobileList);
+    function onScrollFactory(el){
+      return function onScroll(){
+        // Only act on mobile
+        if(!isMobile()){
+          siteShell.classList.remove('is-collapsed');
+          return;
+        }
 
-    // Desktop/table scroller (kept for completeness)
-    const tableScroll = document.querySelector('.items-panel .cart-scroll');
-    if (tableScroll) sources.push(tableScroll);
+        // Current scroll position for this source
+        const y = (el === window) ? window.scrollY : el.scrollTop;
+        const last = lastYByEl.get(el) ?? y;
+        const delta = y - last;
 
-    // Fallback to window (in case neither exists)
-    sources.push(window);
-    return sources;
-  }
+        if(locked){
+          lastYByEl.set(el, y);
+          return;
+        }
 
-  function onScrollFactory(el){
-    return function onScroll(){
-      // Only act on mobile
+        // Hide on downward scroll
+        if(delta > DOWN_THRESHOLD && y > 0){
+          siteShell.classList.add('is-collapsed');
+          locked = true; setTimeout(()=> locked = false, 160);
+        }
+        // Show on upward scroll
+        else if(delta < -UP_THRESHOLD){
+          siteShell.classList.remove('is-collapsed');
+          locked = true; setTimeout(()=> locked = false, 160);
+        }
+
+        lastYByEl.set(el, y);
+      };
+    }
+
+    // Pick ONE scroll source depending on layout
+    function getScrollSource(){
+      if (isMobile()){
+        // Mobile: ONLY react to the cart list scroller
+        return document.getElementById('cart-list')
+            || document.querySelector('#cart-list-panel .cart-list')
+            || window; // fallback
+      }
+      // Desktop: use the items table scroller; fallback to window
+      return document.querySelector('.items-panel .cart-scroll') || window;
+    }
+
+    // Keep a single active binding
+    let currentSource = getScrollSource();
+    let currentHandler = onScrollFactory(currentSource);
+    const opts = { passive: true };
+
+    function bind(){
+      if (!currentSource) return;
+      if (currentSource === window){
+        window.addEventListener('scroll', currentHandler, opts);
+      } else {
+        currentSource.addEventListener('scroll', currentHandler, opts);
+        // seed so first delta is correct
+        lastYByEl.set(currentSource, currentSource.scrollTop);
+      }
+    }
+
+    function unbind(){
+      if (!currentSource) return;
+      if (currentSource === window){
+        window.removeEventListener('scroll', currentHandler, opts);
+      } else {
+        currentSource.removeEventListener('scroll', currentHandler, opts);
+      }
+    }
+
+    bind();
+
+    // Rebind when layout/source changes (e.g., rotate, resize, CSS switches)
+    window.addEventListener('resize', () => {
+      const newSource = getScrollSource();
+      if (newSource !== currentSource){
+        unbind();
+        currentSource = newSource;
+        currentHandler = onScrollFactory(currentSource);
+        bind();
+      }
+      // Ensure header is expanded on desktop
       if(!isMobile()){
         siteShell.classList.remove('is-collapsed');
-        return;
       }
-
-      // Current scroll position for this source
-      const y = (el === window) ? window.scrollY : el.scrollTop;
-      const last = lastYByEl.get(el) ?? y;
-      const delta = y - last;
-
-      if(locked){
-        lastYByEl.set(el, y);
-        return;
-      }
-
-      // Hide on downward scroll
-      if(delta > DOWN_THRESHOLD && y > 0){
-        siteShell.classList.add('is-collapsed');
-        locked = true; setTimeout(()=> locked = false, 160);
-      }
-      // Show on upward scroll
-      else if(delta < -UP_THRESHOLD){
-        siteShell.classList.remove('is-collapsed');
-        locked = true; setTimeout(()=> locked = false, 160);
-      }
-
-      lastYByEl.set(el, y);
-    };
-  }
-
-  // Attach listeners to each source that actually scrolls
-  const sources = getScrollSources();
-  const handlers = [];
-  for (const el of sources){
-    const handler = onScrollFactory(el);
-    handlers.push({ el, handler });
-    const opts = { passive: true };
-    if (el === window){
-      window.addEventListener('scroll', handler, opts);
-    }else{
-      el.addEventListener('scroll', handler, opts);
-      // seed initial position so first delta is correct
-      lastYByEl.set(el, el.scrollTop);
-    }
-  }
-
-  // Keep behavior correct if layout switches between mobile/desktop
-  window.addEventListener('resize', () => {
-    if(!isMobile()){
-      siteShell.classList.remove('is-collapsed');
-    }
-  });
-
-})();
-
-  </script>
+    });
+  })();
+</script>
 </body>
 </html>
