@@ -422,6 +422,95 @@
   }
 }
 
+    /* ===== Black/White theme for Order Summary ===== */
+
+/* Tokens for BW theme */
+:root{
+  --bw-bg: #f7f7f9;              /* page-friendly white */
+  --bw-card: #ffffff;            /* panel background */
+  --bw-text: #111;               /* default text */
+  --bw-border: rgba(0,0,0,.14);  /* subtle border */
+  --bw-header-bg: #111;          /* header + totals bg */
+  --bw-header-fg: #fff;          /* header + totals fg */
+  --bw-chip: #2a2a2a;            /* selection rows bg */
+  --bw-chip-fg: #f1f1f1;         /* selection rows fg */
+}
+
+/* Use this class on the <aside> (we switched to class="summary bw") */
+.summary.bw{
+  background: var(--bw-card);
+  color: var(--bw-text);
+  border: 1px solid var(--bw-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.10);
+  padding: 14px;
+}
+
+/* Header bar: black box, white text */
+.summary.bw .sum-header{
+  margin: -6px -6px 12px;       /* pull to edges of the summary card */
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--bw-header-bg);
+  color: var(--bw-header-fg);
+}
+.summary.bw .sum-header h3{
+  margin:0; font-size:1.05rem; letter-spacing:.2px;
+}
+
+/* “Easy on eyes” white for the body area */
+body{ background: var(--page-bg); }         /* keeps your site shell */
+.summary.bw{ background: var(--bw-card); }  /* panel stays clean white */
+
+/* Option rows (selections): dark grey chip with contrasting text */
+.summary.bw .opt-item{
+  background: var(--bw-chip);
+  color: var(--bw-chip-fg);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.summary.bw .opt-item span{ color: var(--bw-chip-fg); }
+.summary.bw .opt-item a{ color: #e8e8ff; text-decoration: underline; }
+
+/* Subtexts still readable on white body */
+.summary.bw .muted{ opacity:.8; color:#333; }
+.summary.bw .muted a{ color:#0a58ff; }
+
+/* Totals block: same theme as header (black box, white text) */
+.summary.bw .sum-totals{
+  margin-top: 12px;
+  background: var(--bw-header-bg);
+  color: var(--bw-header-fg);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+.summary.bw .sum-totals .summary-line{
+  padding: 8px 2px;
+  border-top: 1px solid rgba(255,255,255,.16);
+}
+.summary.bw .sum-totals .summary-line:first-child{
+  border-top: none;
+}
+.summary.bw .sum-totals .label,
+.summary.bw .sum-totals .value{
+  color: var(--bw-header-fg);
+}
+.summary.bw .sum-totals .total .value{
+  font-size: 1.08rem;
+}
+
+/* Buttons below totals stay as-is; add a subtle invert hover for BW if desired */
+.summary.bw .btn{
+  background:#fff; color:#111; border-color: var(--bw-border);
+}
+.summary.bw .btn:hover{ transform: translateY(-3px); }
+.summary.bw .btn--danger{ background: var(--accent); color:#fff; border-color: transparent; }
+
+/* OPTIONAL: lighten the page around the summary a touch (not mandatory) */
+@media (min-width: 768px){
+  .cart-layout{ gap: 18px; }
+}
+
     /* === Responsive switch between desktop head and mobile head (table) === */
     .head-mobile{ display:none; }
     @media (max-width:767.98px){
@@ -581,8 +670,8 @@
 
       <!-- RIGHT: summary -->
 <!-- RIGHT: summary -->
-<aside class="summary glass">  <!-- switch to 'summary solid' if you want the alternative theme below -->
-  <h3>Order Summary</h3>
+<aside class="summary bw">
+  <div class="sum-header"><h3>Order Summary</h3></div>
 
   <!-- OPTIONAL ADD-ON -->
   <section class="sum-section" id="addons-section">
@@ -634,20 +723,19 @@
   </section>
 
   <!-- Summary lines -->
-  <div class="row summary-line em">
-    <span class="label">Shipping fees</span>
-    <strong class="value" id="sumShipping">$0.00</strong>
-  </div>
-  <div class="row summary-line em">
-    <span class="label">Subtotal</span>
-    <strong class="value" id="sumSubtotal">$0.00</strong>
-  </div>
-
-  <hr class="sum-divider">
-
-  <div class="row summary-line em total">
-    <span class="label">Total</span>
-    <strong class="value" id="sumTotal">$0.00</strong>
+    <div class="sum-totals">
+    <div class="row summary-line em">
+      <span class="label">Shipping fees</span>
+      <strong class="value" id="sumShipping">$0.00</strong>
+    </div>
+    <div class="row summary-line em">
+      <span class="label">Subtotal</span>
+      <strong class="value" id="sumSubtotal">$0.00</strong>
+    </div>
+    <div class="row summary-line em total">
+      <span class="label">Total</span>
+      <strong class="value" id="sumTotal">$0.00</strong>
+    </div>
   </div>
 
   <div class="summary-actions">
