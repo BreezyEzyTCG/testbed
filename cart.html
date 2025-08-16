@@ -364,137 +364,139 @@
   </div>
 
   <script>
-    function renderCart() {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      const cartContainer = document.getElementById("cart-items");
-      const cartList = document.getElementById("cart-list"); // mobile list
-      const totalDisplay = document.getElementById("order-total");
-      const sumSubtotal = document.getElementById("sumSubtotal");
-      const sumTotal = document.getElementById("sumTotal");
+  function renderCart() {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const cartContainer = document.getElementById("cart-items");
+    const cartList = document.getElementById("cart-list"); // mobile list
+    const totalDisplay = document.getElementById("order-total");
+    const sumSubtotal = document.getElementById("sumSubtotal");
+    const sumTotal = document.getElementById("sumTotal");
 
-      cartContainer.innerHTML = "";
-      if (cartList) cartList.innerHTML = "";
+    cartContainer.innerHTML = "";
+    if (cartList) cartList.innerHTML = "";
 
-      let total = 0;
+    let total = 0;
 
-      if (cart.length === 0) {
-        cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
-        if (cartList) {
-          cartList.innerHTML = `
-            <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
-              <div style="opacity:.75;">Your cart is empty.</div>
-            </div>`;
-        }
-        totalDisplay.innerText = "Order Total: $0.00";
-        if (sumSubtotal) sumSubtotal.textContent = "$0.00";
-        if (sumTotal) sumTotal.textContent = "$0.00";
-        return;
+    if (cart.length === 0) {
+      cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+      if (cartList) {
+        cartList.innerHTML = `
+          <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
+            <div style="opacity:.75;">Your cart is empty.</div>
+          </div>`;
       }
+      totalDisplay.innerText = "Order Total: $0.00";
+      if (sumSubtotal) sumSubtotal.textContent = "$0.00";
+      if (sumTotal) sumTotal.textContent = "$0.00";
+      return;
+    }
 
-      cart.forEach(item => {
-        const row = document.createElement("tr");
-        const imagePath = item.image || "assets/images/default.png";
-        const qty = Number(item.quantity) || 0;
-        const unit = Number(item.price) || 0;
-        const line = qty * unit;
-        total += line;
+    cart.forEach(item => {
+      const row = document.createElement("tr");
+      const imagePath = item.image || "assets/images/default.png";
+      const qty = Number(item.quantity) || 0;
+      const unit = Number(item.price) || 0;
+      const line = qty * unit;
+      total += line;
 
-        const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
-        row.innerHTML = isMobile
-          ? `
-            <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
-            <td>
-              <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${item.name || ''}
-              </div>
-              <div style="opacity:.8; font-size:.9rem;">
-                ${(item.series ? `${item.series}` : '')}
-                ${(item.rarity ? ` · ${item.rarity}` : '')}
-                ${(item.condition ? ` · ${item.condition}` : '')}
-              </div>
-            </td>
-            <td>${qty}</td>
-            <td>$${unit.toFixed(2)}</td>
-            <td><strong>$${line.toFixed(2)}</strong></td>
-          `
-          : `
-            <td>
-              <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-                <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-                <div style="min-width:0;">
-                  <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${item.name || ''}
-                  </div>
-                  <div style="opacity:.8; font-size:.9rem;">
-                    ${(item.series ? `${item.series}` : '')}
-                    ${(item.rarity ? ` · ${item.rarity}` : '')}
-                    ${(item.condition ? ` · ${item.condition}` : '')}
-                  </div>
+      const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
+      row.innerHTML = isMobile
+        ? `
+          <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
+          <td>
+            <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${item.name || ''}
+            </div>
+            <div style="opacity:.8; font-size:.9rem;">
+              ${(item.series ? `${item.series}` : '')}
+              ${(item.rarity ? ` · ${item.rarity}` : '')}
+              ${(item.condition ? ` · ${item.condition}` : '')}
+            </div>
+          </td>
+          <td>${qty}</td>
+          <td>$${unit.toFixed(2)}</td>
+          <td><strong>$${line.toFixed(2)}</strong></td>
+        `
+        : `
+          <td>
+            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+              <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+              <div style="min-width:0;">
+                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${item.name || ''}
+                </div>
+                <div style="opacity:.8; font-size:.9rem;">
+                  ${(item.series ? `${item.series}` : '')}
+                  ${(item.rarity ? ` · ${item.rarity}` : '')}
+                  ${(item.condition ? ` · ${item.condition}` : '')}
                 </div>
               </div>
-            </td>
-            <td>${qty}</td>
-            <td>$${unit.toFixed(2)}</td>
-            <td><strong>$${line.toFixed(2)}</strong></td>
-          `;
+            </div>
+          </td>
+          <td>${qty}</td>
+          <td>$${unit.toFixed(2)}</td>
+          <td><strong>$${line.toFixed(2)}</strong></td>
+        `;
 
-        cartContainer.appendChild(row);
+      cartContainer.appendChild(row);
 
-        // --- Mobile list item (mini-cart style) ---
-        if (cartList) {
-          const li = document.createElement("div");
-          li.className = "cart-item";
+      // --- Mobile list item (mini-cart style) ---
+      if (cartList) {
+        const li = document.createElement("div");
+        li.className = "cart-item";
 
-          const attrs = [
-            (item.series ? `${item.series}` : ''),
-            (item.rarity ? ` · ${item.rarity}` : ''),
-            (item.condition ? ` · ${item.condition}` : '')
-          ].join('').replace(/^ · /,'');
+        const attrs = [
+          (item.series ? `${item.series}` : ''),
+          (item.rarity ? ` · ${item.rarity}` : ''),
+          (item.condition ? ` · ${item.condition}` : '')
+        ].join('').replace(/^ · /,'');
 
-          li.innerHTML = `
-  <div class="ci-thumb">
-    <img src="${imagePath}" alt="${item.name || 'Item'}">
-  </div>
-  <div class="ci-meta">
-    <!-- Product title -->
-    <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
+        li.innerHTML = `
+          <div class="ci-thumb">
+            <img src="${imagePath}" alt="${item.name || 'Item'}">
+          </div>
+          <div class="ci-meta">
+            <!-- Product title -->
+            <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
 
-    <!-- Attributes on their own line -->
-    ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
+            <!-- Attributes on their own line -->
+            ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
 
-    <!-- Unit price -->
-    <p class="ci-sub">$${unit.toFixed(2)}</p>
+            <!-- Unit price -->
+            <p class="ci-sub">$${unit.toFixed(2)}</p>
 
-    <!-- Quantity -->
-    <div class="ci-qty">
-      <span>Qty</span>
-      <span class="pill">${qty}</span>
-    </div>
-  </div>
+            <!-- Quantity -->
+            <div class="ci-qty">
+              <span>Qty</span>
+              <span class="pill">${qty}</span>
+            </div>
+          </div>
 
-  <!-- Line total -->
-  <div class="ci-right">$${line.toFixed(2)}</div>
-`;
-cartList.appendChild(li);
+          <!-- Line total -->
+          <div class="ci-right">$${line.toFixed(2)}</div>
+        `;
+        cartList.appendChild(li);
+      } // <-- closes if(cartList)
+    }); // <-- closes cart.forEach
 
-      // Update totals
-      const money = v => `$${(Number(v)||0).toFixed(2)}`;
-      totalDisplay.innerText = `Order Total: ${money(total)}`;
-      if (sumSubtotal) sumSubtotal.textContent = money(total);
-      if (sumTotal) sumTotal.textContent = money(total);
-    }
+    // Update totals (run after the loop)
+    const money = v => `$${(Number(v)||0).toFixed(2)}`;
+    totalDisplay.innerText = `Order Total: ${money(total)}`;
+    if (sumSubtotal) sumSubtotal.textContent = money(total);
+    if (sumTotal) sumTotal.textContent = money(total);
+  } // <-- closes renderCart()
 
-    function clearCart() {
-      localStorage.removeItem("cart");
-      renderCart();
-    }
-
-    function checkout() {
-      alert("Checkout functionality not implemented yet.");
-    }
-
-    // Initial load
+  function clearCart() {
+    localStorage.removeItem("cart");
     renderCart();
-  </script>
+  }
+
+  function checkout() {
+    alert("Checkout functionality not implemented yet.");
+  }
+
+  // Initial load
+  renderCart();
+</script>
 </body>
 </html>
