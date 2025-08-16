@@ -209,6 +209,12 @@
   text-align: center;       /* keep content centered */
   padding-left: 6px;        /* ⬅ adjust this to shift group left */
 }
+    /* OPTIONAL: force-shift the entire Qty column */
+.cart-table td.col-qty,
+.cart-table th.col-qty {
+  position: relative;
+  left: -10px;   /* ⬅ try -6px, -8px, etc. */
+}
 
     .thumb{
       width:64px; height:64px; border-radius:6px; background:#fff;
