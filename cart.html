@@ -507,23 +507,87 @@
       </div>
 
       <!-- RIGHT: summary -->
-      <aside class="summary glass">
-        <h3>Order Summary</h3>
-        <div class="row">
-          <span>Subtotal</span>
-          <strong id="sumSubtotal">$0.00</strong>
-        </div>
-        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.45); margin:10px 0;">
-        <div class="row">
-          <span>Total</span>
-          <strong id="sumTotal">$0.00</strong>
-        </div>
-        <div class="summary-actions">
-          <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
-          <button onclick="checkout()" class="btn">Checkout</button>
-        </div>
-      </aside>
+<aside class="summary glass">
+  <h3>Order Summary</h3>
+
+  <!-- ===== NEW: Optional Add-ons (protective packaging) ===== -->
+  <section class="sum-section" id="addons-section">
+    <h4>Optional add-ons – protective packaging</h4>
+    <p class="muted">
+      Only single cards above $10 in value get an individual toploader.
+      <a href="/packing-info" target="_blank" rel="noopener">Visit this page</a>
+      to see how we carefully pack your soon-to-be collections!
+    </p>
+    <div class="option-group" id="addons-options">
+      <label class="opt-item">
+        <input type="checkbox" name="addon" value="team-bag" data-price="0">
+        <span>Team bag</span>
+      </label>
+      <label class="opt-item">
+        <input type="checkbox" name="addon" value="bubble-wrap" data-price="0">
+        <span>Extra bubble wrap</span>
+      </label>
+      <label class="opt-item">
+        <input type="checkbox" name="addon" value="cardboard-sandwich" data-price="0">
+        <span>Cardboard sandwich (outer protection)</span>
+      </label>
     </div>
+  </section>
+
+  <!-- ===== NEW: Shipping method ===== -->
+  <section class="sum-section" id="shipping-section">
+    <h4>Select a shipping method</h4>
+    <p class="muted">
+      <a href="/shipping-guide" target="_blank" rel="noopener">Visit this page</a>
+      to see which shipping service best suits your purchase!
+    </p>
+    <div class="option-group" id="shipping-options" role="radiogroup" aria-label="Shipping method">
+      <label class="opt-item">
+        <input type="radio" name="shipping" value="letter" data-fee="3.00" required>
+        <span>Letterbox-sized package — $3.00</span>
+      </label>
+      <label class="opt-item">
+        <input type="radio" name="shipping" value="s" data-fee="3.50">
+        <span>S-sized package — $3.50</span>
+      </label>
+      <label class="opt-item">
+        <input type="radio" name="shipping" value="m" data-fee="4.00">
+        <span>M-sized package — $4.00</span>
+      </label>
+      <label class="opt-item">
+        <input type="radio" name="shipping" value="l" data-fee="5.00">
+        <span>L-sized package — $5.00</span>
+      </label>
+      <label class="opt-item">
+        <input type="radio" name="shipping" value="xl" data-fee="10.00">
+        <span>XL-sized package — $10.00</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== EXISTING: Subtotal/Total rows, with Shipping added ===== -->
+  <div class="row">
+    <span>Shipping fees</span>
+    <strong id="sumShipping">$0.00</strong>
+  </div>
+  <div class="row">
+    <span>Subtotal</span>
+    <strong id="sumSubtotal">$0.00</strong>
+  </div>
+
+  <hr style="border:none; border-top:1px solid rgba(255,255,255,0.45); margin:10px 0;">
+
+  <div class="row">
+    <span>Total</span>
+    <strong id="sumTotal">$0.00</strong>
+  </div>
+
+  <!-- Buttons stay the same -->
+  <div class="summary-actions">
+    <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
+    <button onclick="checkout()" class="btn">Checkout</button>
+  </div>
+</aside>
 
     <!-- Legacy readout -->
     <div class="row" style="justify-content:flex-end; margin-top:12px;">
@@ -555,6 +619,47 @@
     localStorage.setItem("cart", JSON.stringify(cart));
   }
 
+  /* ===== NEW: Shipping + Add-ons storage/helpers ===== */
+  const SHIPPING_DEFAULT = { id: null, fee: 0 };
+
+  function getSavedShipping(){
+    try { return JSON.parse(localStorage.getItem('shippingMethod')) || SHIPPING_DEFAULT; }
+    catch { return SHIPPING_DEFAULT; }
+  }
+  function saveShipping(obj){
+    localStorage.setItem('shippingMethod', JSON.stringify(obj || SHIPPING_DEFAULT));
+  }
+
+  function getSavedAddons(){
+    try { return JSON.parse(localStorage.getItem('addonsSelected')) || []; }
+    catch { return []; }
+  }
+  function saveAddons(list){
+    localStorage.setItem('addonsSelected', JSON.stringify(Array.isArray(list) ? list : []));
+  }
+
+  function readSelectedShippingFromDOM(){
+    const el = document.querySelector('input[name="shipping"]:checked');
+    if(!el) return SHIPPING_DEFAULT;
+    const fee = parseFloat(el.dataset.fee || '0') || 0;
+    return { id: el.value, fee };
+  }
+
+  function readSelectedAddonsFromDOM(){
+    const els = document.querySelectorAll('#addons-options input[name="addon"]:checked');
+    const arr = [];
+    els.forEach(chk => {
+      arr.push({ id: chk.value, price: parseFloat(chk.dataset.price || '0') || 0 });
+    });
+    return arr;
+  }
+
+  function sumAddonFees(addons){
+    return (addons || []).reduce((a,b)=> a + (parseFloat(b.price)||0), 0);
+  }
+
+  function fmtMoney(n){ return `$${(Number(n)||0).toFixed(2)}`; }
+
   /* ===== Mutators used by + / − / remove buttons ===== */
   function incQty(key){
     const cart = getCart();
@@ -578,18 +683,44 @@
     saveCart(cart); renderCart();
   }
 
+  /* ===== NEW: Centralised summary updater ===== */
+  function updateSummaryTotals(subtotalFromCart){
+    // Subtotal comes from renderCart
+    const subtotal = typeof subtotalFromCart === 'number'
+      ? subtotalFromCart
+      : (window.currentCartSubtotal || 0);
+
+    // Read selections (from localStorage)
+    const ship   = getSavedShipping();
+    const addons = getSavedAddons();
+
+    const shippingFee = ship?.fee || 0;
+    const addonsFee   = sumAddonFees(addons);   // 0 by default (you set data-price on add-ons)
+    const total       = subtotal + shippingFee + addonsFee;
+
+    const sumSubtotal = document.getElementById("sumSubtotal");
+    const sumShipping = document.getElementById("sumShipping"); // <-- make sure this span exists in HTML
+    const sumTotal    = document.getElementById("sumTotal");
+    const totalDisplay= document.getElementById("order-total"); // legacy text line if you still have it
+
+    if (sumSubtotal) sumSubtotal.textContent = fmtMoney(subtotal);
+    if (sumShipping) sumShipping.textContent = fmtMoney(shippingFee);
+    if (sumTotal)    sumTotal.textContent    = fmtMoney(total);
+    if (totalDisplay) totalDisplay.innerText = `Order Total: ${fmtMoney(total)}`;
+  }
+
   // ===== CLEAN VERSION =====
   function renderCart() {
     const cart = getCart();
     const cartContainer = document.getElementById("cart-items");
     const cartList = document.getElementById("cart-list"); // mobile list
-    const sumSubtotal = document.getElementById("sumSubtotal");
-    const sumTotal = document.getElementById("sumTotal");
+
+    // (We do NOT grab sumSubtotal/sumTotal here anymore; updateSummaryTotals handles it)
 
     cartContainer.innerHTML = "";
     if (cartList) cartList.innerHTML = "";
 
-    let total = 0;
+    let subtotal = 0;
 
     if (cart.length === 0) {
       cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
@@ -599,8 +730,8 @@
             <div style="opacity:.75;">Your cart is empty.</div>
           </div>`;
       }
-      if (sumSubtotal) sumSubtotal.textContent = "$0.00";
-      if (sumTotal) sumTotal.textContent = "$0.00";
+      window.currentCartSubtotal = 0;
+      updateSummaryTotals(0); // <-- NEW: also zeroes Shipping fees & Total
       return;
     }
 
@@ -610,7 +741,7 @@
       const qty = Number(item.quantity) || 0;
       const unit = Number(item.price) || 0;
       const line = qty * unit;
-      total += line;
+      subtotal += line;
 
       const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
 
@@ -709,14 +840,16 @@
       }
     }); // end forEach
 
-    // Totals
-    const money = v => `$${(Number(v)||0).toFixed(2)}`;
-    if (sumSubtotal) sumSubtotal.textContent = money(total);
-    if (sumTotal) sumTotal.textContent = money(total);
+    // Save and update summary (now includes Shipping + optional add-ons)
+    window.currentCartSubtotal = subtotal;
+    updateSummaryTotals(subtotal);
   }
 
   function clearCart() {
     localStorage.removeItem("cart");
+    // (Optional) If you also want to reset shipping/add-ons on clear:
+    // saveShipping(null);
+    // saveAddons([]);
     renderCart();
   }
 
@@ -724,8 +857,34 @@
     alert("Checkout functionality not implemented yet.");
   }
 
-  // Initial load
-  renderCart();
+  // === Restore selections & bind change handlers when DOM is ready ===
+  document.addEventListener('DOMContentLoaded', () => {
+    // Restore shipping selection
+    const savedShip = getSavedShipping();
+    if(savedShip.id){
+      const el = document.querySelector(`input[name="shipping"][value="${savedShip.id}"]`);
+      if(el) el.checked = true;
+    }
+    // Restore add-ons
+    const savedAddons = getSavedAddons();
+    savedAddons.forEach(a => {
+      const el = document.querySelector(`#addons-options input[name="addon"][value="${a.id}"]`);
+      if(el) el.checked = true;
+    });
+
+    // Bind changes
+    document.getElementById('shipping-options')?.addEventListener('change', () => {
+      saveShipping(readSelectedShippingFromDOM());
+      updateSummaryTotals();
+    });
+    document.getElementById('addons-options')?.addEventListener('change', () => {
+      saveAddons(readSelectedAddonsFromDOM());
+      updateSummaryTotals();
+    });
+
+    // Initial render after wiring (ensures totals consider restored selections)
+    renderCart();
+  });
 
   // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
   (function(){
@@ -830,5 +989,6 @@
     });
   })();
 </script>
+
 </body>
 </html>
