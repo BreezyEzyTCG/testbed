@@ -27,6 +27,18 @@
       --glass-border: rgba(255,255,255,0.35);
       --glass-blur: blur(14px) saturate(1.12);
     }
+    
+    /* Allow horizontal scroll on narrow phones so columns don't collapse */
+.table-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cart-table{
+  min-width: 480px; /* ensures columns keep shape; scrolls on very small screens */
+}
+@media (max-width: 390px){
+  .cart-table{ min-width: 420px; } /* a bit tighter for very small phones */
+}
 
     /* === HERO HEADER (same as store) === */
 .hero{
@@ -275,14 +287,11 @@
 .cart-table col.col-item  { width: auto; }
 .cart-table col.col-qty   { width: 84px; }
 .cart-table col.col-unit  { width: 120px; }
-.cart-table col.col-total { width: 120px; 
+.cart-table col.col-total { width: 120px; }  /* <-- add the missing brace */
 
-    /* Qty (2nd col), Unit (3rd), Total (4th) */
-.cart-table th:nth-child(2),
-.cart-table td:nth-child(2){ text-align:right; padding-right:18px; }  /* Qty */
-.cart-table th:nth-child(3),
-.cart-table td:nth-child(3){ text-align:right; padding-right:20px; }  /* Unit Price */
-.cart-table th:nth-child(4),
+  /* Only move the numbers (td), leave headers (th) untouched */
+.cart-table td:nth-child(2){ text-align:right; padding-right:10px; }  /* Qty */
+.cart-table td:nth-child(3){ text-align:right; padding-right:14px; }  /* Unit Price */
 .cart-table td:nth-child(4){ text-align:right; padding-right:18px; }  /* Total */
 
   </style>
@@ -317,8 +326,14 @@
 
     <div class="cart-layout">
       <!-- LEFT: items table (keeps your IDs) -->
-      <div class="card-panel">
-        <table class="cart-table">
+     <div class="card-panel">
+  <div class="table-scroll">
+    <table class="cart-table">
+      ...
+    </table>
+  </div>
+</div>
+
           <!-- === ADDED: fixed column widths === -->
           <colgroup>
             <col class="col-item">
@@ -398,7 +413,7 @@
             <div style="display:flex; gap:10px; align-items:center; min-width:0;">
               <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
               <div style="min-width:0;">
-                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 100%;">
                   ${item.name || ''}
                 </div>
                 <div style="opacity:.8; font-size:.9rem;">
