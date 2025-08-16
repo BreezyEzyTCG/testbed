@@ -529,7 +529,9 @@
               <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
                 <img src="assets/images/plus%20button.svg" alt="+">
               </button>
-              <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">Remove</button>
+              <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
+                <img src="assets/images/bin.svg" alt="Remove">
+              </button>
             </div>
           </td>
           <td>$${unit.toFixed(2)}</td>
@@ -562,7 +564,6 @@
 
             <!-- Quantity controls -->
             <div class="ci-qty">
-              <span>Qty</span>
               <div class="qty-controls">
                 <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
                   <img src="assets/images/minus%20button.svg" alt="-">
