@@ -72,6 +72,10 @@
       font-size: 45px;
       text-shadow: 0 2px 10px rgba(0,0,0,.35);
     }
+
+    .disc-header{ margin:0 0 6px; font-size:1rem; font-weight:700; }
+.disc-text{ font-size:.85rem; color:#d32f2f; } /* small & red */
+
     @media (max-width: 767.98px){
       .brand-title { font-size: 17px; }
       .brand-center > div { transform: translateY(10px); }
@@ -675,29 +679,21 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 <aside class="summary bw">
   <div class="sum-header"><h3>Order Summary</h3></div>
 
-  <!-- OPTIONAL ADD-ON -->
+  <!-- About -->
   <section class="sum-section" id="addons-section">
-    <h4>Optional add-ons – protective packaging</h4>
+    <h4>About your package</h4>
     <small class="muted">
-      Only single cards above $10 in value get an individual toploader.
-      <a href="/packing-info" target="_blank" rel="noopener">Visit this page</a>
-      to see how we carefully pack your soon-to-be collections!
+      Only single cards above $10 comes with an individual toploader. But fret not!
+      <a href="/packing-info" target="_blank" rel="noopener">Here's how</a>
+      we carefully pack your soon-to-be collections!
     </small>
-
-    <div class="option-group">
-      <label class="opt-item">
-        <input type="checkbox" name="addon" value="team-bag" data-price="0">
-        <span>Team bag</span>
-      </label>
-    </div>
-  </section>
 
   <!-- SHIPPING -->
   <section class="sum-section" id="shipping-section">
-    <h4>Select a shipping method</h4>
+    <h4>Select a mailing option</h4>
     <small class="muted">
-      <a href="/shipping-guide" target="_blank" rel="noopener">Visit this page</a>
-      to see which shipping service best suits your purchase!
+      <a href="/shipping-guide" target="_blank" rel="noopener">Find out</a>
+      which shipping service best suits your purchase & delivery timeline.
     </small>
 
     <div class="option-group option-list" id="shipping-options" role="radiogroup" aria-label="Shipping method">
@@ -718,10 +714,29 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
         <span>L-sized package — $5.00</span>
       </label>
       <label class="opt-item">
-        <input type="radio" name="shipping" value="xl" data-fee="10.00">
-        <span>XL-sized package — $10.00</span>
+        <input type="radio" name="shipping" value="xl" data-fee="15.00">
+        <span>XL-sized package — $15.00</span>
       </label>
     </div>
+  </section>
+
+  <!-- === Disclaimers (must accept to proceed) === -->
+  <section class="sum-section" id="disclaimer-section">
+    <h4 class="disc-header">Disclaimers</h4>
+
+    <div class="option-group option-list">
+      <label class="opt-item">
+        <input type="checkbox" id="disc1" required>
+        <span class="disc-text">Disclaimer 1*</span>
+      </label>
+
+      <label class="opt-item">
+        <input type="checkbox" id="disc2" required>
+        <span class="disc-text">Disclaimer 2*</span>
+      </label>
+    </div>
+
+    <small class="muted">Please read and accept both to continue to checkout.</small>
   </section>
 
   <!-- Summary lines -->
@@ -740,10 +755,10 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
     </div>
   </div>
 
-  <div class="summary-actions">
-    <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
-    <button onclick="checkout()" class="btn">Checkout</button>
-  </div>
+ <div class="summary-actions">
+  <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
+  <button onclick="checkout()" class="btn" disabled>Checkout</button>
+</div>
 </aside>
 
     <!-- Legacy readout -->
@@ -1009,10 +1024,25 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
     // saveAddons([]);
     renderCart();
   }
+    function disclaimersAccepted(){
+  const d1 = document.getElementById('disc1');
+  const d2 = document.getElementById('disc2');
+  return !!(d1 && d2 && d1.checked && d2.checked);
+}
 
-  function checkout() {
-    alert("Checkout functionality not implemented yet.");
+function checkout() {
+  if (!disclaimersAccepted()) {
+    alert("Please accept both disclaimers before proceeding to checkout.");
+    return;
   }
+  alert("Checkout functionality not implemented yet.");
+}
+
+function updateCheckoutDisabled(){
+  const btn = document.querySelector('.summary-actions .btn:not(.btn--danger)');
+  if(!btn) return;
+  btn.disabled = !disclaimersAccepted();
+}
 
   // === Restore selections & bind change handlers when DOM is ready ===
   document.addEventListener('DOMContentLoaded', () => {
@@ -1143,6 +1173,11 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
       if(!isMobile()){
         siteShell.classList.remove('is-collapsed');
       }
+      document.getElementById('disc1')?.addEventListener('change', updateCheckoutDisabled);
+document.getElementById('disc2')?.addEventListener('change', updateCheckoutDisabled);
+
+// Initialize button state on load
+updateCheckoutDisabled();
     });
   })();
 </script>
