@@ -157,14 +157,7 @@
 .icon-btn:hover{ transform: translateY(-2px); }
 .icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
 
-/* Prevent wrapping that makes the row too tall */
-.qty-controls{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  flex-wrap: nowrap;   /* 👈 add this */
-}
-
+.qty-controls{ display:inline-flex; align-items:center; gap:6px; }
 .qty-controls .pill{
   min-width:28px; text-align:center; padding:4px 8px;
   border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
@@ -264,32 +257,28 @@
     .cart-list { padding: 8px; }
 
     /* One row = [thumb] [meta] [line-total] */
-.cart-item {
-  display: flex;                /* switch from grid to flex */
-  align-items: center;          /* vertical centering */
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-bottom: 1px solid #eee;
-  min-height: 64px;             /* optional, to match thumb size */
-}
+    .cart-item{
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+    }
 
-    .ci-thumb {
-  flex: 0 0 56px;               /* fixed width for thumb */
-  height: 56px;
-  border-radius: 6px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,.05);
-}
+    .ci-thumb{
+      width:56px; height:56px; border-radius:6px;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.05);
+    }
+    .ci-thumb img{ max-width:100%; max-height:100%; object-fit:contain; display:block; }
 
-.ci-meta {
-  flex: 1;                      /* take all remaining space */
-  min-width: 0;                 /* allow ellipsis to work */
-}
+    .ci-meta{ min-width:0; }
+    .ci-name{
+      margin:0 0 4px;
+      font-weight:700; font-size:.95rem; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
     .ci-sub {
   margin: 0;
   font-size: .85rem;
@@ -326,25 +315,17 @@
       min-width:22px; text-align:center; padding:2px 8px;
       border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
     }
-    
-    ..ci-right {
-  flex: 0 0 auto;               /* shrink-wrap */
-  font-weight: 700;
-  font-size: .95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: right;
 
-  display: flex;                /* center contents vertically */
-  align-items: center;
-  justify-content: flex-end;
-}
+    .ci-right{
+      font-weight:700; font-size:.95rem;
+      white-space:nowrap; text-align:right; overflow:hidden; text-overflow:ellipsis;
+    }
 
-@media (max-width: 480px){
-  .ci-name{ font-size:.9rem; }
-  .ci-sub{ font-size:.8rem; }
-}
+    @media (max-width: 480px){
+      .ci-name{ font-size:.9rem; }
+      .ci-sub{ font-size:.8rem; }
+      .ci-right{ font-size:.9rem; }
+    }
   </style>
 </head>
 <body>
@@ -581,22 +562,20 @@
             <!-- Unit price (bold per your spec) -->
             <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
 
-            <!-- Quantity -->
-      <div class="ci-qty">
-        <div class="qty-controls">
-          <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-            <img src="assets/images/minus%20button.svg" alt="-">
-          </button>
-          <span class="pill">${qty}</span>
-          <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-            <img src="assets/images/plus%20button.svg" alt="+">
-          </button>
-          <!-- NEW: Remove icon next to + -->
-          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
-            <img src="assets/images/bin.svg" alt="Remove">
-          </button>
-        </div>
-      </div>
+            <!-- Quantity controls -->
+            <div class="ci-qty">
+              <div class="qty-controls">
+                <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+                  <img src="assets/images/minus%20button.svg" alt="-">
+                </button>
+                <span class="pill">${qty}</span>
+                <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
+                  <img src="assets/images/plus%20button.svg" alt="+">
+                </button>
+              </div>
+              <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">Remove</button>
+            </div>
+          </div>
 
           <!-- Line total -->
           <div class="ci-right">$${line.toFixed(2)}</div>
