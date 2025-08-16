@@ -381,6 +381,11 @@
 }
 .opt-item input { margin-top: 2px; }
 
+ /* Make shipping option text smaller */
+#shipping-options .opt-item span {
+  font-size: 0.9rem;   /* adjust this value to taste */
+}   
+
 @media (max-width: 767.98px){
   .opt-item { grid-template-columns: 22px 1fr; }
   .opt-item input { width: 22px; height: 22px; }
@@ -732,7 +737,7 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 
       <label class="opt-item">
         <input type="checkbox" id="disc2" required>
-        <span class="disc-text">We ship around our work schedules, so orders may take time to process—kindly order only if you can wait.*</span>
+        <span class="disc-text">We ship around our work schedules, so orders may take time to process—kindly proceed only if you can wait.*</span>
       </label>
     </div>
 
