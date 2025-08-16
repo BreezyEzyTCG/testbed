@@ -149,6 +149,43 @@
       border-color: rgba(0,0,0,.22);
     }
     .btn--danger{ background: var(--accent); color:#fff; border-color: transparent; }
+    
+    /* Glassy back button variant */
+.back-btn--glass{
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border:1px solid var(--glass-border);
+  color:#0f172a;
+  box-shadow:0 10px 24px rgba(2,6,23,0.25);
+}
+@media (prefers-color-scheme: dark){
+  .back-btn--glass{
+    background: rgba(2, 6, 23, 0.55);
+    border-color: rgba(255,255,255,0.12);
+    color:#e5e7eb;
+    box-shadow:0 14px 32px rgba(0,0,0,0.55);
+  }
+}
+
+/* Place the back button over the banner (top-left) */
+.back-in-hero{
+  position:absolute;
+  top:12px;
+  left:12px;
+  z-index:3;
+  pointer-events:auto;
+}
+
+/* Slightly smaller/tighter on mobile */
+@media (max-width:767.98px){
+  .back-in-hero .btn{
+    height:38px;
+    padding:0 12px;
+    font-weight:700;
+  }
+}
+
 
     /* ===== CHANGE 7: Back button keeps your color but uses unified shape ===== */
     .back-btn{ background:#2b6cb0; color:#FBFAF5; }
@@ -245,7 +282,10 @@
 
   <!-- ===== CHANGE 12: Main content using same container width ===== -->
   <div class="container page-wrap">
-    <a href="index.html" class="btn btn--ghost back-btn">← Back to Store</a>
+  <!-- back button overlay on banner -->
+  <div class="back-in-hero">
+    <a href="index.html" class="btn back-btn--glass" aria-label="Back to Store">← Back to Store</a>
+  </div>
 
     <div class="cart-layout">
       <!-- LEFT: items table (keeps your IDs) -->
