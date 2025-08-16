@@ -4,149 +4,340 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cart</title>
+
+  <!-- CHANGE 1: (Optional) Match the brand font you use on the store hero -->
+  <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f4f8;
+    /* ===== CHANGE 2: THEME TOKENS copied from your store ===== */
+    :root{
+      --icon-color-default:#ddeaef;
+      --icon-color-active:#789cac;
+
+      --shell:#85adb8;     /* header & shell (same as store) */
+      --fg:#FBFAF5;        /* text on shell */
+      --page-bg: var(--shell);
+      --accent:#ef4444;
+
+      --chip-bg:#072a54;
+      --chip-fg:#fff;
+
+      /* Glass surface (same vibe as mini-cart) */
+      --glass-bg: rgba(255,255,255,0.45);
+      --glass-border: rgba(255,255,255,0.35);
+      --glass-blur: blur(14px) saturate(1.12);
+    }
+
+    /* === HERO HEADER (same as store) === */
+.hero{
+  position:relative;
+  height:clamp(160px, 28vw, 260px);
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius:14px;
+  overflow:visible;
+  background-image:url("assets/images/Breezy%20Banner.png");
+  background-size:cover;
+  background-position:center 30%;
+}
+.hero::before{
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
+  pointer-events:none;
+  border-radius: inherit;
+}
+
+/* top row inside banner (empty on cart for now) */
+.banner-bar{
+  position:absolute; top:10px; left:12px; right:12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:5;
+}
+
+/* centered brand block */
+.brand-center{
+  position:absolute; inset:0; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; color: var(--fg);
+  padding:0 12px;
+  pointer-events:none;
+}
+.brand-title{
+  margin:0; line-height:1.1; font-weight:800;
+  font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size:45px;
+  text-shadow:0 2px 10px rgba(0,0,0,.35);
+}
+.brand-subtitle{
+  margin:.35rem 0 0 0; opacity:.95;
+  font-size:clamp(1rem, 3vw, 1.2rem);
+  text-shadow:0 1px 6px rgba(0,0,0,.35);
+}
+
+/* desktop nudge matches store */
+@media (min-width:768px){
+  .brand-center > div{ transform: translateY(80px); }
+}
+/* mobile sizes */
+@media (max-width:767.98px){
+  .brand-title{ font-size:32px; }
+  .brand-center > div{ transform: translateY(50px); }
+}
+
+/* ensure space below the banner before cart content */
+.page-wrap{ margin: 16px auto 24px; }
+
+    /* ===== CHANGE 3: Base + shell/header (match store) ===== */
+    html,body{ height:100%; }
+    body{
+      font-family: Arial, sans-serif; /* your store uses Arial for body */
+      background: var(--page-bg);     /* unify to store background */
       margin: 0;
+      color:#111827;
+    }
+    .site-shell{
+      position: sticky; top:0; z-index:20;
+      background: var(--shell);
+      color: var(--fg);
+      box-shadow: none; /* matches your store */
+    }
+    .shell-pad{ padding:10px 12px 6px; }
+    .container{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
     }
 
-    header {
-      background-color: #1a202c;
-      color: white;
-      padding: 1rem;
-      text-align: center;
+    /* ===== CHANGE 4: Page header bar (cart title) ===== */
+    .cart-title{
+      margin:0;
+      font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 32px;
+      line-height: 1.1;
+      text-shadow: 0 2px 10px rgba(0,0,0,.15);
     }
 
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    /* ===== CHANGE 5: Main panel layout to echo store spacing ===== */
+    .page-wrap{
+      margin: 16px auto 24px;
     }
 
-    .back-btn {
-      background-color: #2b6cb0;
-      color: white;
-      text-decoration: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 5px;
-      display: inline-block;
-      margin-bottom: 1rem;
+    /* ===== CHANGE 6: Buttons (unified look) ===== */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:42px; padding:0 14px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,.12);
+      background:#fff; color:#111;
+      font-weight:600; cursor:pointer;
+      transition: transform .12s ease, background .15s ease, opacity .15s ease;
+      text-decoration:none;
+    }
+    .btn:hover{ transform: translateY(-3px); }
+    .btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
+    .btn--ghost{
+      background:transparent;
+      color:#111;
+      border-color: rgba(0,0,0,.22);
+    }
+    .btn--danger{ background: var(--accent); color:#fff; border-color: transparent; }
+
+    /* ===== CHANGE 7: Back button keeps your color but uses unified shape ===== */
+    .back-btn{ background:#2b6cb0; color:#FBFAF5; }
+
+    /* ===== CHANGE 8: Cart layout (items | summary) ===== */
+    .cart-layout{
+      display:grid; gap:16px;
+      grid-template-columns: 2fr 1fr;  /* items | summary */
+    }
+    @media (max-width: 767.98px){
+      .cart-layout{ grid-template-columns: 1fr; }
     }
 
-    .cart-table {
+    /* ===== CHANGE 9: Table styling to match your card aesthetics ===== */
+    .card-panel{
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 8px 20px rgba(0,0,0,.05);
+      overflow:hidden;
+    }
+    .cart-table{
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 1.5rem;
     }
-
-    .cart-table th, .cart-table td {
-      border-bottom: 1px solid #ddd;
-      padding: 0.75rem;
+    .cart-table th, .cart-table td{
+      border-bottom:1px solid #eee;
+      padding: 12px;
       text-align: center;
+      vertical-align: middle;
     }
-
-    .cart-table img {
-      width: 80px;
-      height: auto;
-      border-radius: 6px;
+    .cart-table th{
+      text-align:left;
+      font-weight:700;
     }
+    .cart-table td:first-child, .cart-table th:first-child{ text-align:left; }
 
-    .cart-total {
-      text-align: right;
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin: 1rem 0;
-      padding-right: 1rem;
+    .thumb{
+      width:64px; height:64px; border-radius:6px; background:#fff;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+      box-shadow:0 2px 6px rgba(0,0,0,.05);
     }
+    .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
 
-    .actions {
-      text-align: center;
-      margin-top: 1.5rem;
+    /* ===== CHANGE 10: Glass summary ===== */
+    .summary.glass{
+      padding:14px;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border:1px solid var(--glass-border);
+      border-radius:12px;
+      box-shadow:0 18px 40px rgba(2,6,23,0.25);
+      color:#0f172a;
     }
-
-    .actions button {
-      padding: 0.6rem 1.2rem;
-      margin: 0 0.5rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    @media (prefers-color-scheme: dark){
+      .summary.glass{
+        background: rgba(2, 6, 23, 0.55);
+        border-color: rgba(255,255,255,0.12);
+        color:#e5e7eb;
+        box-shadow:0 18px 42px rgba(0,0,0,0.55);
+      }
     }
-
-    .btn-clear {
-      background-color: #e53e3e;
-      color: white;
+    .summary h3{ margin:0 0 10px; font-size:1.1rem; }
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      margin:6px 0;
     }
-
-    .btn-checkout {
-      background-color: #38a169;
-      color: white;
+    .summary-actions{
+      display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;
+      margin-top:10px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Your Cart</h1>
-  </header>
 
-  <div class="container">
-    <a href="index.html" class="back-btn">← Back to Store</a>
+  <!-- ===== CHANGE 11: Shell header to match store ===== -->
+<div class="site-shell">
+  <div class="shell-pad">
+    <div class="hero">
+      <!-- optional top row inside banner; keep empty on cart -->
+      <div class="banner-bar"></div>
 
-    <table class="cart-table">
-      <thead>
-        <tr>
-          <th>Image</th>
-          <th>Product</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="cart-items"></tbody>
-    </table>
+      <!-- centered brand title exactly like store -->
+      <div class="brand-center">
+        <div>
+          <h1 class="brand-title">BreezyEzyTCG</h1>
+          <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <div class="cart-total" id="order-total">Order Total: $0.00</div>
 
-    <div class="actions">
-      <button onclick="clearCart()" class="btn-clear">Clear Cart</button>
-      <button onclick="checkout()" class="btn-checkout">Checkout</button>
+  <!-- ===== CHANGE 12: Main content using same container width ===== -->
+  <div class="container page-wrap">
+    <a href="index.html" class="btn btn--ghost back-btn">← Back to Store</a>
+
+    <div class="cart-layout">
+      <!-- LEFT: items table (keeps your IDs) -->
+      <div class="card-panel">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="cart-items"></tbody>
+        </table>
+      </div>
+
+      <!-- RIGHT: glass summary (new IDs to mirror totals if you want) -->
+      <aside class="summary glass">
+        <h3>Order Summary</h3>
+        <div class="row">
+          <span>Subtotal</span>
+          <strong id="sumSubtotal">$0.00</strong>
+        </div>
+        <!-- Add shipping/tax rows here if needed -->
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.25); margin:10px 0;">
+        <div class="row">
+          <span>Total</span>
+          <strong id="sumTotal">$0.00</strong>
+        </div>
+
+        <div class="summary-actions">
+          <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
+          <button onclick="checkout()" class="btn">Checkout</button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Keep your original total text, now redundant but left for compatibility -->
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <div id="order-total" style="font-weight:700;">Order Total: $0.00</div>
     </div>
   </div>
 
   <script>
+    // ===== CHANGE 13: renderCart updated to match new table cells and update new totals =====
     function renderCart() {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       const cartContainer = document.getElementById("cart-items");
       const totalDisplay = document.getElementById("order-total");
+      const sumSubtotal = document.getElementById("sumSubtotal");
+      const sumTotal = document.getElementById("sumTotal");
+
       cartContainer.innerHTML = "";
       let total = 0;
 
       if (cart.length === 0) {
-        cartContainer.innerHTML = `<tr><td colspan="5">Your cart is empty.</td></tr>`;
+        cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
         totalDisplay.innerText = "Order Total: $0.00";
+        if (sumSubtotal) sumSubtotal.textContent = "$0.00";
+        if (sumTotal) sumTotal.textContent = "$0.00";
         return;
       }
 
       cart.forEach(item => {
         const row = document.createElement("tr");
         const imagePath = item.image || "assets/images/default.png";
-        const lineTotal = (item.price * item.quantity).toFixed(2);
-        total += parseFloat(lineTotal);
+        const qty = Number(item.quantity) || 0;
+        const unit = Number(item.price) || 0;
+        const line = (qty * unit);
+        total += line;
 
         row.innerHTML = `
-          <td><img src="${imagePath}" alt="${item.name}" /></td>
-          <td>${item.name}</td>
-          <td>${item.quantity}</td>
-          <td>$${item.price.toFixed(2)}</td>
-          <td>$${lineTotal}</td>
+          <td>
+            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+              <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+              <div style="min-width:0;">
+                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${item.name || ''}
+                </div>
+                <div style="opacity:.8; font-size:.9rem;">
+                  ${(item.series ? `${item.series}` : '')}
+                  ${(item.rarity ? ` · ${item.rarity}` : '')}
+                  ${(item.condition ? ` · ${item.condition}` : '')}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td>${qty}</td>
+          <td>$${unit.toFixed(2)}</td>
+          <td><strong>$${line.toFixed(2)}</strong></td>
         `;
         cartContainer.appendChild(row);
       });
 
-      totalDisplay.innerText = `Order Total: $${total.toFixed(2)}`;
+      // Update all total readouts
+      const money = v => `$${(Number(v)||0).toFixed(2)}`;
+      totalDisplay.innerText = `Order Total: ${money(total)}`;
+      if (sumSubtotal) sumSubtotal.textContent = money(total);
+      if (sumTotal) sumTotal.textContent = money(total);
     }
 
     function clearCart() {
@@ -163,4 +354,3 @@
   </script>
 </body>
 </html>
-
