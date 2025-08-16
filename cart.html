@@ -228,6 +228,37 @@
     }
     .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
 
+    /* Fixed column widths (mobile first) */
+.cart-table col.col-item  { width: auto; }   /* grows/wraps */
+.cart-table col.col-qty   { width: 56px; }
+.cart-table col.col-unit  { width: 86px; }
+.cart-table col.col-total { width: 86px; }
+
+/* Right-align numbers only (keep header text readable) */
+.cart-table th:nth-child(2),
+.cart-table th:nth-child(3),
+.cart-table th:nth-child(4),
+.cart-table td:nth-child(2),
+.cart-table td:nth-child(3),
+.cart-table td:nth-child(4) {
+  text-align: right;
+}
+
+/* Tighter mobile spacing */
+@media (max-width: 767.98px){
+  .card-panel { overflow-x: hidden; }                 /* prevent horizontal scroll */
+  .cart-table th, .cart-table td { padding: 10px 8px; font-size: 14px; }
+  .thumb{ width:48px; height:48px; }
+}
+
+/* Loosen up on bigger screens */
+@media (min-width: 768px){
+  .cart-table col.col-qty   { width: 80px; }
+  .cart-table col.col-unit  { width: 110px; }
+  .cart-table col.col-total { width: 115px; }
+  .cart-table th, .cart-table td { padding: 12px; font-size: 16px; }
+}
+
     /* ===== CHANGE 10: Glass summary ===== */
     .summary.glass{
       padding:14px;
@@ -290,16 +321,15 @@
       <!-- LEFT: items table (keeps your IDs) -->
       <div class="card-panel">
         <table class="cart-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody id="cart-items"></tbody>
-        </table>
+  <colgroup>
+    <col class="col-item">
+    <col class="col-qty">
+    <col class="col-unit">
+    <col class="col-total">
+  </colgroup>
+  <thead> ... </thead>
+  <tbody id="cart-items"></tbody>
+</table>
       </div>
 
       <!-- RIGHT: glass summary (new IDs to mirror totals if you want) -->
@@ -357,28 +387,26 @@
         const line = (qty * unit);
         total += line;
 
-        row.innerHTML = `
-          <td>
-            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-              <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-              <div style="min-width:0;">
-                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${item.name || ''}
-                </div>
-                <div style="opacity:.8; font-size:.9rem;">
-                  ${(item.series ? `${item.series}` : '')}
-                  ${(item.rarity ? ` · ${item.rarity}` : '')}
-                  ${(item.condition ? ` · ${item.condition}` : '')}
-                </div>
-              </div>
-            </div>
-          </td>
-          <td>${qty}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
-        `;
-        cartContainer.appendChild(row);
-      });
+       row.innerHTML = `
+  <td>
+    <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+      <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+      <div style="min-width:0;">
+        <div class="item-name">${item.name || ''}</div>
+        <div style="opacity:.8; font-size:.9rem;">
+          ${(item.series ? `${item.series}` : '')}
+          ${(item.rarity ? ` · ${item.rarity}` : '')}
+          ${(item.condition ? ` · ${item.condition}` : '')}
+        </div>
+      </div>
+    </div>
+  </td>
+  <td>${qty}</td>
+  <td>$${unit.toFixed(2)}</td>
+  <td><strong>$${line.toFixed(2)}</strong></td>
+`;
+cartContainer.appendChild(row);
+
 
       // Update all total readouts
       const money = v => `$${(Number(v)||0).toFixed(2)}`;
