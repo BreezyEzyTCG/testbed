@@ -182,16 +182,33 @@
       box-shadow:0 8px 20px rgba(0,0,0,.05);
       overflow:hidden;
     }
-    .cart-table{ width: 100%; border-collapse: collapse; }
-    .cart-table th, .cart-table td{
-      border-bottom:1px solid #eee;
-      padding: 12px;
-      text-align: center;
-      vertical-align: middle;
-    }
-    .cart-table th{ text-align:left; font-weight:700; }
-    .cart-table td:first-child, .cart-table th:first-child{ text-align:left; }
-    
+  .cart-table{ 
+  width: 100%; 
+  border-collapse: collapse; 
+}
+
+.cart-table th,
+.cart-table td {
+  border-bottom: 1px solid #eee;
+  padding: 12px;
+  text-align: center;        /* default center */
+  vertical-align: middle;
+}
+
+/* Item column: left align */
+.cart-table th:first-child,
+.cart-table td:first-child {
+  text-align: left;
+  font-weight: 700;
+}
+
+/* Nudge Qty, Unit, Total cells a bit left */
+.cart-table td.col-qty,
+.cart-table td.col-unit,
+.cart-table td.col-total {
+  text-align: center;       /* keep content centered */
+  padding-left: 6px;        /* ⬅ adjust this to shift group left */
+}
 
     .thumb{
       width:64px; height:64px; border-radius:6px; background:#fff;
