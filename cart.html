@@ -48,40 +48,48 @@
   border-radius: inherit;
 }
 
-/* top row inside banner (empty on cart for now) */
-.banner-bar{
-  position:absolute; top:10px; left:12px; right:12px;
-  display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:5;
+/* Centered brand block */
+.brand-center {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--fg);
+  padding: 0 12px;
+  pointer-events: none;
 }
 
-/* centered brand block */
-.brand-center{
-  position:absolute; inset:0; z-index:2;
-  display:flex; align-items:center; justify-content:center;
-  text-align:center; color: var(--fg);
-  padding:0 12px;
-  pointer-events:none;
+/* Desktop-only nudge (won’t affect mobile) */
+@media (min-width: 768px){
+  .brand-center > div {
+    transform: translateY(80px); /* adjust as needed */
+  }
 }
-.brand-title{
-  margin:0; line-height:1.1; font-weight:800;
+
+.brand-title {
+  margin: 0;
+  line-height: 1.1;
+  font-weight: 800;
   font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size:45px;
-  text-shadow:0 2px 10px rgba(0,0,0,.35);
+  font-size: 45px; /* desktop size */
+  text-shadow: 0 2px 10px rgba(0,0,0,.35);
 }
+
+/* Mobile override */
+@media (max-width: 767.98px){
+  .brand-title { font-size: 32px; }  /* mobile size */
+  .brand-center > div { transform: translateY(50px); }
+}
+
+/* Subtitle */
 .brand-subtitle{
-  margin:.35rem 0 0 0; opacity:.95;
+  margin:.35rem 0 0 0;
+  opacity:.95;
   font-size:clamp(1rem, 3vw, 1.2rem);
   text-shadow:0 1px 6px rgba(0,0,0,.35);
-}
-
-/* desktop nudge matches store */
-@media (min-width:768px){
-  .brand-center > div{ transform: translateY(80px); }
-}
-/* mobile sizes */
-@media (max-width:767.98px){
-  .brand-title{ font-size:32px; }
-  .brand-center > div{ transform: translateY(50px); }
 }
 
 /* ensure space below the banner before cart content */
@@ -226,8 +234,8 @@
       <!-- centered brand title exactly like store -->
       <div class="brand-center">
         <div>
-          <h1 class="brand-title">BreezyEzyTCG</h1>
-          <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
+          <h1 class="brand-title">YOUR HAND-PICKED MAGIC AWAITS✨</h1>
+          <p class="brand-subtitle"><strong>Happiness is only a checkout away (*˘︶˘*).｡.:*♡</strong></p>
         </div>
       </div>
     </div>
