@@ -625,17 +625,41 @@
           (item.condition ? ` · ${item.condition}` : '')
         ].join('').replace(/^ · /,'');
 
-        li.innerHTML = `
-          <div class="ci-thumb">
-            <img src="${imagePath}" alt="${item.name || 'Item'}">
-          </div>
-          <div class="ci-meta">
-            <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
-            ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
+       li.innerHTML = `
+  <div class="ci-thumb">
+    <img src="${imagePath}" alt="${item.name || 'Item'}">
+  </div>
 
-            <!-- Unit price (bold per your spec) -->
-            <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
+  <div class="ci-meta">
+    <!-- 1) Name -->
+    <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
 
+    <!-- 2) Attributes -->
+    ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
+
+    <!-- 3) Unit price (bottom-1) -->
+    <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
+
+    <!-- 4) Qty controls (bottom) -->
+    <div class="ci-qty">
+      <div class="qty-controls">
+        <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+          <img src="assets/images/minus%20button.svg" alt="-">
+        </button>
+        <span class="pill">${qty}</span>
+        <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
+          <img src="assets/images/plus%20button.svg" alt="+">
+        </button>
+        <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
+          <img src="assets/images/bin.svg" alt="Remove">
+        </button>
+      </div>
+    </div>
+  </div> <!-- ✅ CLOSE .ci-meta here -->
+
+  <!-- Total in its own (3rd) grid column -->
+  <div class="ci-right">$${line.toFixed(2)}</div>
+`;
             <!-- Quantity controls -->
 <div class="ci-qty">
   <div class="qty-controls">
