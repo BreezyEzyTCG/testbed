@@ -146,6 +146,21 @@
     }
     .back-btn{ background:#2b6cb0; color:#FBFAF5; }
 
+    /* === Mobile: collapsible header on scroll === */
+@media (max-width: 767.98px){
+  .site-shell{
+    transition: height .25s ease, padding .25s ease;
+    overflow: hidden;
+  }
+  .site-shell.is-collapsed{
+    height: 0 !important;
+    padding: 0 !important;
+  }
+  .hero{
+    height: 200px; /* tweak if you want, just for smooth collapse */
+  }
+}
+
     /* === qty & remove controls (match mini-cart look) === */
     .icon-btn{
       display:inline-flex; align-items:center; justify-content:center;
@@ -697,6 +712,49 @@
 
   // Initial load
   renderCart();
+
+    // === Hide header on scroll (mobile only) ===
+(function(){
+  const siteShell = document.querySelector('.site-shell');
+  if(!siteShell) return;
+
+  let lastY = window.scrollY;
+  let locked = false;
+  const MOBILE_MAX = 767.98;
+  const DOWN_THRESHOLD = 20;
+  const UP_THRESHOLD = 10;
+
+  function isMobile(){
+    return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
+  }
+
+  window.addEventListener('scroll', () => {
+    if(!isMobile() || locked) { lastY = window.scrollY; return; }
+
+    const y = window.scrollY;
+    const delta = y - lastY;
+
+    if(delta > DOWN_THRESHOLD && y > 0){
+      siteShell.classList.add('is-collapsed');
+      locked = true;
+      setTimeout(() => locked = false, 180);
+    }
+    else if(delta < -UP_THRESHOLD){
+      siteShell.classList.remove('is-collapsed');
+      locked = true;
+      setTimeout(() => locked = false, 180);
+    }
+
+    lastY = y;
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if(!isMobile()){
+      siteShell.classList.remove('is-collapsed');
+    }
+  });
+})();
+
   </script>
 </body>
 </html>
