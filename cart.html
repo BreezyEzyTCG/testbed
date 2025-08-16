@@ -158,6 +158,30 @@
     transition: max-height .25s ease, opacity .2s ease;
   }
 
+  /* === Desktop: collapsible hero/header on scroll === */
+@media (min-width: 768px){
+  /* Let the shell clip the hero when we collapse it */
+  .site-shell { overflow: hidden; }
+
+  /* Animate hero height on desktop too */
+  .hero{
+    /* pick your banner's visual height on desktop */
+    max-height: 240px;
+    transition: max-height .28s ease, opacity .22s ease;
+    will-change: max-height;
+  }
+
+  /* Collapsed state toggled by JS (same class you already use) */
+  .site-shell.is-collapsed .hero{
+    max-height: 0;
+    opacity: 0;
+  }
+  .site-shell.is-collapsed .shell-pad{
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
   /* Reduce padding so there’s no leftover gap during collapse */
   .shell-pad{
     transition: padding .25s ease;
@@ -283,7 +307,7 @@
     /* Scrollable cart (desktop) */
 .items-panel { padding: 0; } /* keep edges clean */
 .items-panel .cart-scroll{
-  max-height: 500px;          /* ≈4 rows visible on desktop */
+  max-height: 1000px;          /* ≈4 rows visible on desktop */
   overflow: auto;
   overscroll-behavior: contain; /* don't scroll the page when at ends */
 }
@@ -434,7 +458,7 @@
   /* NEW blue theme */
   --bw-header-bg: #0f3a60;   /* navy blue header + totals */
   --bw-header-fg: #fff;      /* white text */
-  --bw-chip: #e8f3fa;        /* very light blue selection */
+  --bw-chip: #f0f0f0;        /* very light grey selection */
   --bw-chip-fg: #111;        /* dark text */
 }
 
@@ -1059,37 +1083,36 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
     }
 
     function onScrollFactory(el){
-      return function onScroll(){
-        // Only act on mobile
-        if(!isMobile()){
-          siteShell.classList.remove('is-collapsed');
-          return;
-        }
+  return function onScroll(){
+    // Viewport-aware thresholds (mobile vs desktop)
+    const mobile = isMobile();
+    const DOWN = mobile ? 12 : 40;  // collapse sooner on mobile, later on desktop
+    const UP   = mobile ? 10 : 20;  // expand a bit quicker than collapse
 
-        // Current scroll position for this source
-        const y = (el === window) ? window.scrollY : el.scrollTop;
-        const last = lastYByEl.get(el) ?? y;
-        const delta = y - last;
+    // Current scroll position for this source
+    const y = (el === window) ? window.scrollY : el.scrollTop;
+    const last = lastYByEl.get(el) ?? y;
+    const delta = y - last;
 
-        if(locked){
-          lastYByEl.set(el, y);
-          return;
-        }
-
-        // Hide on downward scroll
-        if(delta > DOWN_THRESHOLD && y > 0){
-          siteShell.classList.add('is-collapsed');
-          locked = true; setTimeout(()=> locked = false, 160);
-        }
-        // Show on upward scroll
-        else if(delta < -UP_THRESHOLD){
-          siteShell.classList.remove('is-collapsed');
-          locked = true; setTimeout(()=> locked = false, 160);
-        }
-
-        lastYByEl.set(el, y);
-      };
+    if (locked){
+      lastYByEl.set(el, y);
+      return;
     }
+
+    // Hide on downward scroll
+    if (delta > DOWN && y > 0){
+      siteShell.classList.add('is-collapsed');
+      locked = true; setTimeout(() => (locked = false), 160);
+    }
+    // Show on upward scroll
+    else if (delta < -UP){
+      siteShell.classList.remove('is-collapsed');
+      locked = true; setTimeout(() => (locked = false), 160);
+    }
+
+    lastYByEl.set(el, y);
+  };
+}
 
     // Pick ONE scroll source depending on layout
     function getScrollSource(){
