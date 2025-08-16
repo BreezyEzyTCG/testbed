@@ -349,6 +349,79 @@
     .row{ display:flex; align-items:center; justify-content:space-between; margin:6px 0; }
     .summary-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px; }
 
+    /* ===== Summary layout tweaks ===== */
+.sum-section { margin: 14px 0 16px; }
+.sum-section h4 { margin: 0 0 6px; font-size: 1rem; font-weight: 700; }
+
+/* small subtexts */
+.sum-section .muted {
+  display:block;
+  margin: 0 0 10px;
+  font-size: .8rem;      /* smaller text */
+  opacity: .8;
+}
+.sum-section .muted a { text-decoration: underline; }
+
+/* option list: 1 item per row, good spacing */
+.option-group { display: grid; gap: 8px; }
+.option-group.option-list { gap: 6px; }
+.opt-item {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.18);  /* subtle row chip for separation */
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.opt-item input { margin-top: 2px; }
+
+@media (max-width: 767.98px){
+  .opt-item { grid-template-columns: 22px 1fr; }
+  .opt-item input { width: 22px; height: 22px; }
+}
+
+/* summary rows */
+.summary-line {
+  display:flex; justify-content:space-between; align-items:center;
+  padding: 6px 0;
+}
+.summary-line.em .label,
+.summary-line.em .value {
+  font-weight: 700;                 /* bold labels & values */
+}
+.summary-line.total .value { font-size: 1.05rem; } /* slightly larger total */
+
+.sum-divider{
+  border:none; border-top:1px solid rgba(255,255,255,0.45);
+  margin:10px 0;
+}
+
+/* ===== OPTIONAL: alternative 'solid card' theme for the summary ===== */
+.summary.solid{
+  background:#ffffff;
+  color:#0f172a;
+  border:1px solid rgba(2,6,23,0.08);
+  box-shadow: 0 10px 28px rgba(2,6,23,0.12);
+}
+.summary.solid .opt-item{
+  background: rgba(2,6,23,0.04);
+  border-color: rgba(2,6,23,0.08);
+}
+@media (prefers-color-scheme: dark){
+  .summary.solid{
+    background: #0b1220;
+    color:#e5e7eb;
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+  }
+  .summary.solid .opt-item{
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.10);
+  }
+}
+
     /* === Responsive switch between desktop head and mobile head (table) === */
     .head-mobile{ display:none; }
     @media (max-width:767.98px){
@@ -507,41 +580,36 @@
       </div>
 
       <!-- RIGHT: summary -->
-<aside class="summary glass">
+<!-- RIGHT: summary -->
+<aside class="summary glass">  <!-- switch to 'summary solid' if you want the alternative theme below -->
   <h3>Order Summary</h3>
 
-  <!-- ===== NEW: Optional Add-ons (protective packaging) ===== -->
+  <!-- OPTIONAL ADD-ON -->
   <section class="sum-section" id="addons-section">
     <h4>Optional add-ons – protective packaging</h4>
-    <p class="muted">
+    <small class="muted">
       Only single cards above $10 in value get an individual toploader.
       <a href="/packing-info" target="_blank" rel="noopener">Visit this page</a>
       to see how we carefully pack your soon-to-be collections!
-    </p>
-    <div class="option-group" id="addons-options">
+    </small>
+
+    <div class="option-group">
       <label class="opt-item">
         <input type="checkbox" name="addon" value="team-bag" data-price="0">
         <span>Team bag</span>
       </label>
-      <label class="opt-item">
-        <input type="checkbox" name="addon" value="bubble-wrap" data-price="0">
-        <span>Extra bubble wrap</span>
-      </label>
-      <label class="opt-item">
-        <input type="checkbox" name="addon" value="cardboard-sandwich" data-price="0">
-        <span>Cardboard sandwich (outer protection)</span>
-      </label>
     </div>
   </section>
 
-  <!-- ===== NEW: Shipping method ===== -->
+  <!-- SHIPPING -->
   <section class="sum-section" id="shipping-section">
     <h4>Select a shipping method</h4>
-    <p class="muted">
+    <small class="muted">
       <a href="/shipping-guide" target="_blank" rel="noopener">Visit this page</a>
       to see which shipping service best suits your purchase!
-    </p>
-    <div class="option-group" id="shipping-options" role="radiogroup" aria-label="Shipping method">
+    </small>
+
+    <div class="option-group option-list" id="shipping-options" role="radiogroup" aria-label="Shipping method">
       <label class="opt-item">
         <input type="radio" name="shipping" value="letter" data-fee="3.00" required>
         <span>Letterbox-sized package — $3.00</span>
@@ -565,24 +633,23 @@
     </div>
   </section>
 
-  <!-- ===== EXISTING: Subtotal/Total rows, with Shipping added ===== -->
-  <div class="row">
-    <span>Shipping fees</span>
-    <strong id="sumShipping">$0.00</strong>
+  <!-- Summary lines -->
+  <div class="row summary-line em">
+    <span class="label">Shipping fees</span>
+    <strong class="value" id="sumShipping">$0.00</strong>
   </div>
-  <div class="row">
-    <span>Subtotal</span>
-    <strong id="sumSubtotal">$0.00</strong>
-  </div>
-
-  <hr style="border:none; border-top:1px solid rgba(255,255,255,0.45); margin:10px 0;">
-
-  <div class="row">
-    <span>Total</span>
-    <strong id="sumTotal">$0.00</strong>
+  <div class="row summary-line em">
+    <span class="label">Subtotal</span>
+    <strong class="value" id="sumSubtotal">$0.00</strong>
   </div>
 
-  <!-- Buttons stay the same -->
+  <hr class="sum-divider">
+
+  <div class="row summary-line em total">
+    <span class="label">Total</span>
+    <strong class="value" id="sumTotal">$0.00</strong>
+  </div>
+
   <div class="summary-actions">
     <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
     <button onclick="checkout()" class="btn">Checkout</button>
