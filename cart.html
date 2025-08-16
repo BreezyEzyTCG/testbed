@@ -222,11 +222,12 @@
     .cart-table td:first-child, .cart-table th:first-child{ text-align:left; }
 
     .thumb{
-      width:64px; height:64px; border-radius:6px; background:#fff;
-      display:flex; align-items:center; justify-content:center; overflow:hidden;
-      box-shadow:0 2px 6px rgba(0,0,0,.05);
-    }
-    .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
+  width:60px; height:60px;
+  border-radius:6px; background:#fff;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,.05);
+}
+.thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
 
     .cart-table .item-name{
   font-weight:700;
@@ -244,11 +245,11 @@
   }
 }
 
-    /* Fixed column widths (mobile first) */
-.cart-table col.col-item  { width: auto; }   /* grows/wraps */
-.cart-table col.col-qty   { width: 56px; }
-.cart-table col.col-unit  { width: 86px; }
-.cart-table col.col-total { width: 86px; }
+    /* Fixed column widths (mobile first) — give Item more space */
+.cart-table col.col-item  { width: 60%; }  /* was auto; prevents squeeze */
+.cart-table col.col-qty   { width: 14%; }
+.cart-table col.col-unit  { width: 13%; }
+.cart-table col.col-total { width: 13%; }
 
 /* Right-align numbers only (keep header text readable) */
 .cart-table th:nth-child(2),
@@ -264,7 +265,9 @@
 @media (max-width: 767.98px){
   .card-panel { overflow-x: hidden; }                 /* prevent horizontal scroll */
   .cart-table th, .cart-table td { padding: 10px 8px; font-size: 14px; }
-  .thumb{ width:48px; height:48px; }
+
+  /* Consistent thumbnail size on mobile */
+  .thumb{ width:56px; height:56px; }   /* instead of 48px */
 }
 
 /* Loosen up on bigger screens */
