@@ -345,10 +345,18 @@
 
 .pager .pg-label {
   font-weight: 400;
-  line-height: 40px; /* match .pg-btn height for perfect vertical centering */
-  padding: 0 6px;    /* left/right padding only */
+  font-size: 0.85rem;     /* smaller font size */
+  line-height: 10px;      /* matches arrow button height for perfect vertical centering */
+  padding: 0 6px;         /* left/right padding only */
   color: #111;
-  display: inline-block; /* ensures height/line-height apply consistently */
+  display: inline-block;  /* ensures height/line-height apply consistently */
+}
+
+ @media (max-width: 767.98px){
+  .pager .pg-label {
+    font-size: 0.8rem;    /* even smaller for mobile */
+    line-height: 36px;    /* match the mobile .pg-btn height */
+  }
 }
 
 
