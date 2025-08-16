@@ -523,62 +523,6 @@
     @media (max-width: 480px){
       .ci-right{ font-size:.9rem; }
     }
-    /* ===== Summary header strip ===== */
-.sum-header{
-  margin: -6px -6px 12px;                 /* pull to edges of the summary card */
-  padding: 14px 16px;
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.10));
-  border: 1px solid rgba(0,0,0,.06);
-  box-shadow: 0 10px 24px rgba(2,6,23,.12);
-}
-.summary.solid .sum-header{
-  background: linear-gradient(180deg, rgba(2,6,23,.06), rgba(2,6,23,.02));
-  border-color: rgba(2,6,23,.08);
-}
-.sum-header h3{
-  margin:0; font-size:1.05rem; letter-spacing:.2px;
-}
-
-/* ===== KPI boxes (Shipping / Subtotal / Total) ===== */
-.sum-box{
-  padding: 10px 12px;
-  margin: 8px 0;
-  border-radius: 12px;
-  background: rgba(255,255,255,.22);      /* glassy layer */
-  border: 1px solid rgba(0,0,0,.06);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
-}
-.summary.solid .sum-box{
-  background: rgba(2,6,23,.04);
-  border-color: rgba(2,6,23,.08);
-  box-shadow: none;
-}
-
-/* Emphasize TOTAL */
-.kpi-total{
-  background: rgba(255,255,255,.28);
-  border: 1px solid rgba(0,0,0,.10);
-}
-.summary.solid .kpi-total{
-  background: rgba(2,6,23,.06);
-  border-color: rgba(2,6,23,.12);
-}
-
-/* Keep the row layout inside boxes */
-.summary-line{
-  display:flex; justify-content:space-between; align-items:center;
-}
-.summary-line .label{ font-weight:700; }
-.summary-line .value{ font-weight:800; }
-
-/* Mobile spacing */
-@media (max-width: 767.98px){
-  .sum-header{ margin: -6px -6px 10px; padding: 12px 14px; }
-  .sum-box{ padding: 9px 10px; border-radius: 10px; }
-}
-
   </style>
 </head>
 <body>
@@ -638,9 +582,7 @@
       <!-- RIGHT: summary -->
 <!-- RIGHT: summary -->
 <aside class="summary glass">  <!-- switch to 'summary solid' if you want the alternative theme below -->
-  <div class="sum-header">
   <h3>Order Summary</h3>
-</div>
 
   <!-- OPTIONAL ADD-ON -->
   <section class="sum-section" id="addons-section">
@@ -691,27 +633,22 @@
     </div>
   </section>
 
-  <div class="sum-box">
+  <!-- Summary lines -->
   <div class="row summary-line em">
     <span class="label">Shipping fees</span>
     <strong class="value" id="sumShipping">$0.00</strong>
   </div>
-</div>
-
-<div class="sum-box">
   <div class="row summary-line em">
     <span class="label">Subtotal</span>
     <strong class="value" id="sumSubtotal">$0.00</strong>
   </div>
-</div>
 
-<div class="sum-box kpi-total">
+  <hr class="sum-divider">
+
   <div class="row summary-line em total">
     <span class="label">Total</span>
     <strong class="value" id="sumTotal">$0.00</strong>
   </div>
-</div>
-
 
   <div class="summary-actions">
     <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
