@@ -157,21 +157,13 @@
 .icon-btn:hover{ transform: translateY(-2px); }
 .icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
 
-.qty-controls{ display:inline-flex; align-items:center; gap:6px; }
+.qty-controls{ display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap; } /* 👈 add flex-wrap:nowrap */
+
 .qty-controls .pill{
   min-width:28px; text-align:center; padding:4px 8px;
   border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
   font-weight:600;
 }
-
-.remove-btn{
-  margin-left:10px;
-  display:inline-flex; align-items:center; gap:6px;
-  font-size:.85rem; opacity:.9; cursor:pointer;
-  background:transparent; border:none; padding:4px 6px; border-radius:8px;
-}
-.remove-btn:hover{ background:rgba(0,0,0,.05); }
-
 
     /* Cart layout: items | summary */
     .cart-layout{
@@ -563,19 +555,22 @@
             <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
 
             <!-- Quantity controls -->
-            <div class="ci-qty">
-              <div class="qty-controls">
-                <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-                  <img src="assets/images/minus%20button.svg" alt="-">
-                </button>
-                <span class="pill">${qty}</span>
-                <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-                  <img src="assets/images/plus%20button.svg" alt="+">
-                </button>
-              </div>
-              <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">Remove</button>
-            </div>
-          </div>
+<div class="ci-qty">
+  <div class="qty-controls">
+    <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+      <img src="assets/images/minus%20button.svg" alt="-">
+    </button>
+    <span class="pill">${qty}</span>
+    <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
+      <img src="assets/images/plus%20button.svg" alt="+">
+    </button>
+    <!-- NEW: bin button (same style as index mini-cart) -->
+    <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
+      <img src="assets/images/bin.svg" alt="Remove">
+    </button>
+  </div>
+</div>
+
 
           <!-- Line total -->
           <div class="ci-right">$${line.toFixed(2)}</div>
