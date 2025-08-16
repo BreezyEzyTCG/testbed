@@ -27,18 +27,6 @@
       --glass-border: rgba(255,255,255,0.35);
       --glass-blur: blur(14px) saturate(1.12);
     }
-    
-    /* Allow horizontal scroll on narrow phones so columns don't collapse */
-.table-scroll{
-  overflow-x:auto;
-  -webkit-overflow-scrolling: touch;
-}
-.cart-table{
-  min-width: 480px; /* ensures columns keep shape; scrolls on very small screens */
-}
-@media (max-width: 390px){
-  .cart-table{ min-width: 420px; } /* a bit tighter for very small phones */
-}
 
     /* === HERO HEADER (same as store) === */
 .hero{
@@ -268,32 +256,6 @@
       display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;
       margin-top:10px;
     }
-
-    /* === ADDED: Numeric column alignment & fixed widths === */
-    /* keep this */
-.cart-table { table-layout: fixed; }
-
-/* change this block: remove th.num */
-.cart-table td.num{
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  padding-right: 16px;
-}
-    .cart-table td.total{           /* === ADDED: stronger total column */
-      font-weight: 700;
-    }
-    /* Fixed column widths to prevent shifting */
-.cart-table col.col-item  { width: auto; }
-.cart-table col.col-qty   { width: 84px; }
-.cart-table col.col-unit  { width: 120px; }
-.cart-table col.col-total { width: 120px; }  /* <-- add the missing brace */
-
-  /* Only move the numbers (td), leave headers (th) untouched */
-.cart-table td:nth-child(2){ text-align:right; padding-right:10px; }  /* Qty */
-.cart-table td:nth-child(3){ text-align:right; padding-right:14px; }  /* Unit Price */
-.cart-table td:nth-child(4){ text-align:right; padding-right:18px; }  /* Total */
-
   </style>
 </head>
 <body>
@@ -325,29 +287,20 @@
   <div class="container page-wrap">
 
     <div class="cart-layout">
-     <!-- LEFT: items table -->
-<div class="card-panel">
-  <div class="table-scroll">
-    <table class="cart-table">
-      <colgroup>
-        <col class="col-item">
-        <col class="col-qty">
-        <col class="col-unit">
-        <col class="col-total">
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="cart-items"></tbody>
-    </table>
-  </div>
-</div>
-
+      <!-- LEFT: items table (keeps your IDs) -->
+      <div class="card-panel">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="cart-items"></tbody>
+        </table>
+      </div>
 
       <!-- RIGHT: glass summary (new IDs to mirror totals if you want) -->
       <aside class="summary glass">
@@ -409,7 +362,7 @@
             <div style="display:flex; gap:10px; align-items:center; min-width:0;">
               <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
               <div style="min-width:0;">
-                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 100%;">
+                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${item.name || ''}
                 </div>
                 <div style="opacity:.8; font-size:.9rem;">
@@ -420,9 +373,9 @@
               </div>
             </div>
           </td>
-          <td class="num">${qty}</td>                      <!-- === ADDED class === -->
-          <td class="num">$${unit.toFixed(2)}</td>         <!-- === ADDED class === -->
-          <td class="num total">$${line.toFixed(2)}</td>   <!-- === ADDED classes === -->
+          <td>${qty}</td>
+          <td>$${unit.toFixed(2)}</td>
+          <td><strong>$${line.toFixed(2)}</strong></td>
         `;
         cartContainer.appendChild(row);
       });
