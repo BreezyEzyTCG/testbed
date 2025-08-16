@@ -5,101 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cart</title>
 
-  <!-- CHANGE 1: (Optional) Match the brand font you use on the store hero -->
+  <!-- Brand font -->
   <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
   <style>
-    /* ===== CHANGE 2: THEME TOKENS copied from your store ===== */
+    /* ===== THEME TOKENS ===== */
     :root{
       --icon-color-default:#ddeaef;
       --icon-color-active:#789cac;
 
-      --shell:#85adb8;     /* header & shell (same as store) */
-      --fg:#FBFAF5;        /* text on shell */
+      --shell:#85adb8;
+      --fg:#FBFAF5;
       --page-bg: var(--shell);
       --accent:#ef4444;
 
       --chip-bg:#072a54;
       --chip-fg:#fff;
 
-      /* Glass surface (same vibe as mini-cart) */
+      /* Glass surface */
       --glass-bg: rgba(255,255,255,0.35);
       --glass-border: rgba(255,255,255,0.35);
       --glass-blur: blur(14px) saturate(1.12);
     }
 
-    /* === HERO HEADER (same as store) === */
-.hero{
-  position:relative;
-  height:clamp(160px, 28vw, 260px);
-  max-width: 1200px;
-  margin: 0 auto;
-  border-radius:14px;
-  overflow:visible;
-  background-image:url("assets/images/Breezy%20Banner.png");
-  background-size:cover;
-  background-position:center 30%;
-}
-.hero::before{
-  content:"";
-  position:absolute; inset:0;
-  background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
-  pointer-events:none;
-  border-radius: inherit;
-}
+    /* ===== HERO HEADER (same as store) ===== */
+    .hero{
+      position:relative;
+      height:clamp(160px, 28vw, 260px);
+      max-width: 1200px;
+      margin: 0 auto;
+      border-radius:14px;
+      overflow:visible;
+      background-image:url("assets/images/Breezy%20Banner.png");
+      background-size:cover;
+      background-position:center 30%;
+    }
+    .hero::before{
+      content:"";
+      position:absolute; inset:0;
+      background:linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.25));
+      pointer-events:none;
+      border-radius: inherit;
+    }
 
-/* Centered brand block */
-.brand-center {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--fg);
-  padding: 0 12px;
-  pointer-events: none;
-}
+    /* Centered brand block */
+    .brand-center {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--fg);
+      padding: 0 12px;
+      pointer-events: none;
+    }
+    @media (min-width: 768px){
+      .brand-center > div { transform: translateY(0); }
+    }
+    .brand-title {
+      margin: 0;
+      line-height: 1.1;
+      font-weight: 800;
+      font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 45px;
+      text-shadow: 0 2px 10px rgba(0,0,0,.35);
+    }
+    @media (max-width: 767.98px){
+      .brand-title { font-size: 17px; }
+      .brand-center > div { transform: translateY(10px); }
+    }
+    .brand-subtitle{
+      margin:.35rem 0 0 0;
+      opacity:.95;
+      font-size:clamp(0.8rem, 3vw, 1.2rem);
+      text-shadow:0 1px 6px rgba(0,0,0,.35);
+    }
 
-/* Desktop: remove big offset so it stays centered */
-@media (min-width: 768px){
-  .brand-center > div {
-    transform: translateY(0); /* no extra shift */
-  }
-}
-
-.brand-title {
-  margin: 0;
-  line-height: 1.1;
-  font-weight: 800;
-  font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size: 45px; /* desktop size */
-  text-shadow: 0 2px 10px rgba(0,0,0,.35);
-}
-
-/* Mobile override */
-@media (max-width: 767.98px){
-  .brand-title { font-size: 17px; }  /* mobile size */
-  .brand-center > div { transform: translateY(10px); } /* subtle shift */
-}
-
-/* Subtitle */
-.brand-subtitle{
-  margin:.35rem 0 0 0;
-  opacity:.95;
-  font-size:clamp(0.8rem, 3vw, 1.2rem);
-  text-shadow:0 1px 6px rgba(0,0,0,.35);
-}
-
-/* ensure space below the banner before cart content */
-.page-wrap{ margin: 16px auto 24px; }
-
-    /* ===== CHANGE 3: Base + shell/header (match store) ===== */
+    /* Layout/base */
     html,body{ height:100%; }
     body{
-      font-family: Arial, sans-serif; /* your store uses Arial for body */
-      background: var(--page-bg);     /* unify to store background */
+      font-family: Arial, sans-serif;
+      background: var(--page-bg);
       margin: 0;
       color:#111827;
     }
@@ -107,30 +95,19 @@
       position: sticky; top:0; z-index:20;
       background: var(--shell);
       color: var(--fg);
-      box-shadow: none; /* matches your store */
+      box-shadow: none;
     }
     .shell-pad{ padding:10px 12px 6px; }
+
     .container{
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 16px;
     }
 
-    /* ===== CHANGE 4: Page header bar (cart title) ===== */
-    .cart-title{
-      margin:0;
-      font-family: "Poetsen One", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size: 32px;
-      line-height: 1.1;
-      text-shadow: 0 2px 10px rgba(0,0,0,.15);
-    }
+    .page-wrap{ margin: 16px auto 24px; }
 
-    /* ===== CHANGE 5: Main panel layout to echo store spacing ===== */
-    .page-wrap{
-      margin: 16px auto 24px;
-    }
-
-    /* ===== CHANGE 6: Buttons (unified look) ===== */
+    /* Buttons */
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
       height:42px; padding:0 14px;
@@ -143,82 +120,54 @@
     }
     .btn:hover{ transform: translateY(-3px); }
     .btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
-    .btn--ghost{
-      background:transparent;
-      color:#111;
-      border-color: rgba(0,0,0,.22);
-    }
+    .btn--ghost{ background:transparent; color:#111; border-color: rgba(0,0,0,.22); }
     .btn--danger{ background: var(--accent); color:#fff; border-color: transparent; }
-    
-    /* Glassy back button variant */
-.back-btn--glass{
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border:1px solid var(--glass-border);
-  color:#0f172a;
-  box-shadow:0 10px 24px rgba(2,6,23,0.25);
-}
-@media (prefers-color-scheme: dark){
-  .back-btn--glass{
-    background: rgba(2, 6, 23, 0.55);
-    border-color: rgba(255,255,255,0.12);
-    color:#e5e7eb;
-    box-shadow:0 14px 32px rgba(0,0,0,0.55);
-  }
-}
 
-/* Place the back button over the banner (top-left) */
-.back-in-hero{
-  position:absolute;
-  top:12px;
-  left:12px;
-  z-index:3;
-  pointer-events:auto;
-}
-
-/* Slightly smaller/tighter on mobile */
-@media (max-width:767.98px){
-  .back-in-hero .btn{
-    height:20px;
-    padding:0 12px;
-    font-weight:500;
-  }
-}
-
-    /* ===== CHANGE 7: Back button keeps your color but uses unified shape ===== */
+    /* Glass back button */
+    .back-btn--glass{
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border:1px solid var(--glass-border);
+      color:#0f172a;
+      box-shadow:0 10px 24px rgba(2,6,23,0.25);
+    }
+    @media (prefers-color-scheme: dark){
+      .back-btn--glass{
+        background: rgba(2, 6, 23, 0.55);
+        border-color: rgba(255,255,255,0.12);
+        color:#e5e7eb;
+        box-shadow:0 14px 32px rgba(0,0,0,0.55);
+      }
+    }
+    .back-in-hero{ position:absolute; top:12px; left:12px; z-index:3; pointer-events:auto; }
+    @media (max-width:767.98px){
+      .back-in-hero .btn{ height:20px; padding:0 12px; font-weight:500; }
+    }
     .back-btn{ background:#2b6cb0; color:#FBFAF5; }
 
-    /* ===== CHANGE 8: Cart layout (items | summary) ===== */
+    /* Cart layout: items | summary */
     .cart-layout{
       display:grid; gap:16px;
-      grid-template-columns: 2fr 1fr;  /* items | summary */
+      grid-template-columns: 2fr 1fr;
     }
-    @media (max-width: 767.98px){
-      .cart-layout{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 767.98px){ .cart-layout{ grid-template-columns: 1fr; } }
 
-    /* ===== CHANGE 9: Table styling to match your card aesthetics ===== */
+    /* Cards / table */
     .card-panel{
       background:#fff;
       border-radius:12px;
       box-shadow:0 8px 20px rgba(0,0,0,.05);
       overflow:hidden;
     }
-    .cart-table{
-      width: 100%;
-      border-collapse: collapse;
-    }
+    .cart-table{ width: 100%; border-collapse: collapse; }
     .cart-table th, .cart-table td{
       border-bottom:1px solid #eee;
       padding: 12px;
       text-align: center;
       vertical-align: middle;
     }
-    .cart-table th{
-      text-align:left;
-      font-weight:700;
-    }
+    .cart-table th{ text-align:left; font-weight:700; }
     .cart-table td:first-child, .cart-table th:first-child{ text-align:left; }
 
     .thumb{
@@ -228,16 +177,16 @@
     }
     .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
 
-    /* Smaller font for mobile cart cells */
-@media (max-width:767.98px){
-  .cart-table td, 
-  .cart-table th {
-    font-size: 0.65rem;   /* smaller text */
-    padding: 8px;         /* tighter spacing */
-  }
-}
+    /* Smaller font for mobile cart cells (desktop table) */
+    @media (max-width:767.98px){
+      .cart-table td, .cart-table th { font-size: 0.65rem; padding: 8px; }
+    }
+    /* Prevent any numeric overflow in the desktop table */
+    .cart-table td{
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
 
-    /* ===== CHANGE 10: Glass summary ===== */
+    /* ===== Summary (glass) ===== */
     .summary.glass{
       padding:14px;
       background: var(--glass-bg);
@@ -257,81 +206,137 @@
       }
     }
     .summary h3{ margin:0 0 10px; font-size:1.1rem; }
-    .row{
-      display:flex; align-items:center; justify-content:space-between;
-      margin:6px 0;
-    }
-    .summary-actions{
-      display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;
-      margin-top:10px;
-    }
-    /* === Responsive switch between desktop head and mobile head === */
-.head-mobile{ display:none; }
+    .row{ display:flex; align-items:center; justify-content:space-between; margin:6px 0; }
+    .summary-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px; }
 
-@media (max-width:767.98px){
-  .head-desktop{ display:none; }
-  .head-mobile{ display:table-row; }
-}
+    /* === Responsive switch between desktop head and mobile head (table) === */
+    .head-mobile{ display:none; }
+    @media (max-width:767.98px){
+      .head-desktop{ display:none; }
+      .head-mobile{ display:table-row; }
+    }
+
+    /* ========= Mini-cart style rows for MOBILE ========= */
+
+    /* Default: show table panel, hide list panel */
+    #cart-list-panel { display: none; }
+
+    /* Mobile: hide table, show list */
+    @media (max-width: 767.98px){
+      .cart-table { display: none; }
+      #cart-list-panel { display: block; }
+    }
+
+    .cart-list { padding: 8px; }
+
+    /* One row = [thumb] [meta] [line-total] */
+    .cart-item{
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .ci-thumb{
+      width:56px; height:56px; border-radius:6px;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.05);
+    }
+    .ci-thumb img{ max-width:100%; max-height:100%; object-fit:contain; display:block; }
+
+    .ci-meta{ min-width:0; }
+    .ci-name{
+      margin:0 0 4px;
+      font-weight:700; font-size:.95rem; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .ci-sub{
+      margin:0;
+      font-size:.85rem; opacity:.9; line-height:1.25;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    .ci-qty{
+      margin-top:6px; display:inline-flex; align-items:center; gap:6px;
+      font-size:.9rem;
+    }
+    .ci-qty .pill{
+      min-width:22px; text-align:center; padding:2px 8px;
+      border:1px solid rgba(0,0,0,.1); border-radius:999px; background:#fff;
+    }
+
+    .ci-right{
+      font-weight:700; font-size:.95rem;
+      white-space:nowrap; text-align:right; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    @media (max-width: 480px){
+      .ci-name{ font-size:.9rem; }
+      .ci-sub{ font-size:.8rem; }
+      .ci-right{ font-size:.9rem; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- ===== CHANGE 11: Shell header to match store ===== -->
-<div class="site-shell">
-  <div class="shell-pad">
-    <div class="hero">
-      <!-- optional top row inside banner; keep empty on cart -->
-      <div class="banner-bar"></div>
+  <!-- ===== Shell / Hero ===== -->
+  <div class="site-shell">
+    <div class="shell-pad">
+      <div class="hero">
+        <div class="banner-bar"></div>
 
-        <!-- back button overlay on banner -->
-  <div class="back-in-hero">
-    <a href="index.html" class="btn back-btn--glass" aria-label="Back to Store">← Store</a>
-  </div>
+        <div class="back-in-hero">
+          <a href="index.html" class="btn back-btn--glass" aria-label="Back to Store">← Store</a>
+        </div>
 
-      <!-- centered brand title exactly like store -->
-      <div class="brand-center">
-        <div>
-          <h1 class="brand-title">YOUR HAND-PICKED MAGIC AWAITS✨</h1>
-          <p class="brand-subtitle"><strong>Happiness is only a checkout away (*˘︶˘*).｡.:*♡</strong></p>
+        <div class="brand-center">
+          <div>
+            <h1 class="brand-title">YOUR HAND-PICKED MAGIC AWAITS✨</h1>
+            <p class="brand-subtitle"><strong>Happiness is only a checkout away (*˘︶˘*).｡.:*♡</strong></p>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-  <!-- ===== CHANGE 12: Main content using same container width ===== -->
+  <!-- ===== Main ===== -->
   <div class="container page-wrap">
 
     <div class="cart-layout">
-      <!-- LEFT: items table (keeps your IDs) -->
+      <!-- LEFT: items -->
       <div class="card-panel">
         <table class="cart-table">
-         <thead>
-  <tr class="head-desktop">
-    <th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th>
-  </tr>
-  <tr class="head-mobile">
-    <th>Image</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th>
-  </tr>
-</thead>
+          <thead>
+            <tr class="head-desktop">
+              <th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th>
+            </tr>
+            <tr class="head-mobile">
+              <th>Image</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th>
+            </tr>
+          </thead>
           <tbody id="cart-items"></tbody>
         </table>
       </div>
 
-      <!-- RIGHT: glass summary (new IDs to mirror totals if you want) -->
+      <!-- Mobile list version (mini-cart style) -->
+      <div class="card-panel" id="cart-list-panel">
+        <div id="cart-list" class="cart-list"></div>
+      </div>
+
+      <!-- RIGHT: summary -->
       <aside class="summary glass">
         <h3>Order Summary</h3>
         <div class="row">
           <span>Subtotal</span>
           <strong id="sumSubtotal">$0.00</strong>
         </div>
-        <!-- Add shipping/tax rows here if needed -->
         <hr style="border:none; border-top:1px solid rgba(255,255,255,0.25); margin:10px 0;">
         <div class="row">
           <span>Total</span>
           <strong id="sumTotal">$0.00</strong>
         </div>
-
         <div class="summary-actions">
           <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
           <button onclick="checkout()" class="btn">Checkout</button>
@@ -339,26 +344,34 @@
       </aside>
     </div>
 
-    <!-- Keep your original total text, now redundant but left for compatibility -->
+    <!-- Legacy readout -->
     <div class="row" style="justify-content:flex-end; margin-top:12px;">
       <div id="order-total" style="font-weight:700;">Order Total: $0.00</div>
     </div>
   </div>
 
   <script>
-    // ===== CHANGE 13: renderCart updated to match new table cells and update new totals =====
     function renderCart() {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       const cartContainer = document.getElementById("cart-items");
+      const cartList = document.getElementById("cart-list"); // mobile list
       const totalDisplay = document.getElementById("order-total");
       const sumSubtotal = document.getElementById("sumSubtotal");
       const sumTotal = document.getElementById("sumTotal");
 
       cartContainer.innerHTML = "";
+      if (cartList) cartList.innerHTML = "";
+
       let total = 0;
 
       if (cart.length === 0) {
         cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+        if (cartList) {
+          cartList.innerHTML = `
+            <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
+              <div style="opacity:.75;">Your cart is empty.</div>
+            </div>`;
+        }
         totalDisplay.innerText = "Order Total: $0.00";
         if (sumSubtotal) sumSubtotal.textContent = "$0.00";
         if (sumTotal) sumTotal.textContent = "$0.00";
@@ -370,52 +383,78 @@
         const imagePath = item.image || "assets/images/default.png";
         const qty = Number(item.quantity) || 0;
         const unit = Number(item.price) || 0;
-        const line = (qty * unit);
+        const line = qty * unit;
         total += line;
 
         const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
-row.innerHTML = isMobile
-  ? `
-    <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
-    <td>
-      <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-        ${item.name || ''}
-      </div>
-      <div style="opacity:.8; font-size:.9rem;">
-        ${(item.series ? `${item.series}` : '')}
-        ${(item.rarity ? ` · ${item.rarity}` : '')}
-        ${(item.condition ? ` · ${item.condition}` : '')}
-      </div>
-    </td>
-    <td>${qty}</td>
-    <td>$${unit.toFixed(2)}</td>
-    <td><strong>$${line.toFixed(2)}</strong></td>
-  `
-  : `
-    <td>
-      <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-        <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-        <div style="min-width:0;">
-          <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            ${item.name || ''}
-          </div>
-          <div style="opacity:.8; font-size:.9rem;">
-            ${(item.series ? `${item.series}` : '')}
-            ${(item.rarity ? ` · ${item.rarity}` : '')}
-            ${(item.condition ? ` · ${item.condition}` : '')}
-          </div>
-        </div>
-      </div>
-    </td>
-    <td>${qty}</td>
-    <td>$${unit.toFixed(2)}</td>
-    <td><strong>$${line.toFixed(2)}</strong></td>
-  `;
+        row.innerHTML = isMobile
+          ? `
+            <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
+            <td>
+              <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${item.name || ''}
+              </div>
+              <div style="opacity:.8; font-size:.9rem;">
+                ${(item.series ? `${item.series}` : '')}
+                ${(item.rarity ? ` · ${item.rarity}` : '')}
+                ${(item.condition ? ` · ${item.condition}` : '')}
+              </div>
+            </td>
+            <td>${qty}</td>
+            <td>$${unit.toFixed(2)}</td>
+            <td><strong>$${line.toFixed(2)}</strong></td>
+          `
+          : `
+            <td>
+              <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+                <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+                <div style="min-width:0;">
+                  <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${item.name || ''}
+                  </div>
+                  <div style="opacity:.8; font-size:.9rem;">
+                    ${(item.series ? `${item.series}` : '')}
+                    ${(item.rarity ? ` · ${item.rarity}` : '')}
+                    ${(item.condition ? ` · ${item.condition}` : '')}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>${qty}</td>
+            <td>$${unit.toFixed(2)}</td>
+            <td><strong>$${line.toFixed(2)}</strong></td>
+          `;
 
         cartContainer.appendChild(row);
+
+        // --- Mobile list item (mini-cart style) ---
+        if (cartList) {
+          const li = document.createElement("div");
+          li.className = "cart-item";
+
+          const attrs = [
+            (item.series ? `${item.series}` : ''),
+            (item.rarity ? ` · ${item.rarity}` : ''),
+            (item.condition ? ` · ${item.condition}` : '')
+          ].join('').replace(/^ · /,'');
+
+          li.innerHTML = `
+            <div class="ci-thumb"><img src="${imagePath}" alt="${item.name || 'Item'}"></div>
+            <div class="ci-meta">
+              <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
+              <p class="ci-sub">$${unit.toFixed(2)}${attrs ? ` · ${attrs}` : ''}</p>
+              <div class="ci-qty">
+                <span>Qty</span>
+                <span class="pill">${qty}</span>
+              </div>
+            </div>
+            <div class="ci-right">$${line.toFixed(2)}</div>
+          `;
+          cartList.appendChild(li);
+        }
       });
 
-      // Update all total readouts
+      // Update totals
       const money = v => `$${(Number(v)||0).toFixed(2)}`;
       totalDisplay.innerText = `Order Total: ${money(total)}`;
       if (sumSubtotal) sumSubtotal.textContent = money(total);
