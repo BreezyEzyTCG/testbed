@@ -256,6 +256,26 @@
       display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;
       margin-top:10px;
     }
+
+    /* === ADDED: Numeric column alignment & fixed widths === */
+    .cart-table{ /* keep existing styles above; add fixed layout for stable columns */
+      table-layout: fixed; /* === ADDED === */
+    }
+    .cart-table th.num,
+    .cart-table td.num{
+      text-align: right;            /* === ADDED === */
+      white-space: nowrap;          /* === ADDED === */
+      font-variant-numeric: tabular-nums; /* === ADDED === */
+      padding-right: 16px;          /* === ADDED: slightly tighter right pad */
+    }
+    .cart-table td.total{           /* === ADDED: stronger total column */
+      font-weight: 700;
+    }
+    /* Fixed column widths to prevent shifting */
+    .cart-table col.col-item  { width: auto; }   /* === ADDED === */
+    .cart-table col.col-qty   { width: 84px; }   /* === ADDED === */
+    .cart-table col.col-unit  { width: 120px; }  /* === ADDED === */
+    .cart-table col.col-total { width: 120px; }  /* === ADDED === */
   </style>
 </head>
 <body>
@@ -290,12 +310,19 @@
       <!-- LEFT: items table (keeps your IDs) -->
       <div class="card-panel">
         <table class="cart-table">
+          <!-- === ADDED: fixed column widths === -->
+          <colgroup>
+            <col class="col-item">
+            <col class="col-qty">
+            <col class="col-unit">
+            <col class="col-total">
+          </colgroup>
           <thead>
             <tr>
               <th>Item</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Total</th>
+              <th class="num">Qty</th>         <!-- === ADDED class === -->
+              <th class="num">Unit Price</th>  <!-- === ADDED class === -->
+              <th class="num">Total</th>       <!-- === ADDED class === -->
             </tr>
           </thead>
           <tbody id="cart-items"></tbody>
@@ -373,9 +400,9 @@
               </div>
             </div>
           </td>
-          <td>${qty}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
+          <td class="num">${qty}</td>                      <!-- === ADDED class === -->
+          <td class="num">$${unit.toFixed(2)}</td>         <!-- === ADDED class === -->
+          <td class="num total">$${line.toFixed(2)}</td>   <!-- === ADDED classes === -->
         `;
         cartContainer.appendChild(row);
       });
