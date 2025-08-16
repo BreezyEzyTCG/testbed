@@ -228,6 +228,22 @@
     }
     .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
 
+    .cart-table .item-name{
+  font-weight:700;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;     /* up to 2 lines on mobile */
+  white-space: normal;
+  text-overflow: ellipsis;
+}
+
+@media (min-width:768px){
+  .cart-table .item-name{
+    -webkit-line-clamp: 1;   /* single line on desktop */
+  }
+}
+
     /* Fixed column widths (mobile first) */
 .cart-table col.col-item  { width: auto; }   /* grows/wraps */
 .cart-table col.col-qty   { width: 56px; }
@@ -327,7 +343,16 @@
     <col class="col-unit">
     <col class="col-total">
   </colgroup>
-  <thead> ... </thead>
+
+  <thead>
+    <tr>
+      <th>Item</th>
+      <th>Qty</th>
+      <th>Unit Price</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+
   <tbody id="cart-items"></tbody>
 </table>
       </div>
@@ -406,14 +431,14 @@
   <td><strong>$${line.toFixed(2)}</strong></td>
 `;
 cartContainer.appendChild(row);
+}); // <-- closes forEach
 
-
-      // Update all total readouts
-      const money = v => `$${(Number(v)||0).toFixed(2)}`;
-      totalDisplay.innerText = `Order Total: ${money(total)}`;
-      if (sumSubtotal) sumSubtotal.textContent = money(total);
-      if (sumTotal) sumTotal.textContent = money(total);
-    }
+// Update all total readouts
+const money = v => `$${(Number(v)||0).toFixed(2)}`;
+totalDisplay.innerText = `Order Total: ${money(total)}`;
+if (sumSubtotal) sumSubtotal.textContent = money(total);
+if (sumTotal)    sumTotal.textContent = money(total);
+} // <-- closes renderCart()
 
     function clearCart() {
       localStorage.removeItem("cart");
