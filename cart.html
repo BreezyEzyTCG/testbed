@@ -247,6 +247,28 @@
     /* Allow wrapping inside the first (Item) column only */
     .cart-table td.col-item { white-space: normal; }
 
+    /* Scrollable cart (desktop) */
+.items-panel { padding: 0; } /* keep edges clean */
+.items-panel .cart-scroll{
+  max-height: 420px;          /* ≈4 rows visible on desktop */
+  overflow: auto;
+  overscroll-behavior: contain; /* don't scroll the page when at ends */
+}
+
+/* Pin the table header inside the scrolling area */
+.cart-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;             /* match your card bg */
+  box-shadow: inset 0 -1px 0 #eee; /* subtle divider under header */
+}
+
+/* Mobile: let the cart take a comfortable slice of the viewport */
+@media (max-width: 767.98px){
+  .items-panel .cart-scroll{ max-height: 60vh; }
+}
+
     /* Product name single line with ellipsis */
     .item-name{
       font-weight:700;
@@ -422,25 +444,27 @@
 
     <div class="cart-layout">
       <!-- LEFT: items -->
-      <div class="card-panel">
-        <table class="cart-table">
-          <colgroup>
-            <col class="col-item">
-            <col class="col-qty">
-            <col class="col-unit">
-            <col class="col-total">
-          </colgroup>
-          <thead>
-            <tr class="head-desktop">
-              <th>Item</th><th>Qty</th><th>Price</th><th>Total</th>
-            </tr>
-            <tr class="head-mobile">
-              <th>Image</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th>
-            </tr>
-          </thead>
-          <tbody id="cart-items"></tbody>
-        </table>
-      </div>
+<div class="card-panel items-panel">
+  <div class="cart-scroll">
+    <table class="cart-table">
+      <colgroup>
+        <col class="col-item">
+        <col class="col-qty">
+        <col class="col-unit">
+        <col class="col-total">
+      </colgroup>
+      <thead>
+        <tr class="head-desktop">
+          <th>Item</th><th>Qty</th><th>Price</th><th>Total</th>
+        </tr>
+        <tr class="head-mobile">
+          <th>Image</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="cart-items"></tbody>
+    </table>
+  </div>
+</div>
 
       <!-- Mobile list version (mini-cart style) -->
       <div class="card-panel" id="cart-list-panel">
