@@ -222,91 +222,11 @@
     .cart-table td:first-child, .cart-table th:first-child{ text-align:left; }
 
     .thumb{
-  width:60px; height:60px;
-  border-radius:6px; background:#fff;
-  display:flex; align-items:center; justify-content:center; overflow:hidden;
-  box-shadow:0 2px 6px rgba(0,0,0,.05);
-}
-.thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-
-    .cart-table .item-name{
-  font-weight:700;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;     /* up to 2 lines on mobile */
-  white-space: normal;
-  text-overflow: ellipsis;
-}
-
-@media (min-width:768px){
-  .cart-table .item-name{
-    -webkit-line-clamp: 1;   /* single line on desktop */
-  }
-}
-
-    /* Fixed column widths (mobile first) — give Item more space */
-.cart-table col.col-item  { width: 60%; }  /* was auto; prevents squeeze */
-.cart-table col.col-qty   { width: 14%; }
-.cart-table col.col-unit  { width: 13%; }
-.cart-table col.col-total { width: 13%; }
-
-/* Right-align numbers only (keep header text readable) */
-.cart-table th:nth-child(2),
-.cart-table th:nth-child(3),
-.cart-table th:nth-child(4),
-.cart-table td:nth-child(2),
-.cart-table td:nth-child(3),
-.cart-table td:nth-child(4) {
-  text-align: right;
-}
-
-/* === Mobile-only cart look (<=768px) === */
-@media (max-width: 767.98px){
-  .card-panel { overflow-x: hidden; }
-  .cart-table { table-layout: fixed; }
-  .cart-table th, .cart-table td { padding: 10px 8px; font-size: 13px; }
-
-  /* Mobile column distribution */
-  .cart-table col.col-item  { width: 46%; }
-  .cart-table col.col-qty   { width: 12%; }
-  .cart-table col.col-unit  { width: 21%; }
-  .cart-table col.col-total { width: 21%; }
-
-  /* Thumbnail like your sample */
-  .thumb{ width:80px; height:80px; border-radius:6px; }
-  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-
-  /* Product text smaller and clamped */
-  .cart-table .item-name{
-    font-size: 13px;
-    line-height: 1.2;
-    -webkit-line-clamp: 2;
-    display:-webkit-box;
-    -webkit-box-orient: vertical;
-    overflow:hidden;
-  }
-
-  /* Subtext smaller */
-  .cart-table .item-meta{ font-size: 12px; opacity:.85; }
-
-  /* Numbers right-aligned */
-  .cart-table th:nth-child(3),
-  .cart-table th:nth-child(4),
-  .cart-table th:nth-child(5),
-  .cart-table td:nth-child(3),
-  .cart-table td:nth-child(4),
-  .cart-table td:nth-child(5){ text-align:right; }
-}
-
-
-/* Loosen up on bigger screens */
-@media (min-width: 768px){
-  .cart-table col.col-qty   { width: 80px; }
-  .cart-table col.col-unit  { width: 110px; }
-  .cart-table col.col-total { width: 115px; }
-  .cart-table th, .cart-table td { padding: 12px; font-size: 16px; }
-}
+      width:64px; height:64px; border-radius:6px; background:#fff;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+      box-shadow:0 2px 6px rgba(0,0,0,.05);
+    }
+    .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
 
     /* ===== CHANGE 10: Glass summary ===== */
     .summary.glass{
@@ -336,6 +256,13 @@
       display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;
       margin-top:10px;
     }
+    /* === Responsive switch between desktop head and mobile head === */
+.head-mobile{ display:none; }
+
+@media (max-width:767.98px){
+  .head-desktop{ display:none; }
+  .head-mobile{ display:table-row; }
+}
   </style>
 </head>
 <body>
@@ -370,24 +297,16 @@
       <!-- LEFT: items table (keeps your IDs) -->
       <div class="card-panel">
         <table class="cart-table">
-  <colgroup>
-    <col class="col-item">
-    <col class="col-qty">
-    <col class="col-unit">
-    <col class="col-total">
-  </colgroup>
-
-  <thead id="cart-head">
-  <tr>
-    <th>Item</th>
-    <th>Qty</th>
-    <th>Unit Price</th>
-    <th>Total</th>
+         <thead>
+  <tr class="head-desktop">
+    <th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th>
+  </tr>
+  <tr class="head-mobile">
+    <th>Image</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th>
   </tr>
 </thead>
-
-  <tbody id="cart-items"></tbody>
-</table>
+          <tbody id="cart-items"></tbody>
+        </table>
       </div>
 
       <!-- RIGHT: glass summary (new IDs to mirror totals if you want) -->
@@ -418,103 +337,81 @@
   </div>
 
   <script>
-  // ===== CHANGE 13: renderCart updated for mobile 5-col vs desktop 4-col =====
-function renderCart() {
-  const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+    // ===== CHANGE 13: renderCart updated to match new table cells and update new totals =====
+    function renderCart() {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const cartContainer = document.getElementById("cart-items");
+      const totalDisplay = document.getElementById("order-total");
+      const sumSubtotal = document.getElementById("sumSubtotal");
+      const sumTotal = document.getElementById("sumTotal");
 
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  const cartContainer = document.getElementById("cart-items");
-  const cartHead = document.getElementById("cart-head");   // <-- add id="cart-head" on <thead>
-  const totalDisplay = document.getElementById("order-total");
-  const sumSubtotal = document.getElementById("sumSubtotal");
-  const sumTotal = document.getElementById("sumTotal");
+      cartContainer.innerHTML = "";
+      let total = 0;
 
-  // Swap table header for mobile vs desktop
-  const desktopHead = `
-    <tr>
-      <th>Item</th>
-      <th>Qty</th>
-      <th>Unit Price</th>
-      <th>Total</th>
-    </tr>`;
-  const mobileHead = `
-    <tr>
-      <th>Image</th>
-      <th>Product</th>
-      <th>Qty</th>
-      <th>Unit Price</th>
-      <th>Total</th>
-    </tr>`;
+      if (cart.length === 0) {
+        cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+        totalDisplay.innerText = "Order Total: $0.00";
+        if (sumSubtotal) sumSubtotal.textContent = "$0.00";
+        if (sumTotal) sumTotal.textContent = "$0.00";
+        return;
+      }
 
-  if (cartHead) cartHead.innerHTML = isMobile ? mobileHead : desktopHead;
+      cart.forEach(item => {
+        const row = document.createElement("tr");
+        const imagePath = item.image || "assets/images/default.png";
+        const qty = Number(item.quantity) || 0;
+        const unit = Number(item.price) || 0;
+        const line = (qty * unit);
+        total += line;
 
-  cartContainer.innerHTML = "";
-  let total = 0;
-
-  if (cart.length === 0) {
-    const colspan = isMobile ? 5 : 4;
-    cartContainer.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;">Your cart is empty.</td></tr>`;
-    const zero = "$0.00";
-    if (totalDisplay) totalDisplay.innerText = `Order Total: ${zero}`;
-    if (sumSubtotal)  sumSubtotal.textContent = zero;
-    if (sumTotal)     sumTotal.textContent = zero;
-    return;
-  }
-
-  cart.forEach(item => {
-    const row = document.createElement("tr");
-    const imagePath = item.image || "assets/images/default.png";
-    const qty  = Number(item.quantity) || 0;
-    const unit = Number(item.price) || 0;
-    const line = qty * unit;
-    total += line;
-
-    if (isMobile) {
-      // === Mobile template: 5 columns (Image | Product | Qty | Unit | Total)
-      row.innerHTML = `
-        <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}"></div></td>
-        <td>
-          <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
-          <div class="item-meta">
+        const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
+row.innerHTML = isMobile
+  ? `
+    <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
+    <td>
+      <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        ${item.name || ''}
+      </div>
+      <div style="opacity:.8; font-size:.9rem;">
+        ${(item.series ? `${item.series}` : '')}
+        ${(item.rarity ? ` · ${item.rarity}` : '')}
+        ${(item.condition ? ` · ${item.condition}` : '')}
+      </div>
+    </td>
+    <td>${qty}</td>
+    <td>$${unit.toFixed(2)}</td>
+    <td><strong>$${line.toFixed(2)}</strong></td>
+  `
+  : `
+    <td>
+      <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+        <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+        <div style="min-width:0;">
+          <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            ${item.name || ''}
+          </div>
+          <div style="opacity:.8; font-size:.9rem;">
             ${(item.series ? `${item.series}` : '')}
             ${(item.rarity ? ` · ${item.rarity}` : '')}
             ${(item.condition ? ` · ${item.condition}` : '')}
           </div>
-        </td>
-        <td>${qty}</td>
-        <td>$${unit.toFixed(2)}</td>
-        <td><strong>$${line.toFixed(2)}</strong></td>
-      `;
-    } else {
-      // === Desktop template: keep your existing 4 columns
-      row.innerHTML = `
-        <td>
-          <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-            <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-            <div class="item-meta" style="min-width:0;">
-              <div class="item-name">${item.name || ''}</div>
-              <div style="opacity:.8; font-size:.9rem;">
-                ${(item.series ? `${item.series}` : '')}
-                ${(item.rarity ? ` · ${item.rarity}` : '')}
-                ${(item.condition ? ` · ${item.condition}` : '')}
-              </div>
-            </div>
-          </div>
-        </td>
-        <td>${qty}</td>
-        <td>$${unit.toFixed(2)}</td>
-        <td><strong>$${line.toFixed(2)}</strong></td>
-      `;
-    }
-    cartContainer.appendChild(row);
-  });
+        </div>
+      </div>
+    </td>
+    <td>${qty}</td>
+    <td>$${unit.toFixed(2)}</td>
+    <td><strong>$${line.toFixed(2)}</strong></td>
+  `;
 
-  // Update totals
-  const money = v => `$${(Number(v)||0).toFixed(2)}`;
-  if (totalDisplay) totalDisplay.innerText = `Order Total: ${money(total)}`;
-  if (sumSubtotal)  sumSubtotal.textContent = money(total);
-  if (sumTotal)     sumTotal.textContent   = money(total);
-}
+        cartContainer.appendChild(row);
+      });
+
+      // Update all total readouts
+      const money = v => `$${(Number(v)||0).toFixed(2)}`;
+      totalDisplay.innerText = `Order Total: ${money(total)}`;
+      if (sumSubtotal) sumSubtotal.textContent = money(total);
+      if (sumTotal) sumTotal.textContent = money(total);
+    }
 
     function clearCart() {
       localStorage.removeItem("cart");
@@ -526,11 +423,7 @@ function renderCart() {
     }
 
     // Initial load
-renderCart();
-
-// Re-render on resize (so switching between mobile <-> desktop updates layout)
-window.addEventListener('resize', () => renderCart());
-
+    renderCart();
   </script>
 </body>
 </html>
