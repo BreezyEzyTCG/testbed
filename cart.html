@@ -205,23 +205,42 @@
       box-shadow:0 8px 20px rgba(0,0,0,.05);
       overflow:hidden;
     }
-    .cart-table{
+  .cart-table{
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;  /* keep columns locked to colgroup widths */
 }
-    /* default: right align so numbers line up under headers */
+
+/* default: right align so numbers line up under headers */
 .cart-table th,
 .cart-table td{
   text-align: right;
-  white-space: nowrap;           /* keep $10.00 on one line */
+  white-space: nowrap;   /* keep $10.00 on one line */
+  padding:14px 12px;     /* a bit taller rows */
 }
 
 /* first column (Item) stays left and can wrap */
 .cart-table th:first-child,
 .cart-table td:first-child{
   text-align: left;
-  white-space: normal;           /* allow wrapping for long descriptions */
+  white-space: normal;   /* allow wrapping for long descriptions */
+}
+
+/* --- NEW: styling for name + meta inside first cell --- */
+.cart-table td:first-child .item-name{
+  font-weight:700;
+  overflow:hidden;
+  white-space: normal;
+  display:-webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;          /* show max 2 lines */
+  line-height: 1.2;
+  max-height: calc(1.2em * 2);
+}
+.cart-table td:first-child .meta{
+  opacity:.8;
+  font-size:.9rem;
+  margin-top:2px;
 }
 
 /* small screens: give number cols a touch more room if needed */
@@ -231,12 +250,13 @@
   .cart-table col:nth-child(4){ width:100px; }    /* Unit/Total */
 }
 
-    .thumb{
-      width:64px; height:64px; border-radius:6px; background:#fff;
-      display:flex; align-items:center; justify-content:center; overflow:hidden;
-      box-shadow:0 2px 6px rgba(0,0,0,.05);
-    }
-    .thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
+.thumb{
+  width:64px; height:64px; border-radius:6px; background:#fff;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,.05);
+}
+.thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
+
 
     /* ===== CHANGE 10: Glass summary ===== */
     .summary.glass{
@@ -373,26 +393,26 @@
         const line = (qty * unit);
         total += line;
 
-        row.innerHTML = `
-          <td>
-            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-              <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-              <div style="min-width:0;">
-                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${item.name || ''}
-                </div>
-                <div style="opacity:.8; font-size:.9rem;">
-                  ${(item.series ? `${item.series}` : '')}
-                  ${(item.rarity ? ` · ${item.rarity}` : '')}
-                  ${(item.condition ? ` · ${item.condition}` : '')}
-                </div>
-              </div>
-            </div>
-          </td>
-          <td>${qty}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
-        `;
+       row.innerHTML = `
+  <td>
+    <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+      <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+      <div style="min-width:0;">
+        <div class="item-name">
+          ${item.name || ''}
+        </div>
+        <div class="meta">
+          ${(item.series ? `${item.series}` : '')}
+          ${(item.rarity ? ` · ${item.rarity}` : '')}
+          ${(item.condition ? ` · ${item.condition}` : '')}
+        </div>
+      </div>
+    </div>
+  </td>
+  <td>${qty}</td>
+  <td>$${unit.toFixed(2)}</td>
+  <td><strong>$${line.toFixed(2)}</strong></td>
+`;
         cartContainer.appendChild(row);
       });
 
