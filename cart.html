@@ -562,20 +562,22 @@
             <!-- Unit price (bold per your spec) -->
             <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
 
-            <!-- Quantity controls -->
-            <div class="ci-qty">
-              <div class="qty-controls">
-                <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-                  <img src="assets/images/minus%20button.svg" alt="-">
-                </button>
-                <span class="pill">${qty}</span>
-                <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-                  <img src="assets/images/plus%20button.svg" alt="+">
-                </button>
-              </div>
-              <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">Remove</button>
-            </div>
-          </div>
+            <!-- Quantity -->
+      <div class="ci-qty">
+        <div class="qty-controls">
+          <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+            <img src="assets/images/minus%20button.svg" alt="-">
+          </button>
+          <span class="pill">${qty}</span>
+          <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
+            <img src="assets/images/plus%20button.svg" alt="+">
+          </button>
+          <!-- NEW: Remove icon next to + -->
+          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
+            <img src="assets/images/bin.svg" alt="Remove">
+          </button>
+        </div>
+      </div>
 
           <!-- Line total -->
           <div class="ci-right">$${line.toFixed(2)}</div>
