@@ -376,13 +376,13 @@
     }
 
   .ci-right{
-  grid-column: 3;              /* stay in 3rd column */
-  align-self: stretch;         /* 👈 fill the row’s height */
-  justify-self: stretch;       /* fill the column width */
+  grid-column: 3;              
+  align-self: stretch;         
+  justify-self: stretch;       
 
-  display: flex;               /* 👇 use flex to center vertically */
-  align-items: center;         /* 👈 vertical center */
-  justify-content: flex-end;   /* keep it right-aligned */
+  display: flex;               
+  align-items: center;         /* vertical center */
+  justify-content: flex-end;   /* right aligned */
 
   font-weight:700;
   font-size:.95rem;
@@ -391,8 +391,11 @@
   overflow:hidden;
   text-overflow:ellipsis;
 
-  line-height: 1.2;            /* reset; no need to match height */
+  line-height: 1.2;            
+  padding-top: 1px;            /* 👈 add here if it looks slightly low */
+  /* or padding-bottom: 1px; if it looks slightly high */
 }
+
 @media (max-width: 480px){
   .ci-right{ font-size:.9rem; }
 }
