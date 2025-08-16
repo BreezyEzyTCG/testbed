@@ -486,24 +486,57 @@ function removeItem(key){
 
       const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
       row.innerHTML = isMobile
-        ? `
-          <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
-          <td>
-            <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              ${item.name || ''}
-            </div>
-            <div style="opacity:.8; font-size:.9rem;">
-              ${(item.series ? `${item.series}` : '')}
-              ${(item.rarity ? ` · ${item.rarity}` : '')}
-              ${(item.condition ? ` · ${item.condition}` : '')}
-            </div>
-          </td>
-          <td>${qty}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
-`;
+  ? `
+    <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
+    <td>
+      <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        ${item.name || ''}
+      </div>
+      <div style="opacity:.8; font-size:.9rem;">
+        ${(item.series ? `${item.series}` : '')}
+        ${(item.rarity ? ` · ${item.rarity}` : '')}
+        ${(item.condition ? ` · ${item.condition}` : '')}
+      </div>
+    </td>
+    <td>${qty}</td>
+    <td>$${unit.toFixed(2)}</td>
+    <td><strong>$${line.toFixed(2)}</strong></td>
+  `
+  : `
+    <td>
+      <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+        <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+        <div style="min-width:0;">
+          <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            ${item.name || ''}
+          </div>
+          <div style="opacity:.8; font-size:.9rem;">
+            ${(item.series ? `${item.series}` : '')}
+            ${(item.rarity ? ` · ${item.rarity}` : '')}
+            ${(item.condition ? ` · ${item.condition}` : '')}
+          </div>
+        </div>
+      </div>
+    </td>
+    <td>
+      <div class="qty-controls">
+        <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+          <img src="assets/images/minus%20button.svg" alt="-">
+        </button>
+        <span class="pill">${qty}</span>
+        <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
+          <img src="assets/images/plus%20button.svg" alt="+">
+        </button>
+        <button class="remove-btn" onclick="removeItem('${escapeKey(item)}')" title="Remove">
+          Remove
+        </button>
+      </div>
+    </td>
+    <td>$${unit.toFixed(2)}</td>
+    <td><strong>$${line.toFixed(2)}</strong></td>
+  `;
       
-      cartContainer.appendChild(row)
+cartContainer.appendChild(row);
         
           <td>
             <div style="display:flex; gap:10px; align-items:center; min-width:0;">
