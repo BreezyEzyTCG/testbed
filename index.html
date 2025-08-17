@@ -1057,22 +1057,40 @@ function normalizeCart(arr){
     }
     
 
-   function addToCart(name, price, image_url, series, rarity, condition){
+   function addToCart(name, price, image_url, series, rarity, condition, stock){
   const cart = getCart();
   const key = makeKey({name, series, price, rarity, condition});
   const found = cart.find(i => i.key === key);
-  if(found){
-    found.quantity += 1;
-  } else {
-    cart.push({ key, name, series, rarity, condition, price, quantity:1, image:image_url });
+
+  const max = Number(stock ?? 0);
+  if (max <= 0){
+    showToast("Sorry, this item is out of stock.");
+    return;
   }
+
+  if (found){
+    const cur = Number(found.quantity) || 0;
+    if (cur >= max){
+      showToast(`Max available is ${max}.`);
+      return;
+    }
+    found.quantity = cur + 1;
+    // in case old items didn’t have stock recorded, write it now
+    if (typeof found.stock === 'undefined') found.stock = max;
+  } else {
+    cart.push({
+      key, name, series, rarity, condition,
+      price, quantity: 1, image: image_url,
+      stock: max                     // ← store stock in the line item
+    });
+  }
+
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
-
-  playAddSfx(); // 🔊 Play dedicated Add-to-Cart SFX
-
+  playAddSfx();
   showToast(`${name} is now in your PC!`);
 }
+
 
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
@@ -1099,7 +1117,14 @@ function setQty(key, qty){
 }
 function incQty(key){
   const cart = getCart(); const it = cart.find(i=>i.key===key);
-  if(!it) return; it.quantity += 1;
+  if(!it) return;
+  const max = Number(it.stock ?? Infinity);
+  const cur = Number(it.quantity) || 0;
+  if (cur >= max){
+    showToast(`Max available is ${isFinite(max) ? max : 0}.`);
+    return;
+  }
+  it.quantity = cur + 1;
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount(); renderMiniCart();
 }
@@ -1301,7 +1326,7 @@ function setupMiniCart(){
 
 const btnAttrs = out
   ? `disabled aria-disabled="true" tabindex="-1"`
-  : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}')"`; 
+  : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${stock})"`;
 
         const card = document.createElement("div");
         card.className = "card";
@@ -1830,7 +1855,8 @@ function clampPage(p){
     product.image_url || '',
     product['series name'] || '',
     product.rarity || '',
-    product.condition || ''
+    product.condition || '',
+    safeNumber(product.stock, 0)
   );
 
       qv.thumbs.innerHTML = '';
