@@ -995,6 +995,7 @@ function playSfx(){
 }
 
     const SHEET_API = "https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec";
+    const REFRESH_MS = Number(new URLSearchParams(location.search).get('refresh')) || 60_000;
 
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
@@ -2054,6 +2055,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+</script>
 
 <!-- Scroll to Top Button -->
 <button id="scrollTopBtn" type="button" aria-label="Scroll to top">
