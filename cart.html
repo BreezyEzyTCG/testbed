@@ -698,7 +698,7 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
     <h4>Select a mailing option</h4>
     <small class="muted">
       <a href="/shipping-guide" target="_blank" rel="noopener">Find out</a>
-      which shipping service best suits your purchase & our delivery timeline.
+      which option best suits your purchase & our delivery timeline.
     </small>
 
     <div class="option-group option-list" id="shipping-options" role="radiogroup" aria-label="Shipping method">
@@ -837,15 +837,21 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 
   function fmtMoney(n){ return `$${(Number(n)||0).toFixed(2)}`; }
 
-  /* ===== Mutators used by + / − / remove buttons ===== */
   function incQty(key){
-    const cart = getCart();
-    const i = cart.findIndex(it => itemKey(it) === key);
-    if(i >= 0){
-      cart[i].quantity = (Number(cart[i].quantity)||0) + 1;
-      saveCart(cart); renderCart();
+  const cart = getCart();
+  const i = cart.findIndex(it => itemKey(it) === key);
+  if(i >= 0){
+    const max = Number(cart[i].stock ?? Infinity);
+    const cur = Number(cart[i].quantity) || 0;
+
+    if (cur >= max){
+      alert(`Only ${isFinite(max) ? max : 0} in stock for "${cart[i].name}".`);
+      return;
     }
+    cart[i].quantity = cur + 1;
+    saveCart(cart); renderCart();
   }
+}
   function decQty(key){
     const cart = getCart();
     const i = cart.findIndex(it => itemKey(it) === key);
@@ -886,11 +892,26 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
     if (totalDisplay) totalDisplay.innerText = `Order Total: ${fmtMoney(total)}`;
   }
 
-  // ===== CLEAN VERSION =====
-  function renderCart() {
-    const cart = getCart();
-    const cartContainer = document.getElementById("cart-items");
-    const cartList = document.getElementById("cart-list"); // mobile list
+ function renderCart() {
+  let cart = getCart();
+
+  // --- Clamp any over-stocked items ---
+  let changed = false;
+  cart = cart.map(it => {
+    const max = Number(it.stock ?? Infinity);
+    const qty = Number(it.quantity) || 0;
+    if (isFinite(max) && qty > max){
+      changed = true;
+      return { ...it, quantity: max };
+    }
+    return it;
+  });
+  if (changed) saveCart(cart);
+  // ------------------------------------
+
+  const cartContainer = document.getElementById("cart-items");
+  const cartList = document.getElementById("cart-list"); // mobile list
+
 
     // (We do NOT grab sumSubtotal/sumTotal here anymore; updateSummaryTotals handles it)
 
@@ -960,9 +981,11 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
                 <img src="assets/images/minus%20button.svg" alt="-">
               </button>
               <span class="pill">${qty}</span>
-              <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-                <img src="assets/images/plus%20button.svg" alt="+">
-              </button>
+              <button class="icon-btn" aria-label="Add"
+              onclick="incQty('${escapeKey(item)}')"
+              ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity) ? 'disabled title="Max stock reached"' : '' }>
+        <img src="assets/images/plus%20button.svg" alt="+">
+      </button>
               <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
                 <img src="assets/images/bin.svg" alt="Remove">
               </button>
@@ -1001,9 +1024,11 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
                   <img src="assets/images/minus%20button.svg" alt="-">
                 </button>
                 <span class="pill">${qty}</span>
-                <button class="icon-btn" aria-label="Add" onclick="incQty('${escapeKey(item)}')">
-                  <img src="assets/images/plus%20button.svg" alt="+">
-                </button>
+                <button class="icon-btn" aria-label="Add"
+        onclick="incQty('${escapeKey(item)}')"
+        ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity) ? 'disabled title="Max stock reached"' : '' }>
+  <img src="assets/images/plus%20button.svg" alt="+">
+</button>
                 <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
                   <img src="assets/images/bin.svg" alt="Remove">
                 </button>
