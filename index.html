@@ -994,7 +994,7 @@ function playSfx(){
   try { sfx.currentTime = 0; sfx.play(); } catch(e){}
 }
 
-    const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+    const SHEET_API = "https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec";
 
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
@@ -1251,54 +1251,52 @@ function setupMiniCart(){
     }
 
     async function fetchInventoryFromSheet(){
-      try {
-        const res = await fetch(SHEET_CSV);
-        const csv = await res.text();
+  try {
+    const res = await fetch(SHEET_API, { cache: 'no-store' }); // hit Apps Script JSON
+    if (!res.ok) throw new Error("Failed to fetch inventory");
 
-        const rows = parseCSV(csv);
-        const headers = rows.shift().map(h => h.trim().toLowerCase());
+    const rows = await res.json(); // already [{ header: value, ... }]
 
-        allProducts = rows.map(row => {
-          const obj = {};
-          row.forEach((cell, i) => {
-            const key = headers[i];
-            const val = (cell || "").trim();
-            if (key === "price" || key === "stock") obj[key] = safeNumber(val);
-            else obj[key] = val;
-          });
-
-          /* CATEGORY + SUBCATEGORY */
-        obj.category    = obj["category"]    || "";
-        obj.subcategory = obj["sub-category"] || "";
-        
-        /* DESCRIPTION */
-        obj.description = obj["description"] || "";
-        
-        /* CONDITION */
-        obj.condition   = obj["condition"] || "";
-        
-        /* SERIES NAME */
-        obj["series name"] = obj["series name"] || "";
-        
-        /* EXTRA IMAGES */
-        obj.back = obj["back"] || "";
-        obj.img2 = obj["img2"] || "";
-        obj.img3 = obj["img3"] || "";
-
-
-          return obj;
-        });
-
-        populateAllDropdowns();
-        filteredProducts = allProducts.slice(); // store the full list for paging
-        paging.page = 1;                         // start on page 1
-        renderPage();                            // slice + render + draw pager
-        enforceResponsiveGrid();
-      } catch(e) {
-        console.error(e);
-        document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+    // Normalize keys + numbers + a few aliases so the rest of your code keeps working
+    allProducts = rows.map(src => {
+      const obj = {};
+      for (const [k, v] of Object.entries(src)) {
+        const key = k.trim().toLowerCase();            // e.g. "Series Name" -> "series name"
+        obj[key] = (key === "price" || key === "stock") ? safeNumber(v) : String(v ?? "").trim();
       }
-    }
+
+      // ---- keep your expected property names consistent with the UI code ----
+      // If your sheet header is "sub-category", expose also "subcategory"
+      if (obj["sub-category"] && !obj.subcategory) obj.subcategory = obj["sub-category"];
+      // If your sheet header is "image url", expose also "image_url"
+      if (obj["image url"] && !obj.image_url) obj.image_url = obj["image url"];
+
+      // Optional: ensure these always exist (avoid undefined in templates)
+      obj.category      = obj.category      || "";
+      obj.subcategory   = obj.subcategory   || "";
+      obj.description   = obj.description   || "";
+      obj.condition     = obj.condition     || "";
+      obj["series name"]= obj["series name"]|| "";
+      obj.back          = obj.back          || "";
+      obj.img2          = obj.img2          || "";
+      obj.img3          = obj.img3          || "";
+
+      return obj;
+    });
+
+    // Rebuild UI
+    populateAllDropdowns();
+    filteredProducts = allProducts.slice();
+    paging.page = 1;
+    renderPage();
+    enforceResponsiveGrid();
+
+    console.log("Fetched inventory:", allProducts.length, "items");
+  } catch (err) {
+    console.error("Error loading inventory:", err);
+    document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+  }
+}
 
     function getBadgeInfo(raw){
       if(!raw) return null;
@@ -1631,8 +1629,8 @@ function clampPage(p){
       document.addEventListener('keydown', (e)=>{
         if(!qv.open) return;
         if(e.key === 'Escape') closeQuickview();
-        if(e.key === 'ArrowLeft') showSlide(qv.index + 1);
-        if(e.key === 'ArrowRight') showSlide(qv.index - 1);
+        if(e.key === 'ArrowLeft') showSlide(qv.index - 1);
+        if(e.key === 'ArrowRight') showSlide(qv.index + 1);
       });
 
       let isPanning = false, movedSincePointerDown = false;
@@ -1980,6 +1978,47 @@ attachImageClickDelegation();
 setToggleIcons(2); // default matches the "double active" button initially
 setupMiniCart();   // ← ADD THIS
 
+    /* === Live refresh every 60s (preserves current filters & page) === */
+// (Uses the REFRESH_MS you declared earlier)
+
+async function refreshInventoryPreserveFilters(){
+  // 1) snapshot current UI selections
+  const kw   = document.getElementById("search").value;
+  const cat  = document.getElementById("category-filter").value;
+  const sub  = document.getElementById("subcategory-filter").value;
+  const rar  = document.getElementById("rarity-filter").value;
+  const cond = document.getElementById("condition-filter").value;
+  const pageBefore = paging.page;
+
+  // 2) fetch latest rows from Apps Script
+  await fetchInventoryFromSheet(true); // pass "preserve" flag
+
+  // 3) restore selections & re-apply
+  document.getElementById("category-filter").value = cat;
+  updateSubcategoryOptions();
+  document.getElementById("subcategory-filter").value = sub;
+  document.getElementById("rarity-filter").value = rar;
+  document.getElementById("condition-filter").value = cond;
+  document.getElementById("search").value = kw;
+
+  applyFilters();
+  paging.page = clampPage(pageBefore);
+  renderPage();
+}
+
+// start the timer
+let refreshTimer = setInterval(refreshInventoryPreserveFilters, REFRESH_MS);
+
+// pause refresh in background tabs to save quota
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(refreshTimer);
+  } else {
+    refreshInventoryPreserveFilters();
+    refreshTimer = setInterval(refreshInventoryPreserveFilters, REFRESH_MS);
+  }
+});
+
 /* === Scroll-to-top button logic === */
 document.addEventListener('DOMContentLoaded', () => {
   const scrollBtn = document.getElementById('scrollTopBtn');
@@ -1999,25 +2038,22 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleBtn();
 
     if (scrollBtn.classList.contains('show')) {
-      // While scrolling
       scrollBtn.classList.add('scrolling');
-
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        // User stopped scrolling
         scrollBtn.classList.remove('scrolling');
-      }, 200); // adjust delay for "stop" detection
+      }, 200);
     }
   }, { passive: true });
 
   toggleBtn();
 
   scrollBtn.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   });
 });
-
-</script>
 
 <!-- Scroll to Top Button -->
 <button id="scrollTopBtn" type="button" aria-label="Scroll to top">
