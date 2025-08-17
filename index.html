@@ -1109,48 +1109,72 @@ function normalizeCart(arr){
       return getCart().reduce((sum, item) => sum + safeNumber(item.quantity, 0), 0);
     }
     function updateCartCount(){
-      const el = document.getElementById("cartCount");
-      if (el) el.textContent = String(getCartCount());
-    }
+  let el = document.getElementById("cartCount");
+  if (!el) {
+    console.warn('[Cart] #cartCount not found. Attempting rebind…');
+    // try once more in case DOM changed late
+    el = document.querySelector('.cart-link .cart-count');
+    if (!el) return; // hard exit if truly missing
+  }
+  el.textContent = String(getCartCount());
+}
     
-
    function addToCart(name, price, image_url, series, rarity, condition, stock){
   const cart = getCart();
   const key = makeKey({ name, series, rarity, condition });
   const found = cart.find(i => i.key === key);
 
-  const max = Number(stock ?? 0);
-  if (max <= 0){
+  // 🔄 Always use the freshest stock from allProducts, fallback to the stock arg
+  const fresh = allProducts.find(p =>
+    makeKey({
+      name: p.name,
+      series: p["series name"],
+      rarity: p.rarity,
+      condition: p.condition
+    }) === key
+  );
+  const max = Number(fresh?.stock ?? stock ?? 0);
+
+  if (max <= 0) {
     showToast("Sorry, this item is out of stock.");
     return;
   }
 
-  if (found){
+  if (found) {
     const cur = Number(found.quantity) || 0;
-    if (cur >= max){
+    if (cur >= max) {
       showToast(`Max available is ${max}.`);
       return;
     }
     found.quantity = cur + 1;
-    // in case old items didn’t have stock recorded, write it now
-    if (typeof found.stock === 'undefined') found.stock = max;
+    if (typeof found.stock === 'undefined') found.stock = max; // backfill legacy items
   } else {
     cart.push({
       key, name, series, rarity, condition,
-      price, quantity: 1, image: image_url,
-      stock: max                     // ← store stock in the line item
+      price,
+      quantity: 1,
+      image: image_url,
+      stock: max // store the freshest stock value
     });
   }
 
- localStorage.setItem("cart", JSON.stringify(cart));
-updateCartCount();
-if (mc?.dropdown?.classList?.contains('open')) {
-  renderMiniCart();                // ✅ update UI immediately if the dropdown is open
-}
+  // ✅ Save & refresh UI
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  renderMiniCart();
+  playAddSfx();
+  showToast(`${name} is now in your PC!`);
+} // ← don’t forget this closing brace!
+
+
+
+ // NEW
+localStorage.setItem("cart", JSON.stringify(cart));
+updateCartCount();     // will use the hardened version below
+renderMiniCart();      // always refresh DOM so it’s ready if user opens it
 playAddSfx();
 showToast(`${name} is now in your PC!`);
-   }
-
+} 
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
   wrap: null,
@@ -1445,7 +1469,7 @@ const btnAttrs = out
             <p class="stock"><strong>Stock:</strong> ${stock}</p>
           </div>
           <div class="product-actions">
-            <button ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
+            <button type="button" ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
           </div>
         `;
         container.appendChild(card);
