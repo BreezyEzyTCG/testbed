@@ -533,14 +533,23 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
   border-color: var(--bw-border);
 }
 
-/* Checkout stays purple */
-.summary.bw .btn--checkout {
-  background:#5725AE; 
-  color:#fff; 
+/* Keep Checkout purple inside the BW summary */
+.summary.bw .btn--checkout{
+  background:#5725AE;
+  color:#fff;
   border:none;
 }
-.summary.bw .btn--checkout:hover {
-  background:#9a5df5;
+.summary.bw .btn--checkout:hover{ background:#9a5df5; }
+
+/* Keep Clear Cart as danger red inside the BW summary */
+.summary.bw .btn--danger{
+  background: var(--accent);
+  color:#fff;
+  border-color: transparent;
+}
+.summary.bw .btn--danger:hover{
+  filter: brightness(1.05);
+  transform: translateY(-3px);
 }
 
 /* OPTIONAL: lighten the page around the summary a touch (not mandatory) */
