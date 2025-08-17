@@ -190,6 +190,14 @@
   text-shadow:0 1px 6px rgba(0,0,0,.35);
 }
 
+    /* Subtitle mobile override */
+@media (max-width: 767.98px){
+  .brand-subtitle {
+    font-size: 0.80rem;   /* 👈 adjust this value as you like */
+    line-height: 1.3;     /* optional: keeps it readable */
+  }
+}
+
     /* ========= Search input now lives in banner ========= */
     #search{
       padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
@@ -2088,7 +2096,7 @@ async function refreshInventoryPreserveFilters(){
     updateCartCount();
     renderMiniCart();
     if (rec.hadOOS){
-      showToast(`Aiyo! Some items in your cart have changed. Go take a quick look!`);
+      showToast(`Aiyo.. Some items in your cart have changed. Go take a quick look!`);
     }
   }
 
