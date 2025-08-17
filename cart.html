@@ -716,6 +716,7 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
       <a href="/packing-info" target="_blank" rel="noopener">Here's how</a>
       we carefully pack your soon-to-be collections!
     </small>
+  </section>
 
   <!-- SHIPPING -->
   <section class="sum-section" id="shipping-section">
@@ -790,10 +791,15 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 </div>
 </aside>
 
-    <!-- Legacy readout -->
-    <div class="row" style="justify-content:flex-end; margin-top:12px;">
-      </div>
-  
+   <!-- Legacy readout -->
+<div class="row" style="justify-content:flex-end; margin-top:12px;">
+  <div id="order-total" style="font-weight:700;">Order Total: $0.00</div>
+</div>
+
+</div> <!-- 👈 close .cart-layout -->
+</div> <!-- 👈 close .container.page-wrap -->
+
+
   <script>
   /* ===== Helpers: stable key for each unique cart line ===== */
   let __toastTimer = null;
@@ -827,6 +833,141 @@ function showToast(msg, duration = 3000){
       it.condition ?? ''
     ].join('||');
   }
+
+/* ===== LIVE STOCK from Google Sheets (CSV) ===== */
+const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+
+/* same parser as your index.html */
+function parseCSV(text){
+  const lines = text.replace(/\r/g,'').split('\n').filter(l => l.length);
+  return lines.map(line => {
+    const out = []; let cur = ''; let inQuotes = false;
+    for(let i=0;i<line.length;i++){
+      const c = line[i];
+      if(c === '"'){
+        if(inQuotes && line[i+1] === '"'){ cur+='"'; i++; }
+        else inQuotes = !inQuotes;
+      }else if(c === ',' && !inQuotes){
+        out.push(cur); cur='';
+      }else{
+        cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  });
+}
+
+/* download the sheet and return an array of product objects
+   whose properties match how we key the cart (name, series name, price, rarity, condition, stock) */
+async function loadProductsFromSheet(){
+  const SHEET_NUM = v => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  try{
+    const res = await fetch(SHEET_CSV, { cache: "no-store" });
+    if(!res.ok) return [];
+
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    const headers = rows.shift().map(h => String(h).trim().toLowerCase());
+
+    // Optional: header aliases in case the sheet ever changes
+    const ALIAS = {
+      "image url": "image_url",
+      "sub category": "sub-category",
+      "series": "series name"
+    };
+
+    return rows.map(row => {
+      const obj = {};
+
+      // Map every cell by its header name (with aliases) and trim
+      row.forEach((cell, i) => {
+        const rawKey = headers[i] || "";
+        const key = ALIAS[rawKey] || rawKey;
+        const val = (cell || "").trim();
+        obj[key] = val;
+      });
+
+      // Normalize the fields we rely on
+      obj.price       = SHEET_NUM(obj.price);
+      obj.stock       = SHEET_NUM(obj.stock);
+      obj.name        = (obj.name || "").trim();
+      obj.rarity      = (obj.rarity || "").trim();
+      obj.condition   = (obj.condition || "").trim();
+      obj["series name"] = (obj["series name"] || obj.series || "").trim();
+      obj.image_url   = (obj.image_url || obj["image url"] || "").trim();
+
+      // (If you ever add extra images/descriptions in the sheet, these will come through by header name automatically)
+      // obj.back = (obj.back || "").trim();
+      // obj.img2 = (obj.img2 || "").trim();
+      // obj.img3 = (obj.img3 || "").trim();
+      // obj.description = (obj.description || "").trim();
+
+      return obj;
+    });
+  }catch{
+    return [];
+  }
+}
+    
+/* Build a stock map keyed EXACTLY like your cart’s itemKey() */
+function keyFromProduct(p){
+  return [
+    p.name ?? '',
+    String(Number(p.price)||0),
+    p["series name"] ?? '',
+    p.rarity ?? '',
+    p.condition ?? ''
+  ].join('||');
+}
+async function buildStockMap(){
+  // Prefer cache from index.html if present (it writes inventoryCache + window.INVENTORY)
+  const cached = (() => {
+    try{ return JSON.parse(localStorage.getItem('inventoryCache')||'[]'); }catch{ return []; }
+  })();
+  const products = (Array.isArray(window.INVENTORY) && window.INVENTORY.length)
+    ? window.INVENTORY
+    : (Array.isArray(cached) && cached.length ? cached : await loadProductsFromSheet());
+
+  const map = Object.create(null);
+  for(const p of products){
+    map[keyFromProduct(p)] = Number(p.stock ?? 0);
+  }
+  return map;
+}
+
+/* Reconcile cart lines vs latest stock */
+function reconcileCart(cart, stockMap){
+  let changed = false;
+  const removed = [];
+  const clamped = [];
+  const next = [];
+
+  for(const it of cart){
+    const k = itemKey(it);
+    const latest = stockMap[k];
+    const curQty = Number(it.quantity)||0;
+
+    if (latest === undefined || latest <= 0){
+      removed.push(it.name || 'Item');
+      changed = true;
+      continue; // drop this line
+    }
+    if (curQty > latest){
+      next.push({ ...it, quantity: latest, stock: latest });
+      clamped.push([it.name || 'Item', latest]);
+      changed = true;
+    }else{
+      next.push({ ...it, stock: latest }); // refresh stock so + button disables correctly
+    }
+  }
+  return { cart: next, changed, removed, clamped };
+}
+ 
   function escapeKey(it){
     return itemKey(it).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
@@ -940,164 +1081,134 @@ function showToast(msg, duration = 3000){
     if (totalDisplay) totalDisplay.innerText = `Order Total: ${fmtMoney(total)}`;
   }
 
- function renderCart() {
+async function renderCart() {
+  const stockMap = await buildStockMap();        // ← NEW
   let cart = getCart();
 
-  // --- Clamp any over-stocked items ---
-  let changed = false;
-  cart = cart.map(it => {
-    const max = Number(it.stock ?? Infinity);
-    const qty = Number(it.quantity) || 0;
-    if (isFinite(max) && qty > max){
-      changed = true;
-      return { ...it, quantity: max };
+  const { cart: fixed, changed, removed, clamped } = reconcileCart(cart, stockMap);
+  if (changed){
+    saveCart(fixed);
+    if (removed.length) showToast(`${removed.join(', ')} is now out of stock and was removed.`);
+    if (clamped.length){
+      const msg = clamped.map(([n,q]) => `${n} → qty ${q}`).join('; ');
+      showToast(`Stock updated: ${msg}`);
     }
-    return it;
-  });
-  if (changed) saveCart(cart);
-  // ------------------------------------
+  }
+  cart = fixed;
 
+  // === the rest of your original renderCart (unchanged), except it now uses the refreshed `cart` ===
   const cartContainer = document.getElementById("cart-items");
   const cartList = document.getElementById("cart-list"); // mobile list
+  cartContainer.innerHTML = "";
+  if (cartList) cartList.innerHTML = "";
 
+  let subtotal = 0;
 
-    // (We do NOT grab sumSubtotal/sumTotal here anymore; updateSummaryTotals handles it)
-
-    cartContainer.innerHTML = "";
-    if (cartList) cartList.innerHTML = "";
-
-    let subtotal = 0;
-
-    if (cart.length === 0) {
-      cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
-      if (cartList) {
-        cartList.innerHTML = `
-          <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
-            <div style="opacity:.75;">Your cart is empty.</div>
-          </div>`;
-      }
-      window.currentCartSubtotal = 0;
-      updateSummaryTotals(0); // <-- NEW: also zeroes Shipping fees & Total
-      return;
+  if (cart.length === 0) {
+    cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+    if (cartList) {
+      cartList.innerHTML = `
+        <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
+          <div style="opacity:.75;">Your cart is empty.</div>
+        </div>`;
     }
+    window.currentCartSubtotal = 0;
+    updateSummaryTotals(0);
+    return;
+  }
 
-    cart.forEach(item => {
-      const row = document.createElement("tr");
-      const imagePath = item.image || item.image_url || "assets/images/default.png";
-      const qty = Number(item.quantity) || 0;
-      const unit = Number(item.price) || 0;
-      const line = qty * unit;
-      subtotal += line;
+  cart.forEach(item => {
+    const row = document.createElement("tr");
+    const imagePath = item.image || item.image_url || "assets/images/default.png";
+    const qty  = Number(item.quantity) || 0;
+    const unit = Number(item.price) || 0;
+    const line = qty * unit;
+    subtotal += line;
 
-      const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
+    const isMaxed = qty >= (Number(item.stock) || Infinity);
 
-      // Desktop (4 columns) OR Mobile-table (5 columns)
-      row.innerHTML = isMobile
-        ? `
-          <td><div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div></td>
-          <td>
-            <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              ${item.name || ''}
-            </div>
-            <div style="opacity:.8; font-size:.9rem;">
+    row.innerHTML = `
+      <td class="col-item">
+        <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+          <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+          <div style="min-width:0;">
+            <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
+            <div class="item-attrs">
               ${(item.series ? `${item.series}` : '')}
               ${(item.rarity ? ` · ${item.rarity}` : '')}
               ${(item.condition ? ` · ${item.condition}` : '')}
             </div>
-          </td>
-          <td>${qty}</td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
-        `
-        : `
-          <td class="col-item">
-            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-              <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-              <div style="min-width:0;">
-                <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
-                <div class="item-attrs">
-                  ${(item.series ? `${item.series}` : '')}
-                  ${(item.rarity ? ` · ${item.rarity}` : '')}
-                  ${(item.condition ? ` · ${item.condition}` : '')}
-                </div>
-              </div>
-            </div>
-          </td>
-          <td>
-            <div class="qty-controls">
-              <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-                <img src="assets/images/minus%20button.svg" alt="-">
-              </button>
-              <span class="pill">${qty}</span>
-              <button class="icon-btn" aria-label="Add"
-  onclick="incQty('${escapeKey(item)}')"
-  ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity)
-      ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"'
-      : '' }>
-  <img src="assets/images/plus%20button.svg" alt="+">
-</button>
-              <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
-                <img src="assets/images/bin.svg" alt="Remove">
-              </button>
-            </div>
-          </td>
-          <td>$${unit.toFixed(2)}</td>
-          <td><strong>$${line.toFixed(2)}</strong></td>
-        `;
-
-      cartContainer.appendChild(row);
-
-      // --- Mobile list item (mini-cart style) ---
-      if (cartList) {
-        const li = document.createElement("div");
-        li.className = "cart-item";
-
-        const attrs = [
-          (item.series ? `${item.series}` : ''),
-          (item.rarity ? ` · ${item.rarity}` : ''),
-          (item.condition ? ` · ${item.condition}` : '')
-        ].join('').replace(/^ · /,'');
-
-        li.innerHTML = `
-          <div class="ci-thumb">
-            <img src="${imagePath}" alt="${item.name || 'Item'}">
           </div>
+        </div>
+      </td>
+      <td>
+        <div class="qty-controls">
+          <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+            <img src="assets/images/minus%20button.svg" alt="-">
+          </button>
+          <span class="pill">${qty}</span>
+          <button class="icon-btn" aria-label="Add"
+                  onclick="incQty('${escapeKey(item)}')"
+                  ${ isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '' }>
+            <img src="assets/images/plus%20button.svg" alt="+">
+          </button>
+          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
+            <img src="assets/images/bin.svg" alt="Remove">
+          </button>
+        </div>
+      </td>
+      <td>$${unit.toFixed(2)}</td>
+      <td><strong>$${line.toFixed(2)}</strong></td>
+    `;
+    cartContainer.appendChild(row);
 
-          <div class="ci-meta">
-            <p class="ci-name" title="${item.name || ''}">${item.name || ''}</p>
-            ${attrs ? `<p class="ci-attrs">${attrs}</p>` : ''}
-            <p class="ci-sub"><strong>$${unit.toFixed(2)}</strong></p>
+   // ---- MOBILE LIST RENDER ----
+if (cartList) {
+  const ci = document.createElement('div');
+  ci.className = 'cart-item';
 
-            <div class="ci-qty">
-              <div class="qty-controls">
-                <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
-                  <img src="assets/images/minus%20button.svg" alt="-">
-                </button>
-                <span class="pill">${qty}</span>
-                <button class="icon-btn" aria-label="Add"
-  onclick="incQty('${escapeKey(item)}')"
-  ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity)
-      ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"'
-      : '' }>
-  <img src="assets/images/plus%20button.svg" alt="+">
-</button>
-                <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
-                  <img src="assets/images/bin.svg" alt="Remove">
-                </button>
-              </div>
-            </div>
-          </div>  <!-- closes .ci-meta -->
+  const safeKey = escapeKey(item);
+  const isMaxed = qty >= (Number(item.stock) || Infinity);
 
-          <div class="ci-right">$${line.toFixed(2)}</div>
-        `;
-        cartList.appendChild(li);
-      }
-    }); // end forEach
+  ci.innerHTML = `
+    <div class="ci-thumb">
+      <img src="${imagePath}" alt="${item.name || 'Item'}" />
+    </div>
 
-    // Save and update summary (now includes Shipping + optional add-ons)
-    window.currentCartSubtotal = subtotal;
-    updateSummaryTotals(subtotal);
-  }
+    <div class="ci-meta">
+      <h4 class="ci-name" title="${item.name || ''}">${item.name || ''}</h4>
+      <p class="ci-attrs">
+        ${(item.series ? `${item.series}` : '')}
+        ${(item.rarity ? ` · ${item.rarity}` : '')}
+        ${(item.condition ? ` · ${item.condition}` : '')}
+      </p>
+      <p class="ci-sub">$${unit.toFixed(2)} each</p>
+      <div class="ci-qty">
+        <button class="icon-btn" aria-label="Reduce" onclick="decQty('${safeKey}')">
+          <img src="assets/images/minus%20button.svg" alt="-">
+        </button>
+        <span class="pill">${qty}</span>
+        <button class="icon-btn" aria-label="Add"
+          onclick="incQty('${safeKey}')"
+          ${ isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '' }>
+          <img src="assets/images/plus%20button.svg" alt="+">
+        </button>
+        <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
+          <img src="assets/images/bin.svg" alt="Remove">
+        </button>
+      </div>
+    </div>
+
+    <div class="ci-right"><strong>$${line.toFixed(2)}</strong></div>
+  `;
+
+  cartList.appendChild(ci);
+}
+  });
+
+  window.currentCartSubtotal = subtotal;
+  updateSummaryTotals(subtotal);
+}
 
   function clearCart() {
     localStorage.removeItem("cart");
