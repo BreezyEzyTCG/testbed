@@ -879,7 +879,7 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 
  <div class="summary-actions">
   <button onclick="clearCart()" class="btn btn--danger">Clear Cart</button>
-  <button onclick="checkout()" class="btn btn--checkout" disabled>Checkout</button>
+  <a href="checkout.html" class="btn btn--checkout" id="checkoutBtn" aria-disabled="true">Checkout</a>
 </div>
 </aside>
 
@@ -1426,7 +1426,7 @@ function checkout() {
     alert("Please accept both disclaimers before proceeding to checkout.");
     return;
   }
-  alert("Checkout functionality not implemented yet.");
+  window.location.href = "checkout.html";  // ✅ redirect to checkout page
 }
 
 function updateCheckoutDisabled(){
