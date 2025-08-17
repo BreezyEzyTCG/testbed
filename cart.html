@@ -185,14 +185,22 @@
 
     /* === qty & remove controls (match mini-cart look) === */
     .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:28px; height:28px; border-radius:8px;
-      border:1px solid rgba(0,0,0,.12);
-      background:#fff; cursor:pointer;
-      transition: transform .12s ease, background .15s ease, opacity .15s ease;
-    }
-    .icon-btn:hover{ transform: translateY(-2px); }
-    .icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:8px;
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff; cursor:pointer;
+  transition: transform .12s ease, background .15s ease, opacity .15s ease;
+}
+.icon-btn:hover{ transform: translateY(-2px); }
+.icon-btn img{ width:18px; height:18px; display:block; pointer-events:none; }
+
+/* 👇 add this */
+.icon-btn[aria-disabled="true"]{
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;   /* cancel hover lift */
+  /* don’t use pointer-events:none → we still want clicks for showToast */
+}
 
     .qty-controls{
       display:inline-flex; align-items:center; gap:6px;
@@ -522,6 +530,22 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
   .cart-layout{ gap: 18px; }
 }
 
+    /* Toast */
+#toast{
+  display:none;
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  background:#e31996;
+  color:#f5f5f5;
+  padding:10px 15px;
+  border-radius:5px;
+  z-index:10000;
+  opacity:0;
+  transition:opacity .5s ease;
+}
+#toast.show{ display:block; opacity:1; }
+
     /* === Responsive switch between desktop head and mobile head (table) === */
     .head-mobile{ display:none; }
     @media (max-width:767.98px){
@@ -772,7 +796,29 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
   
   <script>
   /* ===== Helpers: stable key for each unique cart line ===== */
-  function itemKey(it){
+  let __toastTimer = null;
+function showToast(msg, duration = 3000){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.classList.remove('show');
+  void t.offsetWidth; // reflow
+  t.classList.add('show');
+  if(__toastTimer) clearTimeout(__toastTimer);
+  __toastTimer = setTimeout(()=>{
+    t.classList.remove('show');
+    const onEnd = (e)=>{
+      if(e.propertyName === 'opacity' && !t.classList.contains('show')){
+        t.style.display = 'none';
+        t.removeEventListener('transitionend', onEnd);
+      }
+    };
+    t.addEventListener('transitionend', onEnd);
+  }, duration);
+}
+
+    function itemKey(it){
     return [
       it.name ?? '',
       String(Number(it.price) || 0),
@@ -984,10 +1030,12 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
               </button>
               <span class="pill">${qty}</span>
               <button class="icon-btn" aria-label="Add"
-              onclick="incQty('${escapeKey(item)}')"
-              ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity) ? 'disabled title="Max stock reached"' : '' }>
-        <img src="assets/images/plus%20button.svg" alt="+">
-      </button>
+  onclick="incQty('${escapeKey(item)}')"
+  ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity)
+      ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"'
+      : '' }>
+  <img src="assets/images/plus%20button.svg" alt="+">
+</button>
               <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
                 <img src="assets/images/bin.svg" alt="Remove">
               </button>
@@ -1027,8 +1075,10 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
                 </button>
                 <span class="pill">${qty}</span>
                 <button class="icon-btn" aria-label="Add"
-        onclick="incQty('${escapeKey(item)}')"
-        ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity) ? 'disabled title="Max stock reached"' : '' }>
+  onclick="incQty('${escapeKey(item)}')"
+  ${ (Number(item.quantity)||0) >= (Number(item.stock)||Infinity)
+      ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"'
+      : '' }>
   <img src="assets/images/plus%20button.svg" alt="+">
 </button>
                 <button class="icon-btn" aria-label="Remove item" onclick="removeItem('${escapeKey(item)}')">
@@ -1218,6 +1268,9 @@ updateCheckoutDisabled();
     });
   })();
 </script>
-
+      
+  <!-- 🔔 Toast container -->
+<div id="toast"></div>
+      
 </body>
 </html>
