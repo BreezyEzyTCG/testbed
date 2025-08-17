@@ -1046,30 +1046,28 @@ function playSfx(){
       const n = parseFloat(val);
       return Number.isFinite(n) ? n : fallback;
     }
-    function makeKey({name, series, price, rarity, condition}){
-  return [name, series, price, rarity, condition]
+    function makeKey({name, series, rarity, condition}) {
+  return [name, series, rarity, condition]
     .map(v => String(v ?? '').trim())
-    .join('|');
+    .join('||');            // use a rarer delimiter to avoid accidental clashes
 }
 function normalizeCart(arr){
   return arr.map(i => ({
     ...i,
     key: i.key || makeKey({
-      name:i.name, series:i.series, price:i.price, rarity:i.rarity, condition:i.condition
+      name:i.name, series:i.series, rarity:i.rarity, condition:i.condition
     })
   }));
 }
-  function reconcileCartWithInventory(allProducts){
   const byKey = new Map(allProducts.map(p => [
-    makeKey({
-      name: p.name,
-      series: p["series name"],
-      price: p.price,
-      rarity: p.rarity,
-      condition: p.condition
-    }),
-    p
-  ]));
+  makeKey({
+    name: p.name,
+    series: p["series name"],
+    rarity: p.rarity,
+    condition: p.condition
+  }),
+  p
+]));
 
   let cart = getCart();
   let changed = false;
@@ -1144,12 +1142,13 @@ function normalizeCart(arr){
     });
   }
 
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount();
-  playAddSfx();
-  showToast(`${name} is now in your PC!`);
+ localStorage.setItem("cart", JSON.stringify(cart));
+updateCartCount();
+if (mc?.dropdown?.classList?.contains('open')) {
+  renderMiniCart();                // ✅ update UI immediately if the dropdown is open
 }
-
+playAddSfx();
+showToast(`${name} is now in your PC!`);
 
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
