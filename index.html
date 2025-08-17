@@ -1166,15 +1166,6 @@ function normalizeCart(arr){
   showToast(`${name} is now in your PC!`);
 } // ← don’t forget this closing brace!
 
-
-
- // NEW
-localStorage.setItem("cart", JSON.stringify(cart));
-updateCartCount();     // will use the hardened version below
-renderMiniCart();      // always refresh DOM so it’s ready if user opens it
-playAddSfx();
-showToast(`${name} is now in your PC!`);
-} 
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
   wrap: null,
