@@ -760,7 +760,6 @@
 }
 
 /* === Scroll-to-Top (GLOBAL) === */
-/* === Scroll-to-Top (GLOBAL) === */
 #scrollTopBtn {
   position: fixed;
   right: var(--scroll-btn-right-desktop);
@@ -1268,20 +1267,24 @@ function setupMiniCart(){
             else obj[key] = val;
           });
 
-          /* Explicit fallbacks by index (0-based) */
-          obj.category    = (row[4] || obj.category    || "").trim(); // Column E
-          obj.subcategory = (row[5] || obj.subcategory || "").trim(); // Column F
+          /* CATEGORY + SUBCATEGORY */
+        obj.category    = obj["category"]    || "";
+        obj.subcategory = obj["sub-category"] || "";
+        
+        /* DESCRIPTION */
+        obj.description = obj["description"] || "";
+        
+        /* CONDITION */
+        obj.condition   = obj["condition"] || "";
+        
+        /* SERIES NAME */
+        obj["series name"] = obj["series name"] || "";
+        
+        /* EXTRA IMAGES */
+        obj.back = obj["back"] || "";
+        obj.img2 = obj["img2"] || "";
+        obj.img3 = obj["img3"] || "";
 
-          /* DESCRIPTION: strictly from Column O (index 14) */
-          obj.description = (row[14] || "").trim();
-
-          /* CONDITION at Column H (index 7) */
-          obj.condition   = (row[7] || obj.condition   || "").trim(); // Column H
-
-          /* Extra images by header or index (L=11, M=12, N=13) */
-          obj.back  = (obj.back  || row[11] || "").trim();
-          obj.img2  = (obj.img2  || row[12] || "").trim();
-          obj.img3  = (obj.img3  || row[13] || "").trim();
 
           return obj;
         });
