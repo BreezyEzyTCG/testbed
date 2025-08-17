@@ -950,130 +950,73 @@ function itemKey(it){
   ].join("||");
 }
 
-/* ===== LIVE STOCK from Google Sheets (CSV) ===== */
-const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
+/* ===== LIVE STOCK from Apps Script (JSON) ===== */
+const SHEET_API = "https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec";
+/* Reuse the same refresh cadence as index.html; allow ?refresh= override */
+const REFRESH_MS = Number(new URLSearchParams(location.search).get('refresh')) || 60_000;
 
-/* same parser as your index.html */
-function parseCSV(text){
-  const lines = text.replace(/\r/g,'').split('\n').filter(l => l.length);
-  return lines.map(line => {
-    const out = []; let cur = ''; let inQuotes = false;
-    for(let i=0;i<line.length;i++){
-      const c = line[i];
-      if(c === '"'){
-        if(inQuotes && line[i+1] === '"'){ cur+='"'; i++; }
-        else inQuotes = !inQuotes;
-      }else if(c === ',' && !inQuotes){
-        out.push(cur); cur='';
-      }else{
-        cur += c;
-      }
-    }
-    out.push(cur);
-    return out;
-  });
+
+/* ===== Shared helpers (match index.html closely) ===== */
+function safeNumber(val, fallback=0){
+  if (typeof val === "number" && Number.isFinite(val)) return val;
+  const n = parseFloat(val);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-/* download the sheet and return an array of product objects
-   whose properties match how we key the cart (name, series name, price, rarity, condition, stock) */
-async function loadProductsFromSheet(){
-  const SHEET_NUM = v => {
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : 0;
-  };
+/* Normalize rows coming from Apps Script */
+let allProducts = [];          // latest full inventory
+let stockMap = Object.create(null); // key -> stock
 
-  try{
-    const res = await fetch(SHEET_CSV, { cache: "no-store" });
-    if(!res.ok) return [];
+async function fetchInventoryFromSheet(){
+  try {
+    const res = await fetch(SHEET_API, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    if (!ct.includes('application/json')) throw new Error('API did not return JSON');
 
-    const csv = await res.text();
-    const rows = parseCSV(csv);
-    const headers = rows.shift().map(h => String(h).trim().toLowerCase());
+    let rows = await res.json();
+    if (!Array.isArray(rows) && rows && Array.isArray(rows.data)) rows = rows.data;
+    if (!Array.isArray(rows)) throw new Error('JSON payload is not an array');
 
-    // Optional: header aliases in case the sheet ever changes
-    const ALIAS = {
-      "image url": "image_url",
-      "sub category": "sub-category",
-      "series": "series name"
-    };
-
-    return rows.map(row => {
+    // Normalize shape → mirror index.html
+    allProducts = rows.map(src => {
       const obj = {};
+      for (const [k,v] of Object.entries(src)) {
+        const key = String(k).trim().toLowerCase();
+        obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
+      }
+      if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
+      if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
 
-      // Map every cell by its header name (with aliases) and trim
-      row.forEach((cell, i) => {
-        const rawKey = headers[i] || "";
-        const key = ALIAS[rawKey] || rawKey;
-        const val = (cell || "").trim();
-        obj[key] = val;
-      });
-
-      // Normalize the fields we rely on
-      obj.price       = SHEET_NUM(obj.price);
-      obj.stock       = SHEET_NUM(obj.stock);
-      obj.name        = (obj.name || "").trim();
-      obj.rarity      = (obj.rarity || "").trim();
-      obj.condition   = (obj.condition || "").trim();
-      obj["series name"] = (obj["series name"] || obj.series || "").trim();
-      obj.image_url   = (obj.image_url || obj["image url"] || "").trim();
-
-      // (If you ever add extra images/descriptions in the sheet, these will come through by header name automatically)
-      // obj.back = (obj.back || "").trim();
-      // obj.img2 = (obj.img2 || "").trim();
-      // obj.img3 = (obj.img3 || "").trim();
-      // obj.description = (obj.description || "").trim();
-
+      obj.name           = obj.name || '';
+      obj.category       = obj.category || '';
+      obj.subcategory    = obj.subcategory || '';
+      obj.description    = obj.description || '';
+      obj.condition      = obj.condition || '';
+      obj['series name'] = obj['series name'] || '';
+      obj.back           = obj.back || '';
+      obj.img2           = obj.img2 || '';
+      obj.img3           = obj.img3 || '';
+      obj.price          = safeNumber(obj.price, 0);
+      obj.stock          = safeNumber(obj.stock, 0);
       return obj;
     });
-  }catch{
-    return [];
-  }
-}
-    
-//* === REPLACE keyFromProduct === */
-function keyFromProduct(p){
-  const name = (p.name || "").trim();
-  const price = Number(p.price);
-  const series = normSeries(p);
-  const rarity = (p.rarity || "").trim();
-  const condition = (p.condition || "").trim();
-  return [
-    name,
-    String(Number.isFinite(price) ? price : 0),
-    series,
-    rarity,
-    condition
-  ].join("||");
-}
 
-/* === REPLACE buildStockMap === */
-async function buildStockMap(){
-  const getCached = () => {
-    try{ return JSON.parse(localStorage.getItem('inventoryCache') || '[]'); }
-    catch{ return []; }
-  };
-
-  let products = [];
-  try{
-    // Always try live sheet first
-    products = await loadProductsFromSheet();
-  }catch{ products = []; }
-
-  if (!Array.isArray(products) || !products.length){
-    // Then try window.INVENTORY
-    if (Array.isArray(window.INVENTORY) && window.INVENTORY.length){
-      products = window.INVENTORY;
-    }else{
-      // Finally fall back to cached
-      products = getCached();
+    // Rebuild stockMap for fast reconciliation
+    stockMap = Object.create(null);
+    for (const p of allProducts){
+      const name = (p.name || '').trim();
+      const price = Number(p.price);
+      const series = normSeries(p);
+      const rarity = (p.rarity || '').trim();
+      const condition = (p.condition || '').trim();
+      const key = [name, String(Number.isFinite(price) ? price : 0), series, rarity, condition].join('||');
+      stockMap[key] = Number(p.stock ?? 0);
     }
+  } catch (err) {
+    console.error('[SHEET] Error loading inventory:', err);
+    // Keep previous stockMap; renderCart will still work with last known data
   }
-
-  const map = Object.create(null);
-  for (const p of products){
-    map[keyFromProduct(p)] = Number(p.stock ?? 0);
-  }
-  return map;
 }
 
 
@@ -1219,8 +1162,11 @@ function reconcileCart(cart, stockMap){
   }
 
 async function renderCart() {
-  const stockMap = await buildStockMap();        // ← NEW
-  let cart = getCart();
+  // Ensure we have inventory loaded at least once
+if (!allProducts.length) {
+  await fetchInventoryFromSheet();
+}
+let cart = getCart();
 
   const { cart: fixed, changed, removed, clamped } = reconcileCart(cart, stockMap);
 if (changed){
@@ -1512,6 +1458,44 @@ updateCheckoutDisabled();
 updateCheckoutDisabled();
     });
   })();
+    /* ===== Live refresh every REFRESH_MS (preserves scroll + selections) ===== */
+function snapshotScrollPositions(){
+  const desktopScroll = document.querySelector('.items-panel .cart-scroll');
+  const mobileScroll  = document.querySelector('#cart-list-panel .cart-list');
+  return {
+    dY: desktopScroll ? desktopScroll.scrollTop : null,
+    mY: mobileScroll  ? mobileScroll.scrollTop  : null,
+  };
+}
+function restoreScrollPositions(snap){
+  const desktopScroll = document.querySelector('.items-panel .cart-scroll');
+  const mobileScroll  = document.querySelector('#cart-list-panel .cart-list');
+  if (desktopScroll != null && snap.dY != null) desktopScroll.scrollTop = snap.dY;
+  if (mobileScroll  != null && snap.mY != null) mobileScroll.scrollTop  = snap.mY;
+}
+
+async function refreshInventoryAndCart(){
+  const snap = snapshotScrollPositions();
+  await fetchInventoryFromSheet();   // pulls latest stock into allProducts + stockMap
+  await renderCart();                // reconciles cart + opens OOS modal if needed
+  restoreScrollPositions(snap);
+}
+
+// start/pause with tab visibility
+let refreshTimer = setInterval(refreshInventoryAndCart, REFRESH_MS);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(refreshTimer);
+  } else {
+    refreshInventoryAndCart();
+    refreshTimer = setInterval(refreshInventoryAndCart, REFRESH_MS);
+  }
+});
+
+// Cross-tab sync: if user edits cart in index.html, update here too
+window.addEventListener('storage', (e) => {
+  if (e.key === 'cart') renderCart();
+});
 </script>
   <!-- ===== OOS / Stock Changes Modal ===== -->
 <div id="oosModal" hidden>
