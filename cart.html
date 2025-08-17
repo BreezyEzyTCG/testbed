@@ -129,6 +129,14 @@
     .btn--checkout {  background: #5725AE;  color: #fff; border: none;
 }
 
+    /* For <a> Checkout when aria-disabled="true" */
+#checkoutBtn[aria-disabled="true"] {
+  pointer-events: none;   /* block clicks */
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;        /* cancel hover lift */
+}
+    
 .btn--checkout:hover {
   background: #9a5df5;   /* lighter purple hover */
   transform: translateY(-3px);
@@ -1430,9 +1438,9 @@ function checkout() {
 }
 
 function updateCheckoutDisabled(){
-  const btn = document.querySelector('.summary-actions .btn:not(.btn--danger)');
+  const btn = document.getElementById('checkoutBtn');  // target the <a>
   if(!btn) return;
-  btn.disabled = !disclaimersAccepted();
+  btn.setAttribute('aria-disabled', disclaimersAccepted() ? 'false' : 'true');
 }
 
   // === Restore selections & bind change handlers when DOM is ready ===
@@ -1467,9 +1475,19 @@ function updateCheckoutDisabled(){
 document.getElementById('disc1')?.addEventListener('change', updateCheckoutDisabled);
 document.getElementById('disc2')?.addEventListener('change', updateCheckoutDisabled);
 
+// Bind checkout link click guard
+document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
+  if (!disclaimersAccepted()) {
+    e.preventDefault();
+    alert("Please accept both disclaimers before proceeding to checkout.");
+    return;
+  }
+  // otherwise allow navigation to checkout.html
+});
+
 // Initialize button state on load
 updateCheckoutDisabled();
-  });
+});
 
   // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
   (function(){
