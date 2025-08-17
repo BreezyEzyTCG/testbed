@@ -1245,7 +1245,6 @@ function reconcileCart(cart, stockMap){
     const sumSubtotal = document.getElementById("sumSubtotal");
     const sumShipping = document.getElementById("sumShipping"); // <-- make sure this span exists in HTML
     const sumTotal    = document.getElementById("sumTotal");
-    const totalDisplay= document.getElementById("order-total"); // legacy text line if you still have it
 
     if (sumSubtotal) sumSubtotal.textContent = fmtMoney(subtotal);
     if (sumShipping) sumShipping.textContent = fmtMoney(shippingFee);
