@@ -556,36 +556,48 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
 }
+/* Glass dialog */
 .oos-dialog{
   width: min(680px, 96vw);
-  background: #fff;
+  background: rgba(255,255,255,0.22);
+  backdrop-filter: blur(14px) saturate(1.12);
+  -webkit-backdrop-filter: blur(14px) saturate(1.12);
+  border: 1px solid rgba(255,255,255,0.35);
   border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0,0,0,.35);
   overflow: hidden;
   font-family: Arial, sans-serif;
 }
-.oos-head{
-  background: #0f3a60;           /* matches your BW header theme */
-  color: #fff;
-  padding: 14px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.oos-head h3{ margin: 0; font-size: 1.05rem; letter-spacing: .2px; }
-.oos-body{ padding: 14px 16px; color:#0f172a; max-height: 60vh; overflow: auto; }
-.oos-body h4{ margin: 0 0 10px; font-size: .95rem; }
-.oos-list{ margin: 8px 0 14px; padding-left: 18px; }
-.oos-list li{ margin: 4px 0; }
 .oos-foot{
   padding: 12px 16px;
   display: flex; gap: 8px; justify-content: flex-end; align-items: center;
-  border-top: 1px solid rgba(0,0,0,.08);
-  background: #f7f7f9;
+  border-top: 1px solid rgba(255,255,255,.35);
+  background: rgba(255,255,255,0.18);
 }
 
 .oos-dialog .btn{ height: 40px; padding: 0 14px; }
 .oos-primary{ background: #0f3a60; color: #fff; border-color: transparent; }
 .oos-secondary{ background: #fff; color: #111; border:1px solid rgba(0,0,0,.14); }
 
+    /* ===== OOS modal content layout (missing bits) ===== */
+.oos-head{
+  background: rgba(15,58,96,0.88); /* glass-friendly navy */
+  color: #fff;
+  padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.oos-head h3{ margin: 0; font-size: 1.05rem; letter-spacing: .2px; }
+
+.oos-body{ padding: 14px 16px; color:#0f172a; max-height: 60vh; overflow: auto; }
+.oos-body h4{ margin: 0 0 10px; font-size: .95rem; }
+
+.oos-list{ margin: 8px 0 14px; padding-left: 18px; }
+.oos-list li{ margin: 4px 0; }
+
+/* pieces inside each row */
+.oos-item .name       { font-weight: 600; }
+.oos-item .attrs      { font-size: .75em; opacity: .85; margin-left: .25em; }
+.oos-item .qty-change { font-weight: 700; margin-left: .4em; white-space: nowrap; }
 
     /* === Responsive switch between desktop head and mobile head (table) === */
     .head-mobile{ display:none; }
@@ -872,7 +884,12 @@ function buildOOSModalHTML(removed = [], clamped = []){
     parts.push(`
       <h4>Removed (now out of stock):</h4>
       <ul class="oos-list">
-        ${removed.map(label => `<li>${escapeHtml(label)}</li>`).join('')}
+        ${removed.map(({name, attrs}) => `
+          <li class="oos-item">
+            <span class="name">${escapeHtml(name)}</span>
+            ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
+          </li>
+        `).join('')}
       </ul>
     `);
   }
@@ -881,11 +898,13 @@ function buildOOSModalHTML(removed = [], clamped = []){
     parts.push(`
       <h4>Adjusted to available stock:</h4>
       <ul class="oos-list">
-        ${
-          clamped.map(({ label, before, after }) =>
-            `<li>${escapeHtml(label)} — <strong>${escapeHtml(String(before))}</strong> → <strong>${escapeHtml(String(after))}</strong></li>`
-          ).join('')
-        }
+        ${clamped.map(({name, attrs, before, after}) => `
+          <li class="oos-item">
+            <span class="name">${escapeHtml(name)}</span>
+            ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
+            <span class="qty-change">(<del>${escapeHtml(String(before))}</del> → ${escapeHtml(String(after))})</span>
+          </li>
+        `).join('')}
       </ul>
     `);
   }
@@ -893,7 +912,6 @@ function buildOOSModalHTML(removed = [], clamped = []){
   if (!parts.length){
     parts.push(`<p>No changes.</p>`);
   }
-
   parts.push(`<p style="opacity:.85; margin-top:10px;">Tip: Items may go out of stock if another customer checks out first.</p>`);
   return parts.join('');
 }
@@ -1054,34 +1072,53 @@ async function fetchInventoryFromSheet(){
   }
 }
 
+    function formatAttrs(it){
+  const series = normSeries(it);
+  const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
+  const year   = (it.year || it.release_year || '').toString().trim();
+  const rarity = (it.rarity || '').trim();
+  const cond   = (it.condition || '').trim();
 
-/* Reconcile cart lines vs latest stock AND capture before/after quantities */
+  // "Series: Set - 2006 · AR · NM" (omit empty parts automatically)
+  const L = [];
+  if (series && set) L.push(`${series}: ${set}`);
+  else if (series)   L.push(series);
+  else if (set)      L.push(set);
+
+  const R = [year, rarity, cond].filter(Boolean).join(' · ');
+  return [L.join(''), R ? `- ${R}` : ''].filter(Boolean).join(' ');
+}
+
+function splitNameAndAttrs(it){
+  return {
+    name: (it.name || '').trim(),
+    attrs: formatAttrs(it)
+  };
+}
+
 function reconcileCart(cart, stockMap){
   let changed = false;
-  const removed = [];                  // array of strings (labels)
-  const clamped = [];                  // array of { label, before, after }
+  const removed = [];                  // array of { name, attrs }
+  const clamped = [];                  // array of { name, attrs, before, after }
   const next = [];
 
   for (const it of cart){
     const key = itemKey(it);
     const latest = stockMap[key];
     const before = Number(it.quantity) || 0;
-    const label  = formatCartLabel(it);
+    const { name, attrs } = splitNameAndAttrs(it);
 
-    // No stock or not found → removed
     if (latest === undefined || latest <= 0){
-      removed.push(label);
+      removed.push({ name, attrs });
       changed = true;
       continue;
     }
 
-    // More in cart than available → clamp down
     if (before > latest){
       next.push({ ...it, quantity: latest, stock: latest });
-      clamped.push({ label, before, after: latest });
+      clamped.push({ name, attrs, before, after: latest });
       changed = true;
     } else {
-      // Still valid line; update visible stock so + button disables correctly
       next.push({ ...it, stock: latest });
     }
   }
@@ -1543,13 +1580,11 @@ window.addEventListener('storage', (e) => {
     <div class="oos-dialog" role="dialog" aria-modal="true" aria-labelledby="oosTitle" aria-describedby="oosDesc" onclick="event.stopPropagation()">
       <div class="oos-head">
         <h3 id="oosTitle">Poof! Some magic said <em>seeyounara</em> — and vanished (×_×)⌒☆</h3>
-        <button class="btn btn--primary" type="button" aria-label="Close" onclick="closeOOSModal()">✕</button>
       </div>
       <div class="oos-body" id="oosDesc">
         <!-- content injected by JS -->
       </div>
       <div class="oos-foot">
-        <button class="btn oos-secondary" type="button" onclick="closeOOSModal()">Close</button>
         <button class="btn oos-primary" type="button" onclick="closeOOSModal()">OK</button>
       </div>
     </div>
