@@ -546,7 +546,7 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 }
 #toast.show{ display:block; opacity:1; }
 
-    /* ===== OOS Changes Modal ===== */
+    /* ===== OOS Modal (SOLID) ===== */
 #oosModal[hidden] { display: none; }
 
 .oos-backdrop{
@@ -556,48 +556,45 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
 }
-/* Glass dialog */
+
+/* Solid dialog (non-glass) */
 .oos-dialog{
   width: min(680px, 96vw);
-  background: rgba(255,255,255,0.22);
-  backdrop-filter: blur(14px) saturate(1.12);
-  -webkit-backdrop-filter: blur(14px) saturate(1.12);
-  border: 1px solid rgba(255,255,255,0.35);
+  background: #fff;                 /* solid white */
   border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0,0,0,.35);
   overflow: hidden;
   font-family: Arial, sans-serif;
 }
-.oos-foot{
-  padding: 12px 16px;
-  display: flex; gap: 8px; justify-content: flex-end; align-items: center;
-  border-top: 1px solid rgba(255,255,255,.35);
-  background: rgba(255,255,255,0.18);
-}
 
-.oos-dialog .btn{ height: 40px; padding: 0 14px; }
-.oos-primary{ background: #0f3a60; color: #fff; border-color: transparent; }
-.oos-secondary{ background: #fff; color: #111; border:1px solid rgba(0,0,0,.14); }
-
-    /* ===== OOS modal content layout (missing bits) ===== */
 .oos-head{
-  background: rgba(15,58,96,0.88); /* glass-friendly navy */
-  color: #fff;
+  background: #9AB7D9;              /* solid header */
+  color: #FFFFFF;
   padding: 14px 16px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.oos-head h3{ margin: 0; font-size: 1.05rem; letter-spacing: .2px; }
+.oos-head h3{ margin: 0; font-size: 1.05rem; letter-spacing: .2px; } /* fixed invalid 'rem' */
 
-.oos-body{ padding: 14px 16px; color:#0f172a; max-height: 60vh; overflow: auto; }
+.oos-body{ padding: 14px 16px; color:#505050; max-height: 60vh; overflow: auto; }
 .oos-body h4{ margin: 0 0 10px; font-size: .95rem; }
 
 .oos-list{ margin: 8px 0 14px; padding-left: 18px; }
-.oos-list li{ margin: 4px 0; }
+.oos-list li{ margin: 4px 0; font-size: 0.95rem; } /* fixed 'margin: px 0' */
 
-/* pieces inside each row */
 .oos-item .name       { font-weight: 600; }
-.oos-item .attrs      { font-size: .75em; opacity: .85; margin-left: .25em; }
-.oos-item .qty-change { font-weight: 700; margin-left: .4em; white-space: nowrap; }
+.oos-item .attrs      { font-size: .8em; opacity: .85; margin-left: .25em; }
+.oos-item .qty-change { font-weight: 600; margin-left: .4em; white-space: nowrap; }
+
+.oos-foot{
+  padding: 10px 16px;
+  display: flex; gap: 8px; justify-content: flex-end; align-items: center;
+  border-top: 1px solid #ddd;       /* solid divider */
+  background: #f9f9f9;              /* solid footer */
+}
+
+.oos-dialog .btn{ height: 40px; padding: 0 14px; }
+.oos-primary{ background: #9AB7D9; color: #fff; border-color: transparent; }
+.oos-secondary{ background: #fff; color: #111; border:1px solid rgba(0,0,0,.14); }
 
     /* === Responsive switch between desktop head and mobile head (table) === */
     .head-mobile{ display:none; }
@@ -882,7 +879,7 @@ function buildOOSModalHTML(removed = [], clamped = []){
 
   if (removed.length){
     parts.push(`
-      <h4>Removed (now out of stock):</h4>
+      <h4>Gone, for now:</h4>
       <ul class="oos-list">
         ${removed.map(({name, attrs}) => `
           <li class="oos-item">
@@ -896,7 +893,7 @@ function buildOOSModalHTML(removed = [], clamped = []){
 
   if (clamped.length){
     parts.push(`
-      <h4>Adjusted to available stock:</h4>
+      <h4>Adjusted QTY to what's left:</h4>
       <ul class="oos-list">
         ${clamped.map(({name, attrs, before, after}) => `
           <li class="oos-item">
@@ -912,7 +909,8 @@ function buildOOSModalHTML(removed = [], clamped = []){
   if (!parts.length){
     parts.push(`<p>No changes.</p>`);
   }
-  parts.push(`<p style="opacity:.85; margin-top:10px;">Tip: Items may go out of stock if another customer checks out first.</p>`);
+ parts.push(`<p style="opacity:.85; margin-top:50px;"> Got something you want but still browsing for more goodies?</p>
+  <p>Choose "consolidate mailing" option so you can secure it first!</p>`);
   return parts.join('');
 }
 
