@@ -778,6 +778,10 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 
     <div class="option-group option-list" id="shipping-options" role="radiogroup" aria-label="Shipping method">
       <label class="opt-item">
+        <input type="radio" name="shipping" value="consolidate" data-fee="0.00" required>
+        <span>Consolidate My Order — $0.00</span>
+      </label>
+      <label class="opt-item">
         <input type="radio" name="shipping" value="letter" data-fee="3.00" required>
         <span>Letterbox-sized package — $3.00</span>
       </label>
