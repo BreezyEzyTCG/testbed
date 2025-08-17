@@ -1400,14 +1400,14 @@ function setupMiniCart(){
   }
 }
     function getBadgeInfo(raw){
-      if(!raw) return null;
-      const t = String(raw).trim().toLowerCase();
-      if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
-      if(t === "new") return { cls:"new", label:"NEW" };
-      if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
-      if([t === "last"] return { cls:"last", label:"LAST ONE" };
-      return null;
-    }
+  if(!raw) return null;
+  const t = String(raw).trim().toLowerCase();
+  if (["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
+  if (t === "new") return { cls:"new", label:"NEW" };
+  if (["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
+  if (t === "last") return { cls:"last", label:"LAST ONE" };   // ← fixed
+  return null;
+}
 
     function renderStore(list){
       const container = document.querySelector(".card-container");
