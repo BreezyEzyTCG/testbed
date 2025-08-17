@@ -758,6 +758,20 @@
   font-weight:400;
   cursor: pointer;
 }
+  .mini-cart .mc-item.mc-oos{
+  opacity:.55;
+}
+.mini-cart .mc-item.mc-oos .mc-qty img{
+  pointer-events:none;
+  filter: grayscale(100%);
+  opacity:.6;
+}
+.mini-cart .mc-item.mc-oos .mc-price::after{
+  content:" • Out of stock";
+  font-weight:600;
+  color:#b91c1c;
+  margin-left:4px;
+}
 
 /* === Scroll-to-Top (GLOBAL) === */
 #scrollTopBtn {
@@ -862,7 +876,7 @@
         <div class="brand-center">
           <div>
             <h1 class="brand-title">BreezyEzyTCG</h1>
-            <p class="brand-subtitle"><strong>Collectibles Store</strong></p>
+            <p class="brand-subtitle"><strong>A Collectibles Store With Personality</strong></p>
           </div>
         </div>
       </div>
@@ -1000,25 +1014,25 @@ function playSfx(){
     function isMobile(){ return window.matchMedia("(max-width: 767.98px)").matches; }
 
     let toastHideTimer = null;
-    function showToast(msg, duration = 3000) {
-      const toast = document.getElementById("toast");
-      toast.textContent = msg;
-      toast.style.display = "block";
-      toast.classList.remove("show");
-      void toast.offsetWidth;
-      toast.classList.add("show");
-      if (toastHideTimer) clearTimeout(toastHideTimer);
-      toastHideTimer = setTimeout(() => {
-        toast.classList.remove("show");
-        const done = (e) => {
-          if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
-            toast.style.display = "none";
-            toast.removeEventListener("transitionend", done);
-          }
-        };
-        toast.addEventListener("transitionend", done);
-      }, duration);
-    }
+    function showToast(msg, duration = 4000) {
+  const toast = document.getElementById("toast");
+  toast.innerHTML = msg; // ← was textContent
+  toast.style.display = "block";
+  toast.classList.remove("show");
+  void toast.offsetWidth;
+  toast.classList.add("show");
+  if (toastHideTimer) clearTimeout(toastHideTimer);
+  toastHideTimer = setTimeout(() => {
+    toast.classList.remove("show");
+    const done = (e) => {
+      if (e.propertyName === "opacity" && !toast.classList.contains("show")) {
+        toast.style.display = "none";
+        toast.removeEventListener("transitionend", done);
+      }
+    };
+    toast.addEventListener("transitionend", done);
+  }, duration);
+}
 
     function safeNumber(val, fallback=0){
       if (typeof val === "number" && Number.isFinite(val)) return val;
@@ -1037,6 +1051,44 @@ function normalizeCart(arr){
       name:i.name, series:i.series, price:i.price, rarity:i.rarity, condition:i.condition
     })
   }));
+}
+  function reconcileCartWithInventory(allProducts){
+  const byKey = new Map(allProducts.map(p => [
+    makeKey({
+      name: p.name,
+      series: p["series name"],
+      price: p.price,
+      rarity: p.rarity,
+      condition: p.condition
+    }),
+    p
+  ]));
+
+  let cart = getCart();
+  let changed = false;
+  let hadOOS = false;
+
+  cart = cart.map(item => {
+    const prod = byKey.get(item.key);
+    if(!prod){
+      changed = true; hadOOS = true;
+      return {...item, stock: 0, _oos: true};
+    }
+    const max = Number(prod.stock || 0);
+    if (max <= 0){
+      changed = true; hadOOS = true;
+      return {...item, stock: 0, _oos: true};
+    }
+    const qty = Math.min(Number(item.quantity || 1), max);
+    if (qty !== item.quantity || item.stock !== max) changed = true;
+    return {...item, stock: max, quantity: qty, _oos: false};
+  });
+
+  if (changed){
+    localStorage.setItem("cart", JSON.stringify(cart));
+    updateCartCount();
+  }
+  return { changed, hadOOS };
 }
 
     /* ---- Cart helpers ---- */
@@ -1148,28 +1200,37 @@ function renderMiniCart(){
   if(cart.length === 0){
     mc.items.innerHTML = `<div class="mc-empty">Your cart is empty.</div>`;
   } else {
-    cart.forEach(({key, name, price, quantity, image}) => {
-      const row = document.createElement("div");
-      row.className = "mc-item";
-      const safeKey = String(key).replace(/'/g,"\\'");
-      row.innerHTML = `
-        <div class="mc-thumb"><img src="${image||''}" alt=""></div>
-        <div class="mc-meta">
-          <p class="mc-name" title="${name||''}">${name||''}</p>
-          <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
-          <div class="mc-qty">
-            <img src="assets/images/minus%20button.svg" alt="Decrease" onclick="decQty('${safeKey}')" />
-            <span>${safeNumber(quantity,1)}</span>
-            <img src="assets/images/plus%20button.svg" alt="Increase" onclick="incQty('${safeKey}')" />
-          </div>
-        </div>
-        <button class="mc-remove" aria-label="Remove item" onclick="removeFromCart('${safeKey}')">
-          <img src="assets/images/bin.svg" alt="">
-        </button>
-        <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
-      `;
-      mc.items.appendChild(row);
+    cart.forEach(({key, name, price, quantity, image, _oos, stock}) => {
+  const row = document.createElement("div");
+  row.className = "mc-item" + ((_oos || Number(stock||0) <= 0) ? " mc-oos" : "");
+  const safeKey = String(key).replace(/'/g,"\\'");
+  row.innerHTML = `
+    <div class="mc-thumb"><img src="${image||''}" alt=""></div>
+    <div class="mc-meta">
+      <p class="mc-name" title="${name||''}">${name||''}</p>
+      <p class="mc-price">$${safeNumber(price,0).toFixed(2)}</p>
+      <div class="mc-qty">
+        <img src="assets/images/minus%20button.svg" alt="Decrease" onclick="decQty('${safeKey}')" />
+        <span>${safeNumber(quantity,1)}</span>
+        <img src="assets/images/plus%20button.svg" alt="Increase" onclick="incQty('${safeKey}')" />
+      </div>
+    </div>
+    <button class="mc-remove" aria-label="Remove item" onclick="removeFromCart('${safeKey}')">
+      <img src="assets/images/bin.svg" alt="">
+    </button>
+    <div style="font-weight:600;">$${(safeNumber(price,0)*safeNumber(quantity,1)).toFixed(2)}</div>
+  `;
+
+  if (_oos || Number(stock||0) <= 0){
+    row.querySelectorAll('.mc-qty img').forEach(el => {
+      el.setAttribute('aria-disabled','true');
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.4';
     });
+  }
+
+  mc.items.appendChild(row);
+});
   }
   mc.subtotal.textContent = `$${getCartTotal().toFixed(2)}`;
 }
@@ -2010,7 +2071,7 @@ setupMiniCart();   // ← ADD THIS
 // (Uses the REFRESH_MS you declared earlier)
 
 async function refreshInventoryPreserveFilters(){
-  // 1) snapshot current UI selections
+  // 1) snapshot current filters & page
   const kw   = document.getElementById("search").value;
   const cat  = document.getElementById("category-filter").value;
   const sub  = document.getElementById("subcategory-filter").value;
@@ -2018,10 +2079,20 @@ async function refreshInventoryPreserveFilters(){
   const cond = document.getElementById("condition-filter").value;
   const pageBefore = paging.page;
 
-  // 2) fetch latest rows from Apps Script
-  await fetchInventoryFromSheet(true); // pass "preserve" flag
+  // 2) fetch latest rows (no args)
+  await fetchInventoryFromSheet();
 
-  // 3) restore selections & re-apply
+  // 3) reconcile cart
+  const rec = reconcileCartWithInventory(allProducts);
+  if (rec.changed) {
+    updateCartCount();
+    renderMiniCart();
+    if (rec.hadOOS){
+      showToast(`There have been some changes to the items in your cart. <a href="cart.html" style="text-decoration:underline; color:#fff;">See cart page</a>`);
+    }
+  }
+
+  // 4) restore filter selections, then re-apply filters
   document.getElementById("category-filter").value = cat;
   updateSubcategoryOptions();
   document.getElementById("subcategory-filter").value = sub;
@@ -2029,7 +2100,10 @@ async function refreshInventoryPreserveFilters(){
   document.getElementById("condition-filter").value = cond;
   document.getElementById("search").value = kw;
 
+  // Re-apply (this sets paging.page = 1)
   applyFilters();
+
+  // Restore page and re-render
   paging.page = clampPage(pageBefore);
   renderPage();
 }
