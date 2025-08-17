@@ -841,15 +841,17 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
   const cart = getCart();
   const i = cart.findIndex(it => itemKey(it) === key);
   if(i >= 0){
-    const max = Number(cart[i].stock ?? Infinity);
-    const cur = Number(cart[i].quantity) || 0;
-
+    const it = cart[i];
+    const max = Number(it.stock ?? Infinity);
+    const cur = Number(it.quantity) || 0;
     if (cur >= max){
-      alert(`Only ${isFinite(max) ? max : 0} in stock for "${cart[i].name}".`);
+      // 🔔 show toast like index.html
+      showToast(`Max available is ${isFinite(max) ? max : 0}.`);
       return;
     }
-    cart[i].quantity = cur + 1;
-    saveCart(cart); renderCart();
+    it.quantity = cur + 1;
+    saveCart(cart);
+    renderCart();
   }
 }
   function decQty(key){
