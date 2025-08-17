@@ -873,8 +873,8 @@
         <strong id="mcSubtotal">$0.00</strong>
       </div>
       <div class="mc-actions">
-        <button type="button" class="mc-view" id="mcView">View Cart</button>
-        <button type="button" class="mc-checkout" id="mcCheckout">Checkout</button>
+  <button type="button" class="btn btn--danger" id="mcClear">Clear Cart</button>
+  <button type="button" class="mc-view" id="mcView">View Cart</button>
       </div>
     </div>
   </div>
@@ -1269,14 +1269,17 @@ function setupMiniCart(){
   mc.items = document.getElementById("mcItems");
   mc.subtotal = document.getElementById("mcSubtotal");
   mc.viewBtn = document.getElementById("mcView");
-  mc.checkoutBtn = document.getElementById("mcCheckout");
+  mc.clearBtn = document.getElementById("mcClear");
   mc.closeBtn = mc.dropdown.querySelector(".mc-close");
 
   // buttons
   mc.closeBtn?.addEventListener("click", closeMiniCart);
   mc.viewBtn?.addEventListener("click", () => { window.location.href = "cart.html"; });
-  mc.checkoutBtn?.addEventListener("click", () => { window.location.href = "cart.html#checkout"; });
-
+  mc.clearBtn?.addEventListener("click", () => {
+  localStorage.removeItem("cart");
+  updateCartCount();   // <-- keep header badge correct
+  renderMiniCart();    // <-- refresh minicart UI
+});
   // ✅ keep clicks inside the panel from bubbling up
   mc.dropdown.addEventListener("click", (e) => e.stopPropagation());
   mc.dropdown.addEventListener("touchstart", (e) => e.stopPropagation(), {passive:true});
