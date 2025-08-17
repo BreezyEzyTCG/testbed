@@ -1405,6 +1405,7 @@ function setupMiniCart(){
       if(["sale","sales"].includes(t)) return { cls:"sale", label:"SALE" };
       if(t === "new") return { cls:"new", label:"NEW" };
       if(["popular","hot"].includes(t)) return { cls:"popular", label:"POPULAR" };
+      if([t === "last"] return { cls:"last", label:"LAST ONE" };
       return null;
     }
 
