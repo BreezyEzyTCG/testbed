@@ -867,28 +867,37 @@ function showToast(msg, duration = 3000){
 /* ===== OOS Modal helpers ===== */
 function buildOOSModalHTML(removed = [], clamped = []){
   const parts = [];
+
   if (removed.length){
     parts.push(`
       <h4>Removed (now out of stock):</h4>
       <ul class="oos-list">
-        ${removed.map(n => `<li>${escapeHtml(n)}</li>`).join('')}
+        ${removed.map(label => `<li>${escapeHtml(label)}</li>`).join('')}
       </ul>
     `);
   }
+
   if (clamped.length){
     parts.push(`
       <h4>Adjusted to available stock:</h4>
       <ul class="oos-list">
-        ${clamped.map(([n,q]) => `<li>${escapeHtml(n)} → qty ${q}</li>`).join('')}
+        ${
+          clamped.map(({ label, before, after }) =>
+            `<li>${escapeHtml(label)} — <strong>${escapeHtml(String(before))}</strong> → <strong>${escapeHtml(String(after))}</strong></li>`
+          ).join('')
+        }
       </ul>
     `);
   }
+
   if (!parts.length){
     parts.push(`<p>No changes.</p>`);
   }
+
   parts.push(`<p style="opacity:.85; margin-top:10px;">Tip: Items may go out of stock if another customer checks out first.</p>`);
   return parts.join('');
 }
+
 
 function openOOSModal(removed = [], clamped = []){
   const modal = document.getElementById('oosModal');
@@ -932,6 +941,32 @@ function escapeHtml(s){
     /* === Add this helper ABOVE itemKey === */
 function normSeries(obj){
   return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim();
+}
+
+/* === Build "Name, Series: Set - Year · Rarity · Condition" === */
+function formatCartLabel(it){
+  const name = (it.name || '').trim();
+
+  const series = normSeries(it); // already normalizes series name
+  const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
+  const year   = (it.year || it.release_year || '').toString().trim();
+  const rarity = (it.rarity || '').trim();
+  const cond   = (it.condition || '').trim();
+
+  // Left block: "Name, Series: Set"
+  const leftParts = [];
+  if (name) leftParts.push(name);
+  if (series) leftParts.push(series ? `, ${series}` : '');
+  const left = leftParts.join('');
+
+  // If both series and set exist, use colon between them
+  const seriesSet = series && set ? `: ${set}` : (set ? set : '');
+
+  // Right block: "Year · Rarity · Condition"
+  const rightBits = [year, rarity, cond].filter(Boolean).join(' · ');
+  const right = rightBits ? ` - ${rightBits}` : '';
+
+  return `${left}${seriesSet}${right}`.trim();
 }
 
 /* === REPLACE your itemKey with this === */
@@ -1020,34 +1055,39 @@ async function fetchInventoryFromSheet(){
 }
 
 
-/* Reconcile cart lines vs latest stock */
+/* Reconcile cart lines vs latest stock AND capture before/after quantities */
 function reconcileCart(cart, stockMap){
   let changed = false;
-  const removed = [];
-  const clamped = [];
+  const removed = [];                  // array of strings (labels)
+  const clamped = [];                  // array of { label, before, after }
   const next = [];
 
-  for(const it of cart){
-    const k = itemKey(it);
-    const latest = stockMap[k];
-    const curQty = Number(it.quantity)||0;
+  for (const it of cart){
+    const key = itemKey(it);
+    const latest = stockMap[key];
+    const before = Number(it.quantity) || 0;
+    const label  = formatCartLabel(it);
 
+    // No stock or not found → removed
     if (latest === undefined || latest <= 0){
-      removed.push(it.name || 'Item');
+      removed.push(label);
       changed = true;
-      continue; // drop this line
+      continue;
     }
-    if (curQty > latest){
+
+    // More in cart than available → clamp down
+    if (before > latest){
       next.push({ ...it, quantity: latest, stock: latest });
-      clamped.push([it.name || 'Item', latest]);
+      clamped.push({ label, before, after: latest });
       changed = true;
-    }else{
-      next.push({ ...it, stock: latest }); // refresh stock so + button disables correctly
+    } else {
+      // Still valid line; update visible stock so + button disables correctly
+      next.push({ ...it, stock: latest });
     }
   }
+
   return { cart: next, changed, removed, clamped };
 }
- 
   function escapeKey(it){
     return itemKey(it).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
@@ -1502,8 +1542,8 @@ window.addEventListener('storage', (e) => {
   <div class="oos-backdrop" data-oos-close>
     <div class="oos-dialog" role="dialog" aria-modal="true" aria-labelledby="oosTitle" aria-describedby="oosDesc" onclick="event.stopPropagation()">
       <div class="oos-head">
-        <h3 id="oosTitle">Your cart was updated</h3>
-        <button class="btn btn--ghost" type="button" aria-label="Close" onclick="closeOOSModal()">✕</button>
+        <h3 id="oosTitle">Poof! Some magic said <em>seeyounara</em> — and vanished (×_×)⌒☆</h3>
+        <button class="btn btn--primary" type="button" aria-label="Close" onclick="closeOOSModal()">✕</button>
       </div>
       <div class="oos-body" id="oosDesc">
         <!-- content injected by JS -->
