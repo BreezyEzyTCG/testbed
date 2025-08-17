@@ -1251,54 +1251,81 @@ function setupMiniCart(){
       });
     }
 
-    async function fetchInventoryFromSheet(){
+   async function fetchInventoryFromSheet(){
   try {
-    const res = await fetch(SHEET_API, { cache: 'no-store' }); // hit Apps Script JSON
-    if (!res.ok) throw new Error("Failed to fetch inventory");
+    const res = await fetch(SHEET_API, { cache: 'no-store' });
+    console.log('[SHEET] status', res.status, res.statusText);
 
-    const rows = await res.json(); // already [{ header: value, ... }]
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    console.log('[SHEET] content-type', ct);
 
-    // Normalize keys + numbers + a few aliases so the rest of your code keeps working
+    if (!res.ok) {
+      const text = await res.text().catch(()=> '');
+      console.error('[SHEET] non-OK response:', res.status, text);
+      throw new Error(`Inventory fetch failed: HTTP ${res.status}`);
+    }
+
+    // Ensure it’s JSON
+    if (!ct.includes('application/json')) {
+      const text = await res.text().catch(()=> '');
+      console.error('[SHEET] Expected JSON, got:', ct, '\nPreview:\n', text.slice(0, 800));
+      throw new Error('API did not return JSON');
+    }
+
+    let rows = await res.json();
+    // Accept either an array or {data:[...]}
+    if (!Array.isArray(rows) && rows && Array.isArray(rows.data)) {
+      rows = rows.data;
+    }
+    if (!Array.isArray(rows)) {
+      console.error('[SHEET] Unexpected payload:', rows);
+      throw new Error('JSON payload is not an array');
+    }
+
+    // Normalize
     allProducts = rows.map(src => {
       const obj = {};
       for (const [k, v] of Object.entries(src)) {
-        const key = k.trim().toLowerCase();            // e.g. "Series Name" -> "series name"
-        obj[key] = (key === "price" || key === "stock") ? safeNumber(v) : String(v ?? "").trim();
+        const key = String(k).trim().toLowerCase();
+        obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
       }
+      if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
+      if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
 
-      // ---- keep your expected property names consistent with the UI code ----
-      // If your sheet header is "sub-category", expose also "subcategory"
-      if (obj["sub-category"] && !obj.subcategory) obj.subcategory = obj["sub-category"];
-      // If your sheet header is "image url", expose also "image_url"
-      if (obj["image url"] && !obj.image_url) obj.image_url = obj["image url"];
-
-      // Optional: ensure these always exist (avoid undefined in templates)
-      obj.category      = obj.category      || "";
-      obj.subcategory   = obj.subcategory   || "";
-      obj.description   = obj.description   || "";
-      obj.condition     = obj.condition     || "";
-      obj["series name"]= obj["series name"]|| "";
-      obj.back          = obj.back          || "";
-      obj.img2          = obj.img2          || "";
-      obj.img3          = obj.img3          || "";
-
+      // Ensure expected keys exist
+      obj.name          = obj.name          || '';
+      obj.category      = obj.category      || '';
+      obj.subcategory   = obj.subcategory   || '';
+      obj.description   = obj.description   || '';
+      obj.condition     = obj.condition     || '';
+      obj['series name']= obj['series name']|| '';
+      obj.back          = obj.back          || '';
+      obj.img2          = obj.img2          || '';
+      obj.img3          = obj.img3          || '';
+      obj.price         = safeNumber(obj.price, 0);
+      obj.stock         = safeNumber(obj.stock, 0);
       return obj;
     });
 
-    // Rebuild UI
     populateAllDropdowns();
     filteredProducts = allProducts.slice();
     paging.page = 1;
     renderPage();
     enforceResponsiveGrid();
 
-    console.log("Fetched inventory:", allProducts.length, "items");
+    console.log('[SHEET] OK — items:', allProducts.length);
   } catch (err) {
-    console.error("Error loading inventory:", err);
-    document.querySelector(".card-container").innerHTML = "<p>Error loading store inventory.</p>";
+    console.error('[SHEET] Error loading inventory:', err);
+    const c = document.querySelector('.card-container');
+    if (c) {
+      c.innerHTML = `
+        <div style="background:#fff;padding:14px;border-radius:10px">
+          <p><strong>Error loading store inventory.</strong></p>
+          <p style="color:#555;font-size:.9rem">Details: ${String(err?.message || err)}</p>
+        </div>`;
+    }
   }
 }
-
     function getBadgeInfo(raw){
       if(!raw) return null;
       const t = String(raw).trim().toLowerCase();
