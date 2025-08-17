@@ -1059,15 +1059,16 @@ function normalizeCart(arr){
     })
   }));
 }
+  function reconcileCartWithInventory(allProducts){
   const byKey = new Map(allProducts.map(p => [
-  makeKey({
-    name: p.name,
-    series: p["series name"],
-    rarity: p.rarity,
-    condition: p.condition
-  }),
-  p
-]));
+    makeKey({
+      name: p.name,
+      series: p["series name"],
+      rarity: p.rarity,
+      condition: p.condition
+    }),
+    p
+  ]));
 
   let cart = getCart();
   let changed = false;
@@ -1095,7 +1096,6 @@ function normalizeCart(arr){
   }
   return { changed, hadOOS };
 }
-
     /* ---- Cart helpers ---- */
     function getCart(){
   try{
@@ -1116,7 +1116,7 @@ function normalizeCart(arr){
 
    function addToCart(name, price, image_url, series, rarity, condition, stock){
   const cart = getCart();
-  const key = makeKey({name, series, price, rarity, condition});
+  const key = makeKey({ name, series, rarity, condition });
   const found = cart.find(i => i.key === key);
 
   const max = Number(stock ?? 0);
@@ -1149,6 +1149,7 @@ if (mc?.dropdown?.classList?.contains('open')) {
 }
 playAddSfx();
 showToast(`${name} is now in your PC!`);
+   }
 
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
