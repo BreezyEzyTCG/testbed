@@ -546,6 +546,47 @@ body{ background: var(--page-bg); }         /* keeps your site shell */
 }
 #toast.show{ display:block; opacity:1; }
 
+    /* ===== OOS Changes Modal ===== */
+#oosModal[hidden] { display: none; }
+
+.oos-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.oos-dialog{
+  width: min(680px, 96vw);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+.oos-head{
+  background: #0f3a60;           /* matches your BW header theme */
+  color: #fff;
+  padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.oos-head h3{ margin: 0; font-size: 1.05rem; letter-spacing: .2px; }
+.oos-body{ padding: 14px 16px; color:#0f172a; max-height: 60vh; overflow: auto; }
+.oos-body h4{ margin: 0 0 10px; font-size: .95rem; }
+.oos-list{ margin: 8px 0 14px; padding-left: 18px; }
+.oos-list li{ margin: 4px 0; }
+.oos-foot{
+  padding: 12px 16px;
+  display: flex; gap: 8px; justify-content: flex-end; align-items: center;
+  border-top: 1px solid rgba(0,0,0,.08);
+  background: #f7f7f9;
+}
+
+.oos-dialog .btn{ height: 40px; padding: 0 14px; }
+.oos-primary{ background: #0f3a60; color: #fff; border-color: transparent; }
+.oos-secondary{ background: #fff; color: #111; border:1px solid rgba(0,0,0,.14); }
+
+
     /* === Responsive switch between desktop head and mobile head (table) === */
     .head-mobile{ display:none; }
     @media (max-width:767.98px){
@@ -823,7 +864,71 @@ function showToast(msg, duration = 3000){
     t.addEventListener('transitionend', onEnd);
   }, duration);
 }
+/* ===== OOS Modal helpers ===== */
+function buildOOSModalHTML(removed = [], clamped = []){
+  const parts = [];
+  if (removed.length){
+    parts.push(`
+      <h4>Removed (now out of stock):</h4>
+      <ul class="oos-list">
+        ${removed.map(n => `<li>${escapeHtml(n)}</li>`).join('')}
+      </ul>
+    `);
+  }
+  if (clamped.length){
+    parts.push(`
+      <h4>Adjusted to available stock:</h4>
+      <ul class="oos-list">
+        ${clamped.map(([n,q]) => `<li>${escapeHtml(n)} → qty ${q}</li>`).join('')}
+      </ul>
+    `);
+  }
+  if (!parts.length){
+    parts.push(`<p>No changes.</p>`);
+  }
+  parts.push(`<p style="opacity:.85; margin-top:10px;">Tip: Items may go out of stock if another customer checks out first.</p>`);
+  return parts.join('');
+}
 
+function openOOSModal(removed = [], clamped = []){
+  const modal = document.getElementById('oosModal');
+  if (!modal) return;
+  const body = modal.querySelector('.oos-body');
+  body.innerHTML = buildOOSModalHTML(removed, clamped);
+  modal.hidden = false;
+
+  // focus a sensible control
+  const okBtn = modal.querySelector('.oos-primary') || modal.querySelector('button');
+  if (okBtn) setTimeout(() => okBtn.focus(), 0);
+}
+
+function closeOOSModal(){
+  const modal = document.getElementById('oosModal');
+  if (!modal) return;
+  modal.hidden = true;
+}
+
+// backdrop click: close
+document.addEventListener('click', (e) => {
+  const trg = e.target;
+  if (trg && trg.closest && trg.closest('#oosModal .oos-backdrop')){
+    if (trg.dataset.oosClose !== undefined) closeOOSModal();
+  }
+});
+// escape to close
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeOOSModal();
+});
+
+// simple HTML escaper for safety
+function escapeHtml(s){
+  return String(s)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
     function itemKey(it){
     return [
       it.name ?? '',
@@ -1086,15 +1191,12 @@ async function renderCart() {
   let cart = getCart();
 
   const { cart: fixed, changed, removed, clamped } = reconcileCart(cart, stockMap);
-  if (changed){
-    saveCart(fixed);
-    if (removed.length) showToast(`${removed.join(', ')} is now out of stock and was removed.`);
-    if (clamped.length){
-      const msg = clamped.map(([n,q]) => `${n} → qty ${q}`).join('; ');
-      showToast(`Stock updated: ${msg}`);
-    }
-  }
-  cart = fixed;
+if (changed){
+  saveCart(fixed);
+  // 👉 show professional modal instead of toast
+  openOOSModal(removed, clamped);
+}
+cart = fixed;
 
   // === the rest of your original renderCart (unchanged), except it now uses the refreshed `cart` ===
   const cartContainer = document.getElementById("cart-items");
@@ -1379,6 +1481,25 @@ updateCheckoutDisabled();
     });
   })();
 </script>
+  <!-- ===== OOS / Stock Changes Modal ===== -->
+<div id="oosModal" hidden>
+  <div class="oos-backdrop" data-oos-close>
+    <div class="oos-dialog" role="dialog" aria-modal="true" aria-labelledby="oosTitle" aria-describedby="oosDesc" onclick="event.stopPropagation()">
+      <div class="oos-head">
+        <h3 id="oosTitle">Your cart was updated</h3>
+        <button class="btn btn--ghost" type="button" aria-label="Close" onclick="closeOOSModal()">✕</button>
+      </div>
+      <div class="oos-body" id="oosDesc">
+        <!-- content injected by JS -->
+      </div>
+      <div class="oos-foot">
+        <button class="btn oos-secondary" type="button" onclick="closeOOSModal()">Close</button>
+        <button class="btn oos-primary" type="button" onclick="closeOOSModal()">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
       
   <!-- 🔔 Toast container -->
 <div id="toast"></div>
