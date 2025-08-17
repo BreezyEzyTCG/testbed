@@ -929,15 +929,26 @@ function escapeHtml(s){
     .replaceAll('"','&quot;')
     .replaceAll("'",'&#39;');
 }
-    function itemKey(it){
-    return [
-      it.name ?? '',
-      String(Number(it.price) || 0),
-      it.series ?? '',
-      it.rarity ?? '',
-      it.condition ?? ''
-    ].join('||');
-  }
+    /* === Add this helper ABOVE itemKey === */
+function normSeries(obj){
+  return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim();
+}
+
+/* === REPLACE your itemKey with this === */
+function itemKey(it){
+  const name = (it.name || "").trim();
+  const price = Number(it.price);
+  const series = normSeries(it);
+  const rarity = (it.rarity || "").trim();
+  const condition = (it.condition || "").trim();
+  return [
+    name,
+    String(Number.isFinite(price) ? price : 0),
+    series,
+    rarity,
+    condition
+  ].join("||");
+}
 
 /* ===== LIVE STOCK from Google Sheets (CSV) ===== */
 const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDJRZBMe5zGA4VmLoAQnCV1X21yZN7nmGy9U0UChcldGIV4r7FX3-9XgEbvrsEOL6nJn8VhY58Ic50/pub?output=csv";
@@ -1019,31 +1030,52 @@ async function loadProductsFromSheet(){
   }
 }
     
-/* Build a stock map keyed EXACTLY like your cart’s itemKey() */
+//* === REPLACE keyFromProduct === */
 function keyFromProduct(p){
+  const name = (p.name || "").trim();
+  const price = Number(p.price);
+  const series = normSeries(p);
+  const rarity = (p.rarity || "").trim();
+  const condition = (p.condition || "").trim();
   return [
-    p.name ?? '',
-    String(Number(p.price)||0),
-    p["series name"] ?? '',
-    p.rarity ?? '',
-    p.condition ?? ''
-  ].join('||');
+    name,
+    String(Number.isFinite(price) ? price : 0),
+    series,
+    rarity,
+    condition
+  ].join("||");
 }
+
+/* === REPLACE buildStockMap === */
 async function buildStockMap(){
-  // Prefer cache from index.html if present (it writes inventoryCache + window.INVENTORY)
-  const cached = (() => {
-    try{ return JSON.parse(localStorage.getItem('inventoryCache')||'[]'); }catch{ return []; }
-  })();
-  const products = (Array.isArray(window.INVENTORY) && window.INVENTORY.length)
-    ? window.INVENTORY
-    : (Array.isArray(cached) && cached.length ? cached : await loadProductsFromSheet());
+  const getCached = () => {
+    try{ return JSON.parse(localStorage.getItem('inventoryCache') || '[]'); }
+    catch{ return []; }
+  };
+
+  let products = [];
+  try{
+    // Always try live sheet first
+    products = await loadProductsFromSheet();
+  }catch{ products = []; }
+
+  if (!Array.isArray(products) || !products.length){
+    // Then try window.INVENTORY
+    if (Array.isArray(window.INVENTORY) && window.INVENTORY.length){
+      products = window.INVENTORY;
+    }else{
+      // Finally fall back to cached
+      products = getCached();
+    }
+  }
 
   const map = Object.create(null);
-  for(const p of products){
+  for (const p of products){
     map[keyFromProduct(p)] = Number(p.stock ?? 0);
   }
   return map;
 }
+
 
 /* Reconcile cart lines vs latest stock */
 function reconcileCart(cart, stockMap){
