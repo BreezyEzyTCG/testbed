@@ -483,7 +483,43 @@ function renderSummary(){
   sumShipping.textContent = fmt(shipping);
   sumTotal.textContent = fmt(subtotal + shipping);
 }
+function proxyFetch(endpoint, params) {
+  return new Promise((resolve, reject) => {
+    const cb = `onemap_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+    const qs = new URLSearchParams({
+      ...params,
+      endpoint,
+      callback: cb,
+      _: Date.now()                // <— cache buster
+    });
 
+    const s = document.createElement('script');
+    s.src = `${ONEMAP_PROXY}?${qs.toString()}`;
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('JSONP_TIMEOUT'));
+    }, 12000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cb];
+      s.remove();
+    }
+
+    window[cb] = (data) => {
+      cleanup();
+      resolve(data);
+    };
+
+    s.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP_LOAD_ERROR'));
+    };
+
+    document.head.appendChild(s);
+  });
+}
 /* Field validation + CTA visibility */
 function allValid(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fCity','fMethod','disc1','disc2'];
