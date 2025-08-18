@@ -49,6 +49,7 @@
   label{ font-size:var(--size-label); font-weight:600; margin-bottom:5px; color:var(--muted); }
   .req::after{ content:" *"; color:#ef4444; }
   input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
+  select[disabled]{background:#fff; color:inherit;opacity:1;cursor:default;}
   input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
   .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
   .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
@@ -136,15 +137,13 @@
                 <input id="fCity" required value="Singapore" readonly />
               </div>
               <div>
-                <label class="req">Selected Mailing Option</label>
-                <select id="fMethod" required>
-                  <option value="">Select…</option>
-                  <option value="NinjaVan Standard">NinjaVan Standard</option>
-                  <option value="Qxpress">Qxpress</option>
-                  <option value="Registered Mail">Registered Mail</option>
-                  <option value="Self-collection">Self-collection</option>
-                </select>
-              </div>
+  <label class="req">Selected Mailing Option</label>
+  <!-- visible, read-only label from cart -->
+  <input id="fMethodLabel" readonly placeholder="Choose on cart page"/>
+  <!-- hidden value to satisfy required validation -->
+  <input type="hidden" id="fMethod" required />
+  <div class="hint">Selected on cart page. Go back to change.</div>
+</div>
             </div>
 
             <div class="option-group option-list" style="margin-top:8px;">
@@ -248,6 +247,79 @@ function getCart(){
 }
 function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
 
+/* ========= Shipping method from cart ========= */
+const SHIPPING_STORAGE_KEYS = [
+  'shippingMethod',        // preferred
+  'shipMethod',
+  'selectedShipping',
+  'selectedShippingMethod'
+];
+
+// Map possible cart values to the option labels in this page
+const METHOD_ALIASES = {
+  'ninjavan': 'NinjaVan Standard',
+  'ninjavan standard': 'NinjaVan Standard',
+  'qxpress': 'Qxpress',
+  'qx': 'Qxpress',
+  'registered': 'Registered Mail',
+  'registered mail': 'Registered Mail',
+  'singpost registered': 'Registered Mail',
+  'self': 'Self-collection',
+  'self-collection': 'Self-collection',
+  'self collection': 'Self-collection',
+};
+
+function readSavedShippingMethod(){
+  for(const k of SHIPPING_STORAGE_KEYS){
+    const raw = (localStorage.getItem(k) || '').trim();
+    if(!raw) continue;
+    const key = raw.toLowerCase();
+    if(METHOD_ALIASES[key]) return METHOD_ALIASES[key];
+    // if raw already matches an option label, return as-is
+    if(['NinjaVan Standard','Qxpress','Registered Mail','Self-collection'].includes(raw)) return raw;
+  }
+  return '';
+}
+
+function applySavedShippingToForm(){
+  const saved = getSavedShippingFromCart();
+  const hidden = document.getElementById('fMethod');       // hidden required value (id)
+  const label  = document.getElementById('fMethodLabel');  // visible readonly label
+
+  if (saved && saved.id){
+    if (hidden) hidden.value = saved.id;
+    if (label)  label.value  = saved.label || saved.id;
+  } else {
+    if (hidden) hidden.value = '';
+    if (label)  label.value  = '';
+  }
+}
+
+  // If the saved value isn't an existing option, add it so .value works.
+  const exists = Array.from(methodEl.options).some(o => o.value === saved);
+  if(!exists){
+    const opt = document.createElement('option');
+    opt.value = saved; opt.textContent = saved;
+    methodEl.appendChild(opt);
+  }
+
+  methodEl.value = saved;
+
+  // Lock it so checkout only reflects the cart choice.
+  methodEl.disabled = true;
+  methodEl.setAttribute('aria-readonly','true');
+
+  // Small hint below the select (optional)
+  const hint = document.createElement('div');
+  hint.className = 'hint';
+  hint.textContent = 'Selected on cart page. Go back to change.';
+  methodEl.insertAdjacentElement('afterend', hint);
+
+function getSavedShippingFromCart(){
+  try { return JSON.parse(localStorage.getItem('shippingMethod') || ''); }
+  catch { return null; }
+}
+
 /* ========= Summary ========= */
 function renderSummary(){
   const cart = getCart();
@@ -258,8 +330,8 @@ function renderSummary(){
 
   let subtotal = 0;
   sumItems.innerHTML = '';
-  cart.forEach(it=>{
-    const qty = Number(it.qty)||1;
+    cart.forEach(it=>{
+    const qty = Number(it.quantity ?? it.qty) || 1;  // <-- CHANGED
     const price = Number(it.price)||0;
     subtotal += qty*price;
     const row = document.createElement('div');
@@ -269,11 +341,10 @@ function renderSummary(){
   });
 
   let shipping = 0;
-  const method = document.getElementById('fMethod')?.value || '';
-  if(method === 'Registered Mail') shipping = 3.2;
-  if(method === 'Qxpress') shipping = 4.5;
-  if(method === 'NinjaVan Standard') shipping = 4.0;
-  if(method === 'Self-collection') shipping = 0;
+const savedShip = getSavedShippingFromCart();
+if (savedShip && Number.isFinite(Number(savedShip.fee))) {
+  shipping = Number(savedShip.fee);
+}
 
   sumSubtotal.textContent = fmt(subtotal);
   sumShipping.textContent = fmt(shipping);
@@ -383,8 +454,13 @@ function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = s
 
 /* ========= Init ========= */
 function init(){
-  renderSummary(); syncPayCta();
-
+   // 1) Pull method from cart and lock the field
+  applySavedShippingToForm();
+  
+ // 2) Now render totals & button state with that method
+  renderSummary();
+  syncPayCta();
+  
   document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
     el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
@@ -394,7 +470,6 @@ function init(){
   document.getElementById('qrClose')?.addEventListener('click', closeQr);
   document.getElementById('qrCancel')?.addEventListener('click', closeQr);
   document.getElementById('qrPaid')?.addEventListener('click', ()=>{ const file = document.getElementById('proofFile')?.files?.[0] || null; window.location.href = "thank-you.html"; });
-  document.getElementById('fMethod')?.addEventListener('change', renderSummary);
 
   const postalEl = document.getElementById('fPostal');
   const postalHintEl = document.getElementById('postalHint');
