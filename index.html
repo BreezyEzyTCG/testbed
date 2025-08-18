@@ -1046,48 +1046,122 @@ function playSfx(){
       const n = parseFloat(val);
       return Number.isFinite(n) ? n : fallback;
     }
-    function makeKey({name, series, rarity, condition}) {
-  return [name, series, rarity, condition]
-    .map(v => String(v ?? '').trim())
-    .join('||');            // use a rarer delimiter to avoid accidental clashes
+    /* ======== KEY & CART HELPERS (drop-in) ======== */
+
+/* 1) Normalizer used by keys */
+const _norm = v => String(v ?? '').trim().toLowerCase();
+
+/* 2) New 6-part key to prevent collisions */
+function makeKey({ name, series, rarity, condition, category, subcategory }) {
+  return [
+    _norm(name),
+    _norm(series),
+    _norm(rarity),
+    _norm(condition),
+    _norm(category),
+    _norm(subcategory),
+  ].join('||');
 }
+
+/* 3) Old 4-part key kept for back-compat (do not remove yet) */
+function makeKeyOld({ name, series, rarity, condition }) {
+  return [
+    _norm(name),
+    _norm(series),
+    _norm(rarity),
+    _norm(condition),
+  ].join('||');
+}
+
+/* 4) Normalize legacy cart items and upgrade to new key */
 function normalizeCart(arr){
-  return arr.map(i => ({
-    ...i,
-    key: i.key || makeKey({
-      name:i.name, series:i.series, rarity:i.rarity, condition:i.condition
-    })
-  }));
+  return arr.map(i => {
+    const obj = { ...i };
+    // backfill fields that old items might not have
+    obj.category    = obj.category    ?? '';
+    obj.subcategory = obj.subcategory ?? '';
+
+    // if key is missing or still old 4-part shape, rebuild with new 6-part
+    const hasNewShape = (obj.key && obj.key.split('||').length >= 6);
+    if (!hasNewShape) {
+      obj.key = makeKey({
+        name: obj.name,
+        series: obj.series,
+        rarity: obj.rarity,
+        condition: obj.condition,
+        category: obj.category,
+        subcategory: obj.subcategory
+      });
+    }
+    return obj;
+  });
 }
-  function reconcileCartWithInventory(allProducts){
-  const byKey = new Map(allProducts.map(p => [
-    makeKey({
+
+/* 5) Reconcile cart items against latest inventory using new key w/ fallback */
+function reconcileCartWithInventory(allProducts){
+  // Build maps for both new and old key shapes
+  const byNew = new Map();
+  const byOld = new Map();
+
+  for (const p of allProducts) {
+    const kNew = makeKey({
+      name: p.name,
+      series: p["series name"],
+      rarity: p.rarity,
+      condition: p.condition,
+      category: p.category,
+      subcategory: p.subcategory
+    });
+    byNew.set(kNew, p);
+
+    const kOld = makeKeyOld({
       name: p.name,
       series: p["series name"],
       rarity: p.rarity,
       condition: p.condition
-    }),
-    p
-  ]));
+    });
+    if (!byOld.has(kOld)) byOld.set(kOld, p);
+  }
 
   let cart = getCart();
   let changed = false;
-  let hadOOS = false;
+  let hadOOS  = false;
 
   cart = cart.map(item => {
-    const prod = byKey.get(item.key);
+    // Try new key first, then old key for legacy items
+    const prod = byNew.get(item.key) || byOld.get(item.key);
     if(!prod){
       changed = true; hadOOS = true;
-      return {...item, stock: 0, _oos: true};
+      return { ...item, stock: 0, _oos: true };
     }
     const max = Number(prod.stock || 0);
     if (max <= 0){
       changed = true; hadOOS = true;
-      return {...item, stock: 0, _oos: true};
+      return { ...item, stock: 0, _oos: true };
     }
     const qty = Math.min(Number(item.quantity || 1), max);
-    if (qty !== item.quantity || item.stock !== max) changed = true;
-    return {...item, stock: max, quantity: qty, _oos: false};
+
+    // Upgrade any legacy key to the new 6-part key now
+    const upgradedKey = makeKey({
+      name: prod.name,
+      series: prod["series name"],
+      rarity: prod.rarity,
+      condition: prod.condition,
+      category: prod.category,
+      subcategory: prod.subcategory
+    });
+
+    if (qty !== item.quantity || item.stock !== max || item.key !== upgradedKey) changed = true;
+
+    return {
+      ...item,
+      key: upgradedKey,
+      category: item.category ?? prod.category ?? '',
+      subcategory: item.subcategory ?? prod.subcategory ?? '',
+      stock: max,
+      quantity: qty,
+      _oos: false
+    };
   });
 
   if (changed){
@@ -1096,6 +1170,7 @@ function normalizeCart(arr){
   }
   return { changed, hadOOS };
 }
+
     /* ---- Cart helpers ---- */
     function getCart(){
   try{
@@ -1119,26 +1194,42 @@ function normalizeCart(arr){
   el.textContent = String(getCartCount());
 }
     
-   function addToCart(name, price, image_url, series, rarity, condition, stock){
+   function addToCart(
+  name,
+  price,
+  image_url,
+  series,
+  rarity,
+  condition,
+  stock,
+  category,
+  subcategory
+){
   const cart = getCart();
-  const key = makeKey({ name, series, rarity, condition });
-  const found = cart.find(i => i.key === key);
 
-  // 🔄 Always use the freshest stock from allProducts, fallback to the stock arg
+  // ✅ new 6-part key (prevents collisions across categories/subcategories)
+  const key = makeKey({ name, series, rarity, condition, category, subcategory });
+
+  // try to find a matching product in the latest inventory for freshest stock
   const fresh = allProducts.find(p =>
     makeKey({
       name: p.name,
       series: p["series name"],
       rarity: p.rarity,
-      condition: p.condition
+      condition: p.condition,
+      category: p.category,
+      subcategory: p.subcategory
     }) === key
   );
-  const max = Number(fresh?.stock ?? stock ?? 0);
 
+  const max = Number(fresh?.stock ?? stock ?? 0);
   if (max <= 0) {
     showToast("Sorry, this item is out of stock.");
     return;
   }
+
+  // see if item already in cart under the same key
+  const found = cart.find(i => i.key === key);
 
   if (found) {
     const cur = Number(found.quantity) || 0;
@@ -1147,24 +1238,33 @@ function normalizeCart(arr){
       return;
     }
     found.quantity = cur + 1;
-    if (typeof found.stock === 'undefined') found.stock = max; // backfill legacy items
+    // keep cart's idea of stock in sync with latest inventory
+    if (typeof found.stock === 'undefined' || found.stock !== max) {
+      found.stock = max;
+    }
   } else {
     cart.push({
-      key, name, series, rarity, condition,
-      price,
+      key,
+      name,
+      series,
+      rarity,
+      condition,
+      category,
+      subcategory,
+      price: safeNumber(price, 0),
       quantity: 1,
       image: image_url,
-      stock: max // store the freshest stock value
+      stock: max
     });
   }
 
-  // ✅ Save & refresh UI
+  // persist + refresh UI
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
-  renderMiniCart();
-  playAddSfx();
+  if (typeof renderMiniCart === 'function') renderMiniCart();
+  if (typeof playAddSfx === 'function')     playAddSfx();
   showToast(`${name} is now in your PC!`);
-} // ← don’t forget this closing brace!
+}
 
       /* ===== Mini Cart (Dropdown) ===== */
 const mc = {
@@ -1436,13 +1536,16 @@ function setupMiniCart(){
         const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
 
        const esc = s => String(s||'').replace(/'/g,"\\'");
-       const safeSeries = esc(p["series name"]);
-       const safeRarity = esc(p.rarity);
-       const safeCondition = esc(p.condition);
+        const safeSeries     = esc(p["series name"]);
+        const safeRarity     = esc(p.rarity);
+        const safeCondition  = esc(p.condition);
+        const safeCategory   = esc(p.category);
+        const safeSubcat     = esc(p.subcategory);
 
 const btnAttrs = out
   ? `disabled aria-disabled="true" tabindex="-1"`
-  : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${stock})"`;
+  : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${stock}, '${safeCategory}', '${safeSubcat}')"`;
+
 
         const card = document.createElement("div");
         card.className = "card";
@@ -1972,7 +2075,9 @@ function clampPage(p){
     product['series name'] || '',
     product.rarity || '',
     product.condition || '',
-    safeNumber(product.stock, 0)
+    safeNumber(product.stock, 0),
+    product.category || '',
+    product.subcategory || ''
   );
 
       qv.thumbs.innerHTML = '';
