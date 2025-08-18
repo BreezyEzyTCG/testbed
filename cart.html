@@ -1309,7 +1309,7 @@ function reconcileCart(cart, stockMap){
     if (sumSubtotal) sumSubtotal.textContent = fmtMoney(subtotal);
     if (sumShipping) sumShipping.textContent = fmtMoney(shippingFee);
     if (sumTotal)    sumTotal.textContent    = fmtMoney(total);
-   
+   }
 async function renderCart() {
   // Ensure we have inventory loaded at least once
 if (!allProducts.length) {
@@ -1509,10 +1509,6 @@ document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
     return;
   }
   // otherwise allow navigation to checkout.html
-});
-
-// Initialize button state on load
-updateCheckoutDisabled();
 });
 
   // === Hide header on scroll (mobile + desktop) — listens to the right scroll areas ===
