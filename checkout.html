@@ -63,6 +63,7 @@
   .sum-header{ padding:12px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); color:var(--text); font-weight:700; font-size:var(--size-h3); }
   .sum-body{ background:#fff; padding:10px 14px; }
   .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
+  .sum-row .price{ font-weight:400; }
   .sum-total{ background:var(--surface-2); color:var(--text); padding:10px 14px; font-weight:800; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:var(--size-total); }
   .option-group{ display:grid; gap:8px; }
   .opt-item{ display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:start; padding:9px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
@@ -289,7 +290,12 @@ function renderSummary(){
     subtotal += qty*price;
     const row = document.createElement('div');
     row.className = 'sum-row';
-    row.innerHTML = `<span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${it.name} × ${qty}</span><strong>${fmt(qty*price)}</strong>`;
+row.innerHTML = `
+  <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+    ${it.name} × ${qty}
+  </span>
+  <span class="price">${fmt(qty*price)}</span>
+`;
     sumItems.appendChild(row);
   });
 
