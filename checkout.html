@@ -97,6 +97,9 @@
   display: block;
 }
 
+#fPostal[data-state="ok"]  { border-color:#16a34a; }
+#fPostal[data-state="err"] { border-color:#ef4444; }
+
   /* fields */
   .fields{ display:grid; gap:10px; }
   .row{ display:grid; gap:10px; grid-template-columns: 1fr 1fr; }
@@ -288,6 +291,7 @@ input:focus, select:focus, textarea:focus{
       <div>
         <label class="req">Postal Code</label>
         <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits"/>
+        <div id="postalHint" class="hint"></div>
       </div>
     </div>
 
@@ -512,29 +516,43 @@ async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('Postal must be 6 digits');
 
-  const url = `https://developers.onemap.sg/commonapi/search?searchVal=${clean}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Lookup failed');
-  const data = await res.json();
+  const base = 'https://developers.onemap.sg/commonapi/search';
+  const url  = `${base}?searchVal=${encodeURIComponent(clean)}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
 
-  const first = (data && Array.isArray(data.results) && data.results[0]) || null;
+  let data;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lookup failed');
+    data = await res.json();
+  } catch (e) {
+    throw new Error('Network error contacting OneMap');
+  }
+
+  let first = (data && Array.isArray(data.results) && data.results[0]) || null;
+
+  // Fallback: sometimes exact-POSTAL search is picky — try elastic-like search by adding " Singapore"
+  if (!first) {
+    const url2 = `${base}?searchVal=${encodeURIComponent(clean + ' Singapore')}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
+    const res2 = await fetch(url2);
+    if (res2.ok) {
+      const data2 = await res2.json();
+      first = (data2 && Array.isArray(data2.results) && data2.results[0]) || null;
+    }
+  }
+
   if (!first) throw new Error('Postal not found');
 
-  // Typical keys from OneMap
-  const {
-    BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL
-  } = first;
+  const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = first;
 
-  // Prefer a structured line 1, fall back to ADDRESS string
-  // You can tweak to your preference
-  const line1 = ADDRESS || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
+  // Prefer canonical ADDRESS, fall back to BLK + ROAD
+  const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
   const line2 = BUILDING || '';
 
   return {
-    addr1: line1 || ADDRESS || '',
+    addr1: line1 || '',
     addr2: line2,
     city: 'Singapore',
-    postal: POSTAL || clean,
+    postal: (POSTAL || clean),
     fullAddress: ADDRESS || ''
   };
 }
@@ -585,34 +603,36 @@ function init(){
 
   document.getElementById('fMethod')?.addEventListener('change', renderSummary);
 
-  // === Auto-fill address from SG postal ===
+    // === Auto-fill address from SG postal ===
   const postalEl = document.getElementById('fPostal');
+  const postalHintEl = document.getElementById('postalHint');
 
   const hint = (msg, state='info') => {
-    if (!postalEl) return;
-    postalEl.dataset.state = state; // optional: style with [data-state]
-    postalEl.title = msg || '';     // quick tooltip status
+    if (postalHintEl) postalHintEl.textContent = msg || '';
+    if (postalEl) {
+      postalEl.dataset.state = state; // optional visual cue
+      postalEl.title = msg || '';
+    }
   };
 
   async function tryLookupPostal() {
     if (!postalEl) return;
     const val = postalEl.value.replace(/\D/g,'');
-    if (val.length !== 6) return; // only lookup when 6 digits are present
+    if (val.length !== 6) { hint(''); return; } // only when 6 digits present
     hint('Looking up address…');
 
-    try {
-      const addr = await fetchSGAddressByPostal(val); // uses your helper
-      fillAddressFields(addr);                         // populates the fields
-      hint('Address found ✓', 'ok');
-    } catch (err) {
-      hint('Postal not found. Please key address manually.', 'err');
+    try{
+      const addr = await fetchSGAddressByPostal(val);
+      fillAddressFields(addr);
+      hint('Address found ✓','ok');
+    }catch(err){
+      hint('Postal not found. Please key address manually.','err');
     }
   }
 
   // Trigger lookup on stop-typing and on blur
   postalEl?.addEventListener('input', debounce(tryLookupPostal, 400));
   postalEl?.addEventListener('blur', tryLookupPostal);
-}
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
