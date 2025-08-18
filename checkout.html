@@ -543,12 +543,8 @@ async function fetchSGAddressByPostal(postal) {
 
   // --- Try 1: standard commonapi/search (exact postal) ---
   try {
-    const data = await proxyFetch('search', {
-      searchVal: clean,
-      returnGeom: 'N',
-      getAddrDetails: 'Y',
-      pageNum: '1'
-    });
+    const data = await proxyFetch('elastic', { searchVal: clean, size: '8' });
+
     console.debug('[OneMap commonapi via proxy] raw:', data);
 
     const rows  = Array.isArray(data?.results) ? data.results : [];
