@@ -8,13 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
 <style>
-  /* ===== THEME TOKENS (match your site) ===== */
   :root{
     /* Greys */
-    --page-bg:#e9ecef;          /* whole-page shell (soft grey) */
-    --surface:#ffffff;          /* cards */
-    --surface-2:#f6f7f9;        /* subtle panels */
-    --border:rgba(15,23,42,.10);/* light neutral border */
+    --page-bg:#e9ecef;
+    --surface:#ffffff;
+    --surface-2:#f6f7f9;
+    --border:rgba(15,23,42,.10);
     --shadow:0 10px 24px rgba(2,6,23,.08);
 
     /* Brand / accents */
@@ -24,68 +23,85 @@
     --text:#0f172a;
     --muted:#475569;
 
-    /* Badges / chips */
+    /* Chips */
     --chip-bg:#0f172a;
     --chip-fg:#fff;
 
-    /* ✅ FIXED: keep BW tokens INSIDE :root (previously broken) */
     --bw-bg:#111;
     --bw-fg:#fff;
     --bw-border:#e5e7eb;
+
+    /* CHANGE-3: type scale */
+    --size-base:14.5px;       /* global base size (smaller = more fits on screen) */
+    --size-label:12.75px;
+    --size-input:14px;
+    --size-h2:15px;
+    --size-h3:14px;
+    --size-row:14px;
+    --size-total:16.5px;
   }
 
+  /* CHANGE-4: leaner default type + color */
   body{
     margin:0;
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-size: var(--size-base);
     background: var(--page-bg);
     color: var(--text);
   }
-  .wrap{ max-width: 1100px; margin: 24px auto; padding: 16px; }
+
+  /* CHANGE-8: tighter shell */
+  .wrap{ max-width: 1040px; margin: 18px auto; padding: 12px; }
 
   /* ===== LAYOUT ===== */
-  .grid{ display:grid; gap:16px; grid-template-columns: 1.1fr .9fr; }
-  @media (max-width: 900px){ .grid{ grid-template-columns: 1fr; } }
+  /* CHANGE-9: make right column a bit narrower to fit both on screen */
+  .grid{ display:grid; gap:14px; grid-template-columns: 1.15fr .85fr; }
+  @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
 
-  /* ===== LEFT CONTAINER (Form card) ===== */
+  /* ===== LEFT (Form card) ===== */
   .card{
     background: var(--surface);
-    border-radius:14px;
-    padding:0;                          /* CHANGE-A: header is inside card */
+    border-radius:12px;                   /* CHANGE-10 */
+    padding:0;
     border:1px solid var(--border);
     box-shadow: var(--shadow);
     overflow: hidden;
   }
-  .form-header{                         /* CHANGE-A: in-card top bar w/ Back */
-    display:flex; align-items:center; gap:12px;
-    padding:12px 14px;
+
+  /* CHANGE-2: slimmer back row, no “Checkout” title */
+  .form-header{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px;
     border-bottom:1px solid var(--border);
     background: var(--surface-2);
   }
   .back-btn{
     display:inline-flex; align-items:center; gap:6px;
-    padding:8px 10px; border-radius:10px;
+    padding:7px 10px; border-radius:10px;
     text-decoration:none; font-weight:600;
     color:#111; background:#fff; border:1px solid rgba(0,0,0,.12);
   }
-  .form-title{ margin-left:auto; font-weight:800; font-family:"Poetsen One", system-ui, sans-serif; letter-spacing:.3px; }
 
-  .card-body{ padding:18px; }           /* content area */
-  .card-body h2{ margin:0 0 14px; font-size:1.05rem; letter-spacing:.2px; }
+  /* CHANGE-11: slightly smaller padding inside card */
+  .card-body{ padding:14px; }
+  .card-body h2{ margin:0 0 10px; font-size: var(--size-h2); letter-spacing:.2px; }
 
   /* fields */
-  .fields{ display:grid; gap:12px; }
-  .row{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
+  .fields{ display:grid; gap:10px; }
+  .row{ display:grid; gap:10px; grid-template-columns: 1fr 1fr; }
   @media (max-width: 600px){ .row{ grid-template-columns:1fr; } }
 
-  label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); }
+  label{ font-size: var(--size-label); font-weight:600; margin-bottom:5px; color:var(--muted); }
   .req::after{ content:" *"; color:#ef4444; }
+
+  /* CHANGE-5: compact inputs */
   input, select, textarea{
     width:100%;
-    padding:10px 12px;
+    padding:9px 10px;
     border-radius:10px;
     border:1px solid var(--border);
     background:#fff;
-    font-size:.95rem;
+    font-size: var(--size-input);
     outline:none;
     transition: box-shadow .15s ease, border-color .15s ease;
   }
@@ -93,100 +109,127 @@
     border-color:#cbd5e1;
     box-shadow:0 0 0 4px rgba(99,102,241,.10);
   }
-  .hint{ font-size:.85rem; color:var(--muted); margin-top:6px; }
+  .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
 
   /* CTA */
   .pay-cta{
     display:none;
-    margin-top:16px;
+    margin-top:12px;
     width:100%;
-    padding:12px 14px;
-    border-radius:12px;
+    padding:10px 12px;                    /* CHANGE-6 */
+    border-radius:10px;
     font-weight:700;
     border:1px solid transparent;
     cursor:pointer;
     background: var(--chip-bg);
     color: var(--chip-fg);
     transition: opacity .15s ease, transform .05s ease;
+    font-size:14px;
   }
   .pay-cta:hover:not([disabled]){ transform: translateY(-1px); }
   .pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
   .pay-cta.show{ display:block; }
 
-  /* ===== RIGHT CONTAINER (Summary) ===== */
+  /* ===== RIGHT (Summary) ===== */
   .summary{
-    border-radius:14px; overflow:hidden;
+    border-radius:12px;                    /* CHANGE-10 */
+    overflow:hidden;
     background: var(--surface);
     border:1px solid var(--border);
     box-shadow: var(--shadow);
-    position: sticky; top: 16px;
+    position: sticky; top: 12px;           /* CHANGE-12 */
+    align-self: start;
   }
   .sum-header{
-    padding: 14px 16px;
+    padding: 12px 14px;
     background: var(--surface-2);
     border-bottom:1px solid var(--border);
     color: var(--text);
     font-weight:700;
+    font-size: var(--size-h3);
   }
-  .sum-body{ background:#fff; padding: 12px 16px; }
-  .sum-row{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; }
+  .sum-body{ background:#fff; padding: 10px 14px; }
+  .sum-row{
+    display:flex; justify-content:space-between; gap:10px; padding:7px 0;
+    font-size: var(--size-row);
+  }
   .sum-total{
     background: var(--surface-2);
     color: var(--text);
-    padding:12px 16px;
+    padding:10px 14px;
     font-weight:800;
     border-top:1px solid var(--border);
     display:flex; justify-content:space-between;
+    font-size: var(--size-total);
   }
 
   /* disclaimers */
   .option-group { display: grid; gap: 8px; }
   .option-list { gap: 6px; }
   .opt-item{
-    display:grid; grid-template-columns: 20px 1fr; gap: 10px; align-items:start;
-    padding: 10px 12px;
+    display:grid; grid-template-columns: 18px 1fr; gap: 10px; align-items:start;
+    padding: 9px 10px;
     border-radius: 10px;
     background: var(--surface-2);
     border: 1px solid var(--border);
   }
-  .disc-text{ font-size:.9rem; color:var(--muted); }
+  .disc-text{ font-size: 13px; color:var(--muted); }
 
-  /* QR modal */
+  /* QR modal (unchanged visuals, inherits smaller sizes) */
   #qrModal[hidden]{ display:none; }
   .qr-backdrop{
     position:fixed; inset:0; background:rgba(0,0,0,.45);
     z-index:10000; display:flex; align-items:center; justify-content:center; padding:16px;
   }
   .qr-dialog{
-    width:min(680px, 96vw); background:#fff; border-radius:14px;
+    width:min(660px, 96vw); background:#fff; border-radius:12px;
     box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden;
   }
   .qr-head{
     background: var(--surface-2);
     color: var(--text);
-    padding:14px 16px;
+    padding:12px 14px;
     display:flex; justify-content:space-between; align-items:center;
     border-bottom:1px solid var(--border);
+    font-size: var(--size-h3);
   }
-  .qr-head h3{ margin:0; font-size:1.05rem; }
-  .qr-body{ padding:16px; display:grid; gap:12px; }
-  .qr-body img{ max-width:240px; width:100%; border:1px solid rgba(0,0,0,.1); border-radius:10px; }
-  .qr-info{ font-size:.95rem; }
-  .qr-flex{ display:flex; gap:16px; align-items:flex-start; }
+  .qr-body{ padding:14px; display:grid; gap:10px; }
+  .qr-body img{ max-width:220px; width:100%; border:1px solid rgba(0,0,0,.1); border-radius:10px; }
+  .qr-info{ font-size: var(--size-row); }
+  .qr-flex{ display:flex; gap:14px; align-items:flex-start; }
   @media (max-width:600px){ .qr-flex{ flex-direction:column; align-items:stretch; } }
 
   .danger{ background: var(--accent); color:#fff; border:1px solid rgba(0,0,0,.04); }
   .outline{ background:#fff; color:#0f172a; border:1px solid rgba(0,0,0,.12); }
-  .btn{ padding:10px 12px; border-radius:10px; font-weight:700; cursor:pointer; }
+  .btn{ padding:9px 11px; border-radius:10px; font-weight:700; cursor:pointer; font-size:14px; }
+
+  /* CHANGE-13: height-aware compact mode to keep both columns visible */
+  @media (max-height: 820px) and (min-width: 981px){
+    :root{
+      --size-base:13.75px;
+      --size-label:12.25px;
+      --size-input:13.25px;
+      --size-h2:14px;
+      --size-row:13.25px;
+      --size-total:15.5px;
+    }
+    .wrap{ margin: 14px auto; }
+    .card-body{ padding:12px; }
+    .sum-body{ padding:9px 12px; }
+    .sum-header, .sum-total{ padding:9px 12px; }
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="grid">
-      
-      <!-- ===== LEFT CONTAINER: Back + Shipping Details in one card ===== -->
+
+      <!-- LEFT: Back + Shipping Details (header simplified) -->
       <section class="card">
-        <div class="form-header"><a href="cart.html" class="back-btn">← Back</a><div class="form-title">Checkout</div></div> <!-- CHANGE-A -->
+        <!-- CHANGE-1: removed the “Checkout” title -->
+        <div class="form-header">
+          <a href="cart.html" class="back-btn">← Back</a>
+        </div>
         <div class="card-body">
           <h2>Shipping Details</h2>
           <div class="fields" id="shipForm">
@@ -238,7 +281,7 @@
               </div>
             </div>
 
-            <div class="option-group option-list" style="margin-top:10px;">
+            <div class="option-group option-list" style="margin-top:8px;">
               <label class="opt-item">
                 <input type="checkbox" id="disc1" required>
                 <span class="disc-text">Buyers are responsible for additional shipping costs arising from incorrect mailing selection.</span>
@@ -255,11 +298,11 @@
         </div>
       </section>
 
-      <!-- ===== RIGHT CONTAINER: Order Summary ===== -->
+      <!-- RIGHT: Order Summary -->
       <aside class="summary">
         <div class="sum-header"><strong>Detailed Order Summary</strong></div>
         <div class="sum-body" id="sumBody">
-          <div id="sumItems" style="margin-bottom:8px;"></div>
+          <div id="sumItems" style="margin-bottom:6px;"></div>
           <div class="sum-row"><span>Subtotal</span><strong id="sumSubtotal">$0.00</strong></div>
           <div class="sum-row"><span>Shipping</span><strong id="sumShipping">$0.00</strong></div>
         </div>
@@ -270,7 +313,7 @@
     </div>
   </div>
 
-  <!-- ===== QR Modal (unchanged) ===== -->
+  <!-- QR Modal (unchanged) -->
   <div id="qrModal" hidden>
     <div class="qr-backdrop" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
       <div class="qr-dialog">
@@ -307,7 +350,7 @@
   </div>
 
 <script>
-/* ===== Cart helpers (reuse your keying) ===== */
+/* ===== Cart helpers ===== */
 function itemKey(it){
   return [
     it.name ?? '',
@@ -322,10 +365,10 @@ function getCart(){
   catch{ return []; }
 }
 
-/* ===== Currency ===== */
+/* Currency */
 function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
 
-/* ===== Load summary ===== */
+/* Load summary */
 function renderSummary(){
   const cart = getCart();
   const sumItems = document.getElementById('sumItems');
@@ -350,9 +393,9 @@ function renderSummary(){
       <strong>${fmt(qty*price)}</strong>
     `;
     sumItems.appendChild(row);
-  }); /* ✅ FIXED: close forEach properly */
+  });
 
-  /* Shipping calc should be OUTSIDE the loop */
+  /* Shipping calc */
   let shipping = 0;
   const method = document.getElementById('fMethod')?.value || '';
   if(method === 'Registered Mail') shipping = 3.2;
@@ -365,7 +408,7 @@ function renderSummary(){
   sumTotal.textContent = fmt(subtotal + shipping);
 }
 
-/* ===== Field validation + “Make Payment” visibility ===== */
+/* Field validation + CTA visibility */
 function allValid(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fCity','fMethod','disc1','disc2'];
   for(const id of reqIds){
@@ -387,7 +430,7 @@ function syncPayCta(){
   else{ btn.disabled = true; btn.classList.add('show'); }
 }
 
-/* ===== QR Modal logic ===== */
+/* QR Modal */
 let countdown = null;
 let endTime = 0;
 
@@ -398,7 +441,6 @@ function genOrderId(){
 }
 
 function openQr(){
-  const cart = getCart();
   const total = document.getElementById('sumTotal').textContent;
   const orderId = genOrderId();
 
@@ -430,7 +472,7 @@ function tick(){
   if(remain <= 0){ clearInterval(countdown); }
 }
 
-/* ===== Event wiring ===== */
+/* Events */
 function init(){
   renderSummary();
   syncPayCta();
@@ -452,7 +494,6 @@ function init(){
 
   document.getElementById('fMethod').addEventListener('change', renderSummary);
 }
-
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
