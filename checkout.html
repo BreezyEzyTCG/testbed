@@ -632,6 +632,7 @@ function init(){
   // Trigger lookup on stop-typing and on blur
   postalEl?.addEventListener('input', debounce(tryLookupPostal, 400));
   postalEl?.addEventListener('blur', tryLookupPostal);
+}
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
