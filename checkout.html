@@ -292,7 +292,7 @@ input:focus, select:focus, textarea:focus{
         <label class="req">Postal Code</label>
         <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits"
        pattern="\d{6}" autocomplete="postal-code">
-        <div id="postalHint" class="hint"></div>
+        <div id="postalHint" class="hint" aria-live="polite"></div>
       </div>
     </div>
 
@@ -395,7 +395,11 @@ const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9K
 
 async function proxyFetch(endpoint, params) {
   const qs = new URLSearchParams({ ...params, origin: location.origin, endpoint }).toString();
-  const res = await fetch(`${ONEMAP_PROXY}?${qs}`, { method: 'GET' });
+  const res = await fetch(`${ONEMAP_PROXY}?${qs}`, {
+    method: 'GET',
+    mode: 'cors',          // <— add
+    credentials: 'omit'    // <— add
+  });
   if (!res.ok) throw new Error(`HTTP_${res.status}`);
   return res.json();
 }
@@ -528,18 +532,25 @@ async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
 
-  // Helper to turn a OneMap row into our structure
-  const toAddr = (row) => {
-    const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = row || {};
-    const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
-    return {
-      addr1: line1 || '',
-      addr2: BUILDING || '',
-      city: 'Singapore',
-      postal: POSTAL || clean,
-      fullAddress: ADDRESS || ''
-    };
+  // Ask the proxy to hit OneMap elastic with auth
+  const data = await proxyFetch('elastic', { searchVal: clean, size: '8' });
+  const rows = Array.isArray(data?.results) ? data.results : [];
+
+  // exact POSTAL match
+  const exact = rows.find(r => String(r.POSTAL) === String(clean));
+  if (!exact) throw new Error('POSTAL_NOT_FOUND');
+
+  const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = exact;
+  const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
+
+  return {
+    addr1: line1 || '',
+    addr2: BUILDING || '',
+    city: 'Singapore',
+    postal: POSTAL || clean,
+    fullAddress: ADDRESS || ''
   };
+}
 
   // --- Try 1: standard commonapi/search (exact postal) ---
   try {
