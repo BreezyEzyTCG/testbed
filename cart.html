@@ -762,7 +762,7 @@
 
 
   <script>
-  /* ===== Helpers: stable key for each unique cart line ===== */
+  /* ===== Toast ===== */
   let __toastTimer = null;
   function showToast(msg, duration = 3000){
     const t = document.getElementById('toast');
@@ -869,64 +869,89 @@
       .replaceAll("'",'&#39;');
   }
 
-  /* === Add this helper ABOVE itemKey === */
+  /* ======= KEY HELPERS (kept in sync with index.html) ======= */
+  const _norm = v => String(v ?? '').trim().toLowerCase();
+
+  function makeKey({ name, series, rarity, condition, category, subcategory }){
+    return [
+      _norm(name),
+      _norm(series),
+      _norm(rarity),
+      _norm(condition),
+      _norm(category),
+      _norm(subcategory),
+    ].join('||');
+  }
+
+  // Back-compat: legacy 4-part key
+  function makeKeyOld({ name, series, rarity, condition }){
+    return [
+      _norm(name),
+      _norm(series),
+      _norm(rarity),
+      _norm(condition),
+    ].join('||');
+  }
+
+  function normalizeCart(arr){
+    return arr.map(i => {
+      const obj = { ...i };
+      obj.category    = obj.category    ?? '';
+      obj.subcategory = obj.subcategory ?? '';
+      const hasNewShape = (obj.key && obj.key.split('||').length >= 6);
+      if (!hasNewShape) {
+        obj.key = makeKey({
+          name: obj.name,
+          series: obj.series || obj['series name'],
+          rarity: obj.rarity,
+          condition: obj.condition,
+          category: obj.category,
+          subcategory: obj.subcategory
+        });
+      }
+      return obj;
+    });
+  }
+
+  /* === Label helpers (unchanged visually) === */
   function normSeries(obj){
     return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim();
   }
 
-  /* === Build "Name, Series: Set - Year · Rarity · Condition" === */
-  function formatCartLabel(it){
-    const name = (it.name || '').trim();
-
+  function formatAttrs(it){
     const series = normSeries(it);
     const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
     const year   = (it.year || it.release_year || '').toString().trim();
     const rarity = (it.rarity || '').trim();
     const cond   = (it.condition || '').trim();
 
-    const leftParts = [];
-    if (name) leftParts.push(name);
-    if (series) leftParts.push(series ? `, ${series}` : '');
-    const left = leftParts.join('');
+    const L = [];
+    if (series && set) L.push(`${series}: ${set}`);
+    else if (series)   L.push(series);
+    else if (set)      L.push(set);
 
-    const seriesSet = series && set ? `: ${set}` : (set ? set : '');
-
-    const rightBits = [year, rarity, cond].filter(Boolean).join(' · ');
-    const right = rightBits ? ` - ${rightBits}` : '';
-
-    return `${left}${seriesSet}${right}`.trim();
+    const R = [year, rarity, cond].filter(Boolean).join(' · ');
+    return [L.join(''), R ? `- ${R}` : ''].filter(Boolean).join(' ');
   }
 
-  /* === Stable cart key === */
-  function itemKey(it){
-    const name = (it.name || "").trim();
-    const price = Number(it.price);
-    const series = normSeries(it);
-    const rarity = (it.rarity || "").trim();
-    const condition = (it.condition || "").trim();
-    return [
-      name,
-      String(Number.isFinite(price) ? price : 0),
-      series,
-      rarity,
-      condition
-    ].join("||");
+  function splitNameAndAttrs(it){
+    return { name: (it.name || '').trim(), attrs: formatAttrs(it) };
   }
 
-  /* ===== LIVE STOCK from Apps Script (JSON) ===== */
+  /* ===== INVENTORY FETCH (from Apps Script) ===== */
   const SHEET_API = "https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec";
   const REFRESH_MS = Number(new URLSearchParams(location.search).get('refresh')) || 60_000;
 
-  /* ===== Shared helpers (match index.html closely) ===== */
+  let allProducts = [];
+  // Maps to reconcile by new/old key shapes
+  let prodByNewKey = new Map();
+  let prodByOldKey = new Map();
+
   function safeNumber(val, fallback=0){
     if (typeof val === "number" && Number.isFinite(val)) return val;
     const n = parseFloat(val);
     return Number.isFinite(n) ? n : fallback;
   }
-
-  /* Normalize rows coming from Apps Script */
-  let allProducts = [];
-  let stockMap = Object.create(null);
 
   async function fetchInventoryFromSheet(){
     try {
@@ -962,84 +987,98 @@
         return obj;
       });
 
-      stockMap = Object.create(null);
+      // Build lookup maps
+      prodByNewKey = new Map();
+      prodByOldKey = new Map();
       for (const p of allProducts){
-        const name = (p.name || '').trim();
-        const price = Number(p.price);
-        const series = normSeries(p);
-        const rarity = (p.rarity || '').trim();
-        const condition = (p.condition || '').trim();
-        const key = [name, String(Number.isFinite(price) ? price : 0), series, rarity, condition].join('||');
-        stockMap[key] = Number(p.stock ?? 0);
+        const kNew = makeKey({
+          name: p.name,
+          series: p["series name"],
+          rarity: p.rarity,
+          condition: p.condition,
+          category: p.category,
+          subcategory: p.subcategory
+        });
+        prodByNewKey.set(kNew, p);
+
+        const kOld = makeKeyOld({
+          name: p.name,
+          series: p["series name"],
+          rarity: p.rarity,
+          condition: p.condition
+        });
+        // only set first occurrence for old-key fallback
+        if (!prodByOldKey.has(kOld)) prodByOldKey.set(kOld, p);
       }
     } catch (err) {
       console.error('[SHEET] Error loading inventory:', err);
     }
   }
 
-  function formatAttrs(it){
-    const series = normSeries(it);
-    const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
-    const year   = (it.year || it.release_year || '').toString().trim();
-    const rarity = (it.rarity || '').trim();
-    const cond   = (it.condition || '').trim();
-
-    const L = [];
-    if (series && set) L.push(`${series}: ${set}`);
-    else if (series)   L.push(series);
-    else if (set)      L.push(set);
-
-    const R = [year, rarity, cond].filter(Boolean).join(' · ');
-    return [L.join(''), R ? `- ${R}` : ''].filter(Boolean).join(' ');
+  /* ===== Cart IO ===== */
+  function getCart(){
+    try{
+      const raw = JSON.parse(localStorage.getItem("cart") || "[]");
+      return normalizeCart(Array.isArray(raw) ? raw : []);
+    }catch{ return []; }
+  }
+  function saveCart(cart){
+    localStorage.setItem("cart", JSON.stringify(cart));
   }
 
-  function splitNameAndAttrs(it){
-    return { name: (it.name || '').trim(), attrs: formatAttrs(it) };
-  }
-
-  function reconcileCart(cart, stockMap){
+  /* ===== Reconcile cart with live inventory ===== */
+  function reconcileCartWithInventory(cart){
     let changed = false;
     const removed = [];
     const clamped = [];
     const next = [];
 
-    for (const it of cart){
-      const key = itemKey(it);
-      const latest = stockMap[key];
-      const before = Number(it.quantity) || 0;
-      const { name, attrs } = splitNameAndAttrs(it);
+    for (const item of cart){
+      // prefer direct match on new key; fall back to old key (legacy carts)
+      const prod = prodByNewKey.get(item.key) || prodByOldKey.get(item.key);
+      const { name, attrs } = splitNameAndAttrs(item);
 
-      if (latest === undefined || latest <= 0){
+      if (!prod || (Number(prod.stock)||0) <= 0){
         removed.push({ name, attrs });
         changed = true;
         continue;
       }
 
-      if (before > latest){
-        next.push({ ...it, quantity: latest, stock: latest });
-        clamped.push({ name, attrs, before, after: latest });
+      const max = Number(prod.stock)||0;
+      const beforeQty = Number(item.quantity)||0;
+      const afterQty = Math.min(beforeQty || 1, max);
+
+      if (afterQty !== beforeQty) {
+        clamped.push({ name, attrs, before: beforeQty, after: afterQty });
         changed = true;
-      } else {
-        next.push({ ...it, stock: latest });
       }
+
+      const upgradedKey = makeKey({
+        name: prod.name,
+        series: prod["series name"],
+        rarity: prod.rarity,
+        condition: prod.condition,
+        category: prod.category,
+        subcategory: prod.subcategory
+      });
+
+      const priceChanged = Number(item.price) !== Number(prod.price);
+      if (priceChanged) changed = true;
+      if (item.key !== upgradedKey) changed = true;
+
+      next.push({
+        ...item,
+        key: upgradedKey,
+        category: item.category ?? prod.category ?? '',
+        subcategory: item.subcategory ?? prod.subcategory ?? '',
+        price: Number(prod.price)||0,
+        stock: max,
+        quantity: afterQty
+      });
     }
 
+    if (changed) saveCart(next);
     return { cart: next, changed, removed, clamped };
-  }
-
-  function escapeKey(it){
-    return itemKey(it).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  }
-
-  /* ===== Cart IO ===== */
-  function getCart(){
-    try{
-      const raw = JSON.parse(localStorage.getItem("cart") || "[]");
-      return Array.isArray(raw) ? raw : [];
-    }catch{ return []; }
-  }
-  function saveCart(cart){
-    localStorage.setItem("cart", JSON.stringify(cart));
   }
 
   /* ===== Shipping + Add-ons ===== */
@@ -1083,34 +1122,36 @@
 
   function fmtMoney(n){ return `$${(Number(n)||0).toFixed(2)}`; }
 
+  /* ===== Qty ops: use the item's stored key, not recomputed ===== */
   function incQty(key){
     const cart = getCart();
-    const i = cart.findIndex(it => itemKey(it) === key);
-    if(i >= 0){
-      const it = cart[i];
-      const max = Number(it.stock ?? Infinity);
-      const cur = Number(it.quantity) || 0;
-      if (cur >= max){
-        showToast(`Max available is ${isFinite(max) ? max : 0}.`);
-        return;
-      }
-      it.quantity = cur + 1;
-      saveCart(cart);
-      renderCart();
+    const it = cart.find(i => i.key === key);
+    if(!it) return;
+    const max = Number(it.stock ?? Infinity);
+    const cur = Number(it.quantity) || 0;
+    if (cur >= max){
+      showToast(`Max available is ${isFinite(max) ? max : 0}.`);
+      return;
     }
+    it.quantity = cur + 1;
+    saveCart(cart);
+    renderCart();
   }
   function decQty(key){
     const cart = getCart();
-    const i = cart.findIndex(it => itemKey(it) === key);
-    if(i >= 0){
-      const q = (Number(cart[i].quantity)||0) - 1;
-      if(q <= 0){ cart.splice(i,1); } else { cart[i].quantity = q; }
-      saveCart(cart); renderCart();
-    }
+    const i = cart.findIndex(it => it.key === key);
+    if(i < 0) return;
+    const q = (Number(cart[i].quantity)||0) - 1;
+    if(q <= 0){ cart.splice(i,1); } else { cart[i].quantity = q; }
+    saveCart(cart); renderCart();
   }
   function removeItem(key){
-    const cart = getCart().filter(it => itemKey(it) !== key);
+    const cart = getCart().filter(i => i.key !== key);
     saveCart(cart); renderCart();
+  }
+
+  function escapeKeyString(key){
+    return String(key).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
 
   /* ===== Centralised summary updater ===== */
@@ -1141,9 +1182,8 @@
     }
     let cart = getCart();
 
-    const { cart: fixed, changed, removed, clamped } = reconcileCart(cart, stockMap);
+    const { cart: fixed, changed, removed, clamped } = reconcileCartWithInventory(cart);
     if (changed){
-      saveCart(fixed);
       openOOSModal(removed, clamped);
     }
     cart = fixed;
@@ -1177,6 +1217,7 @@
       subtotal += line;
 
       const isMaxed = qty >= (Number(item.stock) || Infinity);
+      const safeKey = escapeKeyString(item.key);
 
       row.innerHTML = `
         <td class="col-item">
@@ -1194,16 +1235,16 @@
         </td>
         <td>
           <div class="qty-controls">
-            <button class="icon-btn" aria-label="Reduce" onclick="decQty('${escapeKey(item)}')">
+            <button class="icon-btn" aria-label="Reduce" onclick="decQty('${safeKey}')">
               <img src="assets/images/minus%20button.svg" alt="-">
             </button>
             <span class="pill">${qty}</span>
             <button class="icon-btn" aria-label="Add"
-                    onclick="incQty('${escapeKey(item)}')"
+                    onclick="incQty('${safeKey}')"
                     ${ isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '' }>
               <img src="assets/images/plus%20button.svg" alt="+">
             </button>
-            <button class="icon-btn" aria-label="Remove" onclick="removeItem('${escapeKey(item)}')">
+            <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
               <img src="assets/images/bin.svg" alt="Remove">
             </button>
           </div>
@@ -1216,9 +1257,7 @@
       if (cartList) {
         const ci = document.createElement('div');
         ci.className = 'cart-item';
-
-        const safeKey = escapeKey(item);
-        const isMaxedMobile = qty >= (Number(item.stock) || Infinity);
+        const isMaxedMobile = isMaxed;
 
         ci.innerHTML = `
           <div class="ci-thumb">
@@ -1437,6 +1476,7 @@
   async function refreshInventoryAndCart(){
     const snap = snapshotScrollPositions();
     await fetchInventoryFromSheet();
+    // After fetching, reconcile & render again
     await renderCart();
     restoreScrollPositions(snap);
   }
