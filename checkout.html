@@ -512,49 +512,82 @@ function tick(){
 }
 // ===== OneMap postal -> address autofill =====
 // Docs: https://www.onemap.gov.sg/apidocs/search  (Search API: searchVal, getAddrDetails=Y)
+// ===== OneMap postal -> address autofill (robust) =====
 async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
-  if (clean.length !== 6) throw new Error('Postal must be 6 digits');
+  if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
 
-  const base = 'https://developers.onemap.sg/commonapi/search';
-  const url  = `${base}?searchVal=${encodeURIComponent(clean)}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
+  const BASE = 'https://developers.onemap.sg/commonapi/search';
+  const url1 = `${BASE}?searchVal=${encodeURIComponent(clean)}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
 
-  let data;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Lookup failed');
-    data = await res.json();
-  } catch (e) {
-    throw new Error('Network error contacting OneMap');
-  }
-
-  let first = (data && Array.isArray(data.results) && data.results[0]) || null;
-
-  // Fallback: sometimes exact-POSTAL search is picky — try elastic-like search by adding " Singapore"
-  if (!first) {
-    const url2 = `${base}?searchVal=${encodeURIComponent(clean + ' Singapore')}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
-    const res2 = await fetch(url2);
-    if (res2.ok) {
-      const data2 = await res2.json();
-      first = (data2 && Array.isArray(data2.results) && data2.results[0]) || null;
-    }
-  }
-
-  if (!first) throw new Error('Postal not found');
-
-  const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = first;
-
-  // Prefer canonical ADDRESS, fall back to BLK + ROAD
-  const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
-  const line2 = BUILDING || '';
-
-  return {
-    addr1: line1 || '',
-    addr2: line2,
-    city: 'Singapore',
-    postal: (POSTAL || clean),
-    fullAddress: ADDRESS || ''
+  // Helper to turn a OneMap row into our structure
+  const toAddr = (row) => {
+    const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = row || {};
+    const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
+    return {
+      addr1: line1 || '',
+      addr2: BUILDING || '',
+      city: 'Singapore',
+      postal: POSTAL || clean,
+      fullAddress: ADDRESS || ''
+    };
   };
+
+  // --- Try 1: standard commonapi/search (and filter for exact postal) ---
+  try {
+    const res = await fetch(url1, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP_${res.status}`);
+    const data = await res.json();
+    console.debug('[OneMap commonapi] raw:', data);
+
+    const rows = Array.isArray(data?.results) ? data.results : [];
+    // exact match first
+    const exact = rows.find(r => r.POSTAL === clean);
+    if (exact) return toAddr(exact);
+    // sometimes the first page doesn’t contain the exact row — try a broader search text
+  } catch (err) {
+    // If this was a genuine network/HTTP problem, rethrow so the caller can show the right message
+    console.warn('[OneMap commonapi] error:', err);
+    if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
+    if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
+  }
+
+  // --- Try 2: broaden the query slightly (still commonapi) ---
+  try {
+    const url2 = `${BASE}?searchVal=${encodeURIComponent(clean + ' Singapore')}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
+    const res2 = await fetch(url2, { headers: { 'Accept': 'application/json' } });
+    if (!res2.ok) throw new Error(`HTTP_${res2.status}`);
+    const data2 = await res2.json();
+    console.debug('[OneMap commonapi fallback] raw:', data2);
+
+    const rows2 = Array.isArray(data2?.results) ? data2.results : [];
+    const exact2 = rows2.find(r => r.POSTAL === clean);
+    if (exact2) return toAddr(exact2);
+  } catch (err) {
+    console.warn('[OneMap commonapi fallback] error:', err);
+    if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
+    if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
+  }
+
+  // --- Try 3: elastic endpoint (sometimes surfaces exact matches more reliably) ---
+  try {
+    const url3 = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${encodeURIComponent(clean)}&size=5`;
+    const res3 = await fetch(url3, { headers: { 'Accept': 'application/json' } });
+    if (!res3.ok) throw new Error(`HTTP_${res3.status}`);
+    const data3 = await res3.json();
+    console.debug('[OneMap elastic] raw:', data3);
+
+    const rows3 = Array.isArray(data3?.results) ? data3.results : [];
+    const exact3 = rows3.find(r => r.POSTAL === clean);
+    if (exact3) return toAddr(exact3);
+  } catch (err) {
+    console.warn('[OneMap elastic] error:', err);
+    if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
+    if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
+  }
+
+  // If we got here, we genuinely didn’t find an exact postal match
+  throw new Error('POSTAL_NOT_FOUND');
 }
 
 // Fill the form safely
@@ -615,19 +648,30 @@ function init(){
   };
 
   async function tryLookupPostal() {
-    if (!postalEl) return;
-    const val = postalEl.value.replace(/\D/g,'');
-    if (val.length !== 6) { hint(''); return; } // only when 6 digits present
-    hint('Looking up address…');
+  if (!postalEl) return;
+  const val = postalEl.value.replace(/\D/g,'');
+  if (val.length !== 6) { hint(''); return; } // only when 6 digits present
+  hint('Looking up address…');
 
-    try{
-      const addr = await fetchSGAddressByPostal(val);
-      fillAddressFields(addr);
-      hint('Address found ✓','ok');
-    }catch(err){
+  try{
+    const addr = await fetchSGAddressByPostal(val);
+    fillAddressFields(addr);
+    hint('Address found ✓','ok');
+  }catch(err){
+    // clearer messaging by error “type”
+    const m = String(err?.message || '');
+    if (m === 'INPUT_6_DIGITS') {
+      hint('Please enter a 6-digit postal code.','err');
+    } else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') {
+      hint('Lookup error. Please check your connection and try again.','err');
+    } else if (m === 'POSTAL_NOT_FOUND') {
       hint('Postal not found. Please key address manually.','err');
+    } else {
+      hint('Lookup error. Please try again.','err');
     }
+    console.warn('[Postal lookup failed]', err);
   }
+}
 
   // Trigger lookup on stop-typing and on blur
   postalEl?.addEventListener('input', debounce(tryLookupPostal, 400));
