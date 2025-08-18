@@ -124,11 +124,11 @@
 
             <div>
               <label class="req">Address Line 1</label>
-              <input id="fAddr1" required placeholder="Block/Street, Unit #"/>
+              <input id="fAddr1" required placeholder="Block & Street Name"/>
             </div>
             <div>
-              <label>Unit No.</label>
-              <input id="fAddr1" required placeholder="Building, landmark"/>
+              <label class="req">Unit No.</label>
+              <input id="fUnit" required autocomplete="off" placeholder="#XX-XXX"/>
             </div>
             <div class="row">
               <div>
@@ -149,17 +149,13 @@
 
             <div class="option-group option-list" style="margin-top:8px;">
               <label class="opt-item">
-                <input type="checkbox" id="disc1" required>
+                <input type="checkbox" id="disc1">
                 <span class="disc-text">By proceeding, you agree that the information above is correct.</span>
-              </label>
-              <label class="opt-item">
-                <input type="checkbox" id="disc2" required>
-                <span class="disc-text">We ship around our work schedules; orders may take time to process.</span>
               </label>
             </div>
 
             <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
-            <div class="hint">Button appears when all required fields are valid.</div>
+            <div class="hint">Button is greyed out until all required fields are valid.</div>
           </div>
         </div>
       </section>
@@ -286,18 +282,27 @@ function renderSummary(){
 
 /* ========= Validation ========= */
 function allValid(){
-  const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fCity','fMethod','disc1','disc2'];
+  // ✅ Include fUnit as required
+  const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
   for(const id of reqIds){
     const el = document.getElementById(id);
     if(!el) return false;
-    if(el.type === 'checkbox'){ if(!el.checked) return false; }
-    else if(!el.value?.trim()) return false;
+    if(!el.value?.trim()) return false;
   }
+
+  // format checks
   const phone = document.getElementById('fPhone').value.replace(/\D/g,'');
   const postal = document.getElementById('fPostal').value.replace(/\D/g,'');
   if(phone.length !== 8) return false;
   if(postal.length !== 6) return false;
+
+  // ✅ Require disclaimer #1
+  const d1 = document.getElementById('disc1');
+  if(!d1?.checked) return false;
+
+  // ✅ Must have items in cart
   if(getCart().length === 0) return false;
+
   return true;
 }
 function syncPayCta(){
@@ -342,9 +347,16 @@ async function fetchSGAddressByPostal(postal) {
     const exact = rows.find(r => String(r.POSTAL) === clean);
     if (!exact) throw new Error('POSTAL_NOT_FOUND');
 
-    const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = exact;
-    const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
-    return { addr1: line1 || '', addr2: BUILDING || '', city: 'Singapore', postal: POSTAL || clean, fullAddress: ADDRESS || '' };
+    const { BLK_NO, ROAD_NAME, POSTAL } = exact;
+
+    // ✅ Only BLK + ROAD, do NOT use ADDRESS or BUILDING so Unit never autofills
+    const line1 = [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
+
+    return {
+      addr1: line1 || '',
+      city: 'Singapore',
+      postal: POSTAL || clean
+    };
   } catch (err) {
     const m = String(err?.message || '');
     if (m.startsWith('HTTP_'))     throw new Error('LOOKUP_HTTP');
@@ -354,14 +366,16 @@ async function fetchSGAddressByPostal(postal) {
 }
 function fillAddressFields(addr){
   const a1 = document.getElementById('fAddr1');
-  const a2 = document.getElementById('fAddr2');
   const city = document.getElementById('fCity');
   const postalEl = document.getElementById('fPostal');
+
   if (a1) a1.value = addr.addr1 || '';
-  if (a2) a2.value = addr.addr2 || '';
+  // ✅ Do NOT read or write fUnit here
   if (city) city.value = addr.city || 'Singapore';
   if (postalEl && addr.postal) postalEl.value = addr.postal;
-  renderSummary(); syncPayCta();
+
+  renderSummary();
+  syncPayCta();
 }
 
 /* ========= Utilities ========= */
