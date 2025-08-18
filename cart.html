@@ -533,6 +533,7 @@
     .oos-item .name{ font-weight: 600; }
     .oos-item .attrs{ font-size: .8em; opacity: .85; margin-left: .25em; }
     .oos-item .qty-change{ font-weight: 600; margin-left: .4em; white-space: nowrap; }
+    .oos-item .price-change{font-weight: 600;margin-left: .4em;white-space: nowrap;}
     .oos-tip {
       margin-top: 40px;
       padding: 8px 16px;
@@ -786,7 +787,7 @@
   }
 
   /* ===== OOS Modal helpers ===== */
-  function buildOOSModalHTML(removed = [], clamped = []){
+  function buildOOSModalHTML(removed = [], clamped = [], priced = []){
     const parts = [];
 
     if (removed.length){
@@ -803,20 +804,20 @@
       `);
     }
 
-    if (clamped.length){
-      parts.push(`
-        <h4>Adjusted QTY to what's left:</h4>
-        <ul class="oos-list">
-          ${clamped.map(({name, attrs, before, after}) => `
-            <li class="oos-item">
-              <span class="name">${escapeHtml(name)}</span>
-              ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
-              <span class="qty-change">(<del>${escapeHtml(String(before))}</del> → ${escapeHtml(String(after))})</span>
-            </li>
-          `).join('')}
-        </ul>
-      `);
-    }
+    if (priced.length){
+  parts.push(`
+    <h4>Price updated:</h4>
+    <ul class="oos-list">
+      ${priced.map(({name, attrs, before, after}) => `
+        <li class="oos-item">
+          <span class="name">${escapeHtml(name)}</span>
+          ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
+          <span class="price-change">(${escapeHtml(fmtMoney(before))} → ${escapeHtml(fmtMoney(after))})</span>
+        </li>
+      `).join('')}
+    </ul>
+  `);
+}
 
     if (!parts.length){
       parts.push(`<p>No changes.</p>`);
@@ -830,11 +831,11 @@
     return parts.join('');
   }
 
-  function openOOSModal(removed = [], clamped = []){
+  function openOOSModal(removed = [], clamped = [], priced = []){
     const modal = document.getElementById('oosModal');
     if (!modal) return;
     const body = modal.querySelector('.oos-body');
-    body.innerHTML = buildOOSModalHTML(removed, clamped);
+    body.innerHTML = buildOOSModalHTML(removed, clamped, priced);
     modal.hidden = false;
 
     const okBtn = modal.querySelector('.oos-primary') || modal.querySelector('button');
@@ -1031,6 +1032,7 @@
     let changed = false;
     const removed = [];
     const clamped = [];
+    const priced  = []; 
     const next = [];
 
     for (const item of cart){
@@ -1054,31 +1056,37 @@
       }
 
       const upgradedKey = makeKey({
-        name: prod.name,
-        series: prod["series name"],
-        rarity: prod.rarity,
-        condition: prod.condition,
-        category: prod.category,
-        subcategory: prod.subcategory
-      });
+  name: prod.name,
+  series: prod["series name"],
+  rarity: prod.rarity,
+  condition: prod.condition,
+  category: prod.category,
+  subcategory: prod.subcategory
+});
 
-      const priceChanged = Number(item.price) !== Number(prod.price);
-      if (priceChanged) changed = true;
-      if (item.key !== upgradedKey) changed = true;
+// ---- ADD: price-change detection ----
+const beforePrice = Number(item.price) || 0;
+const newPrice    = Number(prod.price) || 0;
+if (beforePrice !== newPrice) {
+  priced.push({ name, attrs, before: beforePrice, after: newPrice });
+  changed = true;
+}
+// -------------------------------------
 
-      next.push({
-        ...item,
-        key: upgradedKey,
-        category: item.category ?? prod.category ?? '',
-        subcategory: item.subcategory ?? prod.subcategory ?? '',
-        price: Number(prod.price)||0,
-        stock: max,
-        quantity: afterQty
-      });
-    }
+if (item.key !== upgradedKey) changed = true;
+
+next.push({
+  ...item,
+  key: upgradedKey,
+  category: item.category ?? prod.category ?? '',
+  subcategory: item.subcategory ?? prod.subcategory ?? '',
+  price: newPrice,                // ensure cart uses latest price
+  stock: max,
+  quantity: afterQty
+});
 
     if (changed) saveCart(next);
-    return { cart: next, changed, removed, clamped };
+    return { cart: next, changed, removed, clamped, priced };  // <-- include priced
   }
 
   /* ===== Shipping + Add-ons ===== */
@@ -1182,10 +1190,10 @@
     }
     let cart = getCart();
 
-    const { cart: fixed, changed, removed, clamped } = reconcileCartWithInventory(cart);
-    if (changed){
-      openOOSModal(removed, clamped);
-    }
+    const { cart: fixed, changed, removed, clamped, priced } = reconcileCartWithInventory(cart);
+if (changed){
+  openOOSModal(removed, clamped, priced);
+}
     cart = fixed;
 
     const cartContainer = document.getElementById("cart-items");
