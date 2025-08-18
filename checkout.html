@@ -49,8 +49,9 @@
   label{ font-size:var(--size-label); font-weight:600; margin-bottom:5px; color:var(--muted); }
   .req::after{ content:" *"; color:#ef4444; }
   input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
-  select[disabled]{background:#fff; color:inherit;opacity:1;cursor:default;}
   input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+  /* Read-only shipping label look */
+  #fMethodLabel[readonly]{ background:#fff; color:inherit; opacity:1; cursor:default; }
   .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
   .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
   .pay-cta:hover:not([disabled]){ transform:translateY(-1px); }
@@ -137,13 +138,13 @@
                 <input id="fCity" required value="Singapore" readonly />
               </div>
               <div>
-  <label class="req">Selected Mailing Option</label>
-  <!-- visible, read-only label from cart -->
-  <input id="fMethodLabel" readonly placeholder="Choose on cart page"/>
-  <!-- hidden value to satisfy required validation -->
-  <input type="hidden" id="fMethod" required />
-  <div class="hint">Selected on cart page. Go back to change.</div>
-</div>
+                <label class="req">Selected Mailing Option</label>
+                <!-- visible, read-only label from cart -->
+                <input id="fMethodLabel" readonly placeholder="Choose on cart page"/>
+                <!-- hidden value to satisfy required validation -->
+                <input type="hidden" id="fMethod" required />
+                <div class="hint">Selected on cart page. Go back to change.</div>
+              </div>
             </div>
 
             <div class="option-group option-list" style="margin-top:8px;">
@@ -222,7 +223,7 @@ function proxyFetch(endpoint, params) {
       ...params,
       endpoint,
       callback: cb,
-      _: Date.now() // cache-buster
+      _: Date.now()
     });
     const s = document.createElement('script');
     s.src = `${ONEMAP_PROXY}?${qs.toString()}`;
@@ -238,54 +239,40 @@ function proxyFetch(endpoint, params) {
 }
 
 /* ========= Cart helpers ========= */
-function itemKey(it){
-  return [it.name ?? '', String(Number(it.price) || 0), it.series ?? '', it.rarity ?? '', it.condition ?? ''].join('||');
-}
 function getCart(){
   try{ const raw = JSON.parse(localStorage.getItem("cart") || "[]"); return Array.isArray(raw)? raw:[]; }
   catch{ return []; }
 }
 function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
 
-/* ========= Shipping method from cart ========= */
-const SHIPPING_STORAGE_KEYS = [
-  'shippingMethod',        // preferred
-  'shipMethod',
-  'selectedShipping',
-  'selectedShippingMethod'
-];
-
-// Map possible cart values to the option labels in this page
-const METHOD_ALIASES = {
-  'ninjavan': 'NinjaVan Standard',
-  'ninjavan standard': 'NinjaVan Standard',
-  'qxpress': 'Qxpress',
-  'qx': 'Qxpress',
-  'registered': 'Registered Mail',
-  'registered mail': 'Registered Mail',
-  'singpost registered': 'Registered Mail',
-  'self': 'Self-collection',
-  'self-collection': 'Self-collection',
-  'self collection': 'Self-collection',
-};
-
-function readSavedShippingMethod(){
-  for(const k of SHIPPING_STORAGE_KEYS){
-    const raw = (localStorage.getItem(k) || '').trim();
-    if(!raw) continue;
-    const key = raw.toLowerCase();
-    if(METHOD_ALIASES[key]) return METHOD_ALIASES[key];
-    // if raw already matches an option label, return as-is
-    if(['NinjaVan Standard','Qxpress','Registered Mail','Self-collection'].includes(raw)) return raw;
-  }
-  return '';
+/* ========= Read shipping saved by cart.html ========= */
+// Supports new shape {id, fee, label} and legacy plain string ids.
+function getSavedShippingFromCart(){
+  const RAW = localStorage.getItem('shippingMethod');
+  if (!RAW) return null;
+  try {
+    const obj = JSON.parse(RAW);
+    if (obj && (obj.id || obj.label)) return obj;
+  } catch(e) { /* fall through for legacy */ }
+  const id = String(RAW).trim().toLowerCase();
+  const LABELS = {
+    consolidate:'Consolidate Order — $0.00',
+    letter:'Letterbox-sized package — $3.00',
+    s:'S-sized package — $3.50',
+    m:'M-sized package — $4.00',
+    l:'L-sized package — $5.00',
+    xl:'XL-sized package — $15.00'
+  };
+  const FEES = { consolidate:0, letter:3.00, s:3.50, m:4.00, l:5.00, xl:15.00 };
+  if (id in FEES) return { id, fee: FEES[id], label: LABELS[id] };
+  return null;
 }
 
+/* Put saved shipping into the form (hidden value + visible label) */
 function applySavedShippingToForm(){
   const saved  = getSavedShippingFromCart();
   const hidden = document.getElementById('fMethod');       // hidden required value (id)
   const label  = document.getElementById('fMethodLabel');  // visible readonly label
-
   if (saved && saved.id){
     if (hidden) hidden.value = saved.id;
     if (label)  label.value  = saved.label || saved.id;
@@ -294,52 +281,6 @@ function applySavedShippingToForm(){
     if (label)  label.value  = '';
   }
 }
-
-  // If the saved value isn't an existing option, add it so .value works.
-  const exists = Array.from(methodEl.options).some(o => o.value === saved);
-  if(!exists){
-    const opt = document.createElement('option');
-    opt.value = saved; opt.textContent = saved;
-    methodEl.appendChild(opt);
-  }
-
-  methodEl.value = saved;
-
-  // Lock it so checkout only reflects the cart choice.
-  methodEl.disabled = true;
-  methodEl.setAttribute('aria-readonly','true');
-
-  // Small hint below the select (optional)
-  const hint = document.createElement('div');
-  hint.className = 'hint';
-  hint.textContent = 'Selected on cart page. Go back to change.';
-  methodEl.insertAdjacentElement('afterend', hint);
-
-// Read cart's saved shipping; handle both object and legacy string values
-function getSavedShippingFromCart(){
-  const RAW = localStorage.getItem('shippingMethod');
-  if (!RAW) return null;
-  try {
-    const obj = JSON.parse(RAW);
-    if (obj && (obj.id || obj.label)) return obj;  // new shape: {id, fee, label}
-  } catch(e) {
-    // not JSON – fall through to legacy mapping
-  }
-  // Legacy: plain string id
-  const id = String(RAW).trim().toLowerCase();
-  const LABELS = {
-    consolidate: 'Consolidate Order — $0.00',
-    letter:      'Letterbox-sized package — $3.00',
-    s:           'S-sized package — $3.50',
-    m:           'M-sized package — $4.00',
-    l:           'L-sized package — $5.00',
-    xl:          'XL-sized package — $15.00',
-  };
-  const FEES = { consolidate:0, letter:3.00, s:3.50, m:4.00, l:5.00, xl:15.00 };
-  if (id in FEES) return { id, fee: FEES[id], label: LABELS[id] };
-  return null;
-}
-
 
 /* ========= Summary ========= */
 function renderSummary(){
@@ -351,8 +292,8 @@ function renderSummary(){
 
   let subtotal = 0;
   sumItems.innerHTML = '';
-    cart.forEach(it=>{
-    const qty = Number(it.quantity ?? it.qty) || 1;  // <-- CHANGED
+  cart.forEach(it=>{
+    const qty = Number(it.quantity ?? it.qty) || 1;
     const price = Number(it.price)||0;
     subtotal += qty*price;
     const row = document.createElement('div');
@@ -362,10 +303,8 @@ function renderSummary(){
   });
 
   let shipping = 0;
-const savedShip = getSavedShippingFromCart();
-if (savedShip && Number.isFinite(Number(savedShip.fee))) {
-  shipping = Number(savedShip.fee);
-}
+  const savedShip = getSavedShippingFromCart();
+  if (savedShip && Number.isFinite(Number(savedShip.fee))) shipping = Number(savedShip.fee);
 
   sumSubtotal.textContent = fmt(subtotal);
   sumShipping.textContent = fmt(shipping);
@@ -374,27 +313,18 @@ if (savedShip && Number.isFinite(Number(savedShip.fee))) {
 
 /* ========= Validation ========= */
 function allValid(){
-  // ✅ Include fUnit as required
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
   for(const id of reqIds){
     const el = document.getElementById(id);
-    if(!el) return false;
-    if(!el.value?.trim()) return false;
+    if(!el || !el.value?.trim()) return false;
   }
-
-  // format checks
   const phone = document.getElementById('fPhone').value.replace(/\D/g,'');
   const postal = document.getElementById('fPostal').value.replace(/\D/g,'');
   if(phone.length !== 8) return false;
   if(postal.length !== 6) return false;
-
-  // ✅ Require disclaimer #1
   const d1 = document.getElementById('disc1');
   if(!d1?.checked) return false;
-
-  // ✅ Must have items in cart
   if(getCart().length === 0) return false;
-
   return true;
 }
 function syncPayCta(){
@@ -440,15 +370,8 @@ async function fetchSGAddressByPostal(postal) {
     if (!exact) throw new Error('POSTAL_NOT_FOUND');
 
     const { BLK_NO, ROAD_NAME, POSTAL } = exact;
-
-    // ✅ Only BLK + ROAD, do NOT use ADDRESS or BUILDING so Unit never autofills
     const line1 = [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
-
-    return {
-      addr1: line1 || '',
-      city: 'Singapore',
-      postal: POSTAL || clean
-    };
+    return { addr1: line1 || '', city: 'Singapore', postal: POSTAL || clean };
   } catch (err) {
     const m = String(err?.message || '');
     if (m.startsWith('HTTP_'))     throw new Error('LOOKUP_HTTP');
@@ -462,7 +385,6 @@ function fillAddressFields(addr){
   const postalEl = document.getElementById('fPostal');
 
   if (a1) a1.value = addr.addr1 || '';
-  // ✅ Do NOT read or write fUnit here
   if (city) city.value = addr.city || 'Singapore';
   if (postalEl && addr.postal) postalEl.value = addr.postal;
 
@@ -475,13 +397,13 @@ function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = s
 
 /* ========= Init ========= */
 function init(){
-   // 1) Pull method from cart and lock the field
+  // 1) Reflect cart’s mailing option into the form first
   applySavedShippingToForm();
-  
- // 2) Now render totals & button state with that method
+
+  // 2) Now render totals & CTA with that method
   renderSummary();
   syncPayCta();
-  
+
   document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
     el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
@@ -490,7 +412,10 @@ function init(){
   document.getElementById('btnPay')?.addEventListener('click', openQr);
   document.getElementById('qrClose')?.addEventListener('click', closeQr);
   document.getElementById('qrCancel')?.addEventListener('click', closeQr);
-  document.getElementById('qrPaid')?.addEventListener('click', ()=>{ const file = document.getElementById('proofFile')?.files?.[0] || null; window.location.href = "thank-you.html"; });
+  document.getElementById('qrPaid')?.addEventListener('click', ()=>{ 
+    const file = document.getElementById('proofFile')?.files?.[0] || null; 
+    window.location.href = "thank-you.html"; 
+  });
 
   const postalEl = document.getElementById('fPostal');
   const postalHintEl = document.getElementById('postalHint');
