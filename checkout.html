@@ -282,7 +282,7 @@ function readSavedShippingMethod(){
 }
 
 function applySavedShippingToForm(){
-  const saved = getSavedShippingFromCart();
+  const saved  = getSavedShippingFromCart();
   const hidden = document.getElementById('fMethod');       // hidden required value (id)
   const label  = document.getElementById('fMethodLabel');  // visible readonly label
 
@@ -315,10 +315,31 @@ function applySavedShippingToForm(){
   hint.textContent = 'Selected on cart page. Go back to change.';
   methodEl.insertAdjacentElement('afterend', hint);
 
+// Read cart's saved shipping; handle both object and legacy string values
 function getSavedShippingFromCart(){
-  try { return JSON.parse(localStorage.getItem('shippingMethod') || ''); }
-  catch { return null; }
+  const RAW = localStorage.getItem('shippingMethod');
+  if (!RAW) return null;
+  try {
+    const obj = JSON.parse(RAW);
+    if (obj && (obj.id || obj.label)) return obj;  // new shape: {id, fee, label}
+  } catch(e) {
+    // not JSON – fall through to legacy mapping
+  }
+  // Legacy: plain string id
+  const id = String(RAW).trim().toLowerCase();
+  const LABELS = {
+    consolidate: 'Consolidate Order — $0.00',
+    letter:      'Letterbox-sized package — $3.00',
+    s:           'S-sized package — $3.50',
+    m:           'M-sized package — $4.00',
+    l:           'L-sized package — $5.00',
+    xl:          'XL-sized package — $15.00',
+  };
+  const FEES = { consolidate:0, letter:3.00, s:3.50, m:4.00, l:5.00, xl:15.00 };
+  if (id in FEES) return { id, fee: FEES[id], label: LABELS[id] };
+  return null;
 }
+
 
 /* ========= Summary ========= */
 function renderSummary(){
