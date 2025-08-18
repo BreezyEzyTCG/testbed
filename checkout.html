@@ -7,12 +7,15 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://www.onemap.gov.sg">
+
 
 <style>
   :root{
     --page-bg:#e9ecef;
     --surface:#ffffff;
-    --surface-2:#F5F5F5;
+    --surface-2:#ECECEC;
     --border:rgba(15,23,42,.10);
     --shadow:0 10px 24px rgba(2,6,23,.08);
     --accent:#ef4444;
@@ -119,7 +122,7 @@
               </div>
               <div>
                 <label class="req">Postal Code</label>
-                <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits" pattern="\d{6}" autocomplete="postal-code">
+                <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits" pattern="^\d{6}$" autocomplete="postal-code">
                 <div id="postalHint" class="hint" aria-live="polite"></div>
               </div>
             </div>
@@ -353,25 +356,46 @@ function closeQr(){ document.getElementById('qrModal').hidden = true; clearInter
 function tick(){ const remain = Math.max(0, Math.floor((endTime - Date.now())/1000)); const m = String(Math.floor(remain/60)).padStart(2,'0'); const s = String(remain%60).padStart(2,'0'); document.getElementById('qrTimer').textContent = `${m}:${s}`; if(remain<=0){ clearInterval(countdown); } }
 
 /* ========= OneMap postal -> address (via proxy) ========= */
-async function fetchSGAddressByPostal(postal) {
+const postalCache = Object.create(null);
+try {
+  Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}'));
+} catch {}
+function savePostalCache(){
+  try { sessionStorage.setItem('postalCache', JSON.stringify(postalCache)); } catch {}
+}
+  async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
 
+  // ① Instant return if we’ve already seen this postal
+  if (postalCache[clean]) return postalCache[clean];
+
+  // ② Smaller/faster payload from OneMap
   try {
     const data = await proxyFetch('elastic', {
       searchVal: clean,
-      size: '20',
-      returnGeom: 'Y',
+      size: '5',          // smaller page = faster
+      returnGeom: 'N',    // we don't need geometry
       getAddrDetails: 'Y',
       pageNum: '1'
     });
+
     const rows = Array.isArray(data?.results) ? data.results : [];
-    const exact = rows.find(r => String(r.POSTAL) === clean);
+    const exact = rows.find(r => String(r.POSTAL) === clean) || rows[0];
     if (!exact) throw new Error('POSTAL_NOT_FOUND');
 
     const { BLK_NO, ROAD_NAME, POSTAL } = exact;
-    const line1 = [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
-    return { addr1: line1 || '', city: 'Singapore', postal: POSTAL || clean };
+    const addr = {
+      addr1: [BLK_NO, ROAD_NAME].filter(Boolean).join(' '),
+      city: 'Singapore',
+      postal: POSTAL || clean
+    };
+
+    // ③ Cache for near-instant next time
+    postalCache[clean] = addr;
+    savePostalCache();
+
+    return addr;
   } catch (err) {
     const m = String(err?.message || '');
     if (m.startsWith('HTTP_'))     throw new Error('LOOKUP_HTTP');
@@ -424,28 +448,51 @@ function init(){
     if (postalEl) { postalEl.dataset.state = state; postalEl.title = msg || ''; }
   };
 
-  async function tryLookupPostal(){
-    if (!postalEl) return;
-    const val = postalEl.value.replace(/\D/g,'');
-    if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
-    try{
-      const addr = await fetchSGAddressByPostal(val);
-      fillAddressFields(addr);
-      hint('Address found ✓','ok');
-    }catch(err){
-      const m = String(err?.message || '');
-      if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
-      else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
-      else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
-      else                                hint('Lookup error. Please try again.','err');
-      console.warn('[Postal lookup failed]', err);
-    }
+  let lastPostalReqId = 0;
+
+async function tryLookupPostal(){
+  if (!postalEl) return;
+  const val = postalEl.value.replace(/\D/g,'');
+  if (val.length !== 6) { 
+    hint(''); 
+    postalEl.dataset.state = ''; 
+    return; 
   }
 
-  postalEl?.addEventListener('input', debounce(tryLookupPostal, 400));
-  postalEl?.addEventListener('blur', tryLookupPostal);
+  const myId = ++lastPostalReqId;
+  hint('Looking up…');
+
+  try {
+    const addr = await fetchSGAddressByPostal(val);
+    if (myId !== lastPostalReqId) return; // ignore stale response
+    fillAddressFields(addr);
+    hint('Address found ✓','ok');
+  } catch(err){
+    if (myId !== lastPostalReqId) return; // ignore stale error
+    const m = String(err?.message || '');
+    if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+    else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+    else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+    else                               hint('Lookup error. Please try again.','err');
+    console.warn('[Postal lookup failed]', err);
+  }
 }
+
+// 🔹 Fire immediately when 6th digit is entered
+postalEl?.addEventListener('input', () => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) tryLookupPostal(true);
+});
+
+// 🔹 Debounce for edits after 6 digits (no double fire)
+postalEl?.addEventListener('input', debounce(() => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) return; // already handled above
+  tryLookupPostal();
+}, 400));
+
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
+
