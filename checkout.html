@@ -390,6 +390,16 @@ input:focus, select:focus, textarea:focus{
   </div>
 
 <script>
+  // Replace with your GAS Web App URL:
+const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
+
+async function proxyFetch(endpoint, params) {
+  const qs = new URLSearchParams({ ...params, origin: location.origin, endpoint }).toString();
+  const res = await fetch(`${ONEMAP_PROXY}?${qs}`, { method: 'GET' });
+  if (!res.ok) throw new Error(`HTTP_${res.status}`);
+  return res.json();
+}
+
 /* ===== Cart helpers ===== */
 function itemKey(it){
   return [
@@ -513,13 +523,10 @@ function tick(){
 }
 // ===== OneMap postal -> address autofill =====
 // Docs: https://www.onemap.gov.sg/apidocs/search  (Search API: searchVal, getAddrDetails=Y)
-// ===== OneMap postal -> address autofill (robust) =====
+// ===== OneMap postal -> address autofill (via proxy) =====
 async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
-
-  const BASE = 'https://developers.onemap.sg/commonapi/search';
-  const url1 = `${BASE}?searchVal=${encodeURIComponent(clean)}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
 
   // Helper to turn a OneMap row into our structure
   const toAddr = (row) => {
@@ -534,55 +541,56 @@ async function fetchSGAddressByPostal(postal) {
     };
   };
 
-  // --- Try 1: standard commonapi/search (and filter for exact postal) ---
+  // --- Try 1: standard commonapi/search (exact postal) ---
   try {
-    const res = await fetch(url1, { headers: { 'Accept': 'application/json' } });
-    if (!res.ok) throw new Error(`HTTP_${res.status}`);
-    const data = await res.json();
-    console.debug('[OneMap commonapi] raw:', data);
+    const data = await proxyFetch('search', {
+      searchVal: clean,
+      returnGeom: 'N',
+      getAddrDetails: 'Y',
+      pageNum: '1'
+    });
+    console.debug('[OneMap commonapi via proxy] raw:', data);
 
-    const rows = Array.isArray(data?.results) ? data.results : [];
-    // exact match first
-    const exact = rows.find(r => r.POSTAL === clean);
+    const rows  = Array.isArray(data?.results) ? data.results : [];
+    const exact = rows.find(r => String(r.POSTAL) === String(clean));
     if (exact) return toAddr(exact);
-    // sometimes the first page doesn’t contain the exact row — try a broader search text
+    // fallthrough
   } catch (err) {
-    // If this was a genuine network/HTTP problem, rethrow so the caller can show the right message
-    console.warn('[OneMap commonapi] error:', err);
+    console.warn('[OneMap commonapi via proxy] error:', err);
     if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
     if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
   }
 
   // --- Try 2: broaden the query slightly (still commonapi) ---
   try {
-    const url2 = `${BASE}?searchVal=${encodeURIComponent(clean + ' Singapore')}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
-    const res2 = await fetch(url2, { headers: { 'Accept': 'application/json' } });
-    if (!res2.ok) throw new Error(`HTTP_${res2.status}`);
-    const data2 = await res2.json();
-    console.debug('[OneMap commonapi fallback] raw:', data2);
+    const data2 = await proxyFetch('search', {
+      searchVal: `${clean} Singapore`,
+      returnGeom: 'N',
+      getAddrDetails: 'Y',
+      pageNum: '1'
+    });
+    console.debug('[OneMap commonapi fallback via proxy] raw:', data2);
 
-    const rows2 = Array.isArray(data2?.results) ? data2.results : [];
-    const exact2 = rows2.find(r => r.POSTAL === clean);
+    const rows2  = Array.isArray(data2?.results) ? data2.results : [];
+    const exact2 = rows2.find(r => String(r.POSTAL) === String(clean));
     if (exact2) return toAddr(exact2);
+    // fallthrough
   } catch (err) {
-    console.warn('[OneMap commonapi fallback] error:', err);
+    console.warn('[OneMap commonapi fallback via proxy] error:', err);
     if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
     if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
   }
 
-  // --- Try 3: elastic endpoint (sometimes surfaces exact matches more reliably) ---
+  // --- Try 3: elastic endpoint (more forgiving) ---
   try {
-    const url3 = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${encodeURIComponent(clean)}&size=5`;
-    const res3 = await fetch(url3, { headers: { 'Accept': 'application/json' } });
-    if (!res3.ok) throw new Error(`HTTP_${res3.status}`);
-    const data3 = await res3.json();
-    console.debug('[OneMap elastic] raw:', data3);
+    const data3 = await proxyFetch('elastic', { searchVal: clean, size: '5' });
+    console.debug('[OneMap elastic via proxy] raw:', data3);
 
-    const rows3 = Array.isArray(data3?.results) ? data3.results : [];
-    const exact3 = rows3.find(r => r.POSTAL === clean);
+    const rows3  = Array.isArray(data3?.results) ? data3.results : [];
+    const exact3 = rows3.find(r => String(r.POSTAL) === String(clean));
     if (exact3) return toAddr(exact3);
   } catch (err) {
-    console.warn('[OneMap elastic] error:', err);
+    console.warn('[OneMap elastic via proxy] error:', err);
     if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
     if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
   }
@@ -651,8 +659,8 @@ function init(){
   async function tryLookupPostal() {
   if (!postalEl) return;
   const val = postalEl.value.replace(/\D/g,'');
-  if (val.length !== 6) { hint(''); return; } // only when 6 digits present
-  hint('Looking up address…');
+  if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
+
 
   try{
     const addr = await fetchSGAddressByPostal(val);
