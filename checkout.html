@@ -290,7 +290,8 @@ input:focus, select:focus, textarea:focus{
       </div>
       <div>
         <label class="req">Postal Code</label>
-        <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits"/>
+        <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits"
+       pattern="\d{6}" autocomplete="postal-code">
         <div id="postalHint" class="hint"></div>
       </div>
     </div>
