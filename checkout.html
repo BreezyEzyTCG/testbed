@@ -131,7 +131,8 @@
             </div>
             <div>
               <label class="req">Unit No.</label>
-              <input id="fUnit" type="text" required inputmode="numeric" maxlength="7" pattern="^\d{1,7}$" placeholder="Unit No. (max 7 digits)" autocomplete="off"/>
+          <input id="fUnit" type="text" required inputmode="numeric" maxlength="8"
+                pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
             </div>
             <div class="row">
               <div>
@@ -456,10 +457,10 @@ phoneEl?.addEventListener('input', () => {
   syncPayCta();
 });
 
-/* Unit: digits only, max 7 */
 const unitEl = document.getElementById('fUnit');
 unitEl?.addEventListener('input', () => {
-  unitEl.value = unitEl.value.replace(/\D/g,'').slice(0,7);
+  // allow digits + dash only, max length 8
+  unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
   syncPayCta();
 });
 
