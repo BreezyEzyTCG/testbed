@@ -564,12 +564,11 @@ function fillAddressFields(addr) {
   const city = document.getElementById('fCity');
   const postalEl = document.getElementById('fPostal');
 
-  if (a1 && addr.addr1 && !a1.value) a1.value = addr.addr1;
-  if (a2 && addr.addr2 && !a2.value) a2.value = addr.addr2;
-  if (city && !city.value) city.value = addr.city || 'Singapore';
+  if (a1) a1.value = addr.addr1 || '';
+  if (a2) a2.value = addr.addr2 || '';
+  if (city) city.value = addr.city || 'Singapore';
   if (postalEl && addr.postal) postalEl.value = addr.postal;
 
-  // Re-run summary/CTA checks since fields changed
   renderSummary();
   syncPayCta();
 }
