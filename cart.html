@@ -1130,14 +1130,13 @@ next.push({
     return { id: el.value, fee };
   }
 
-  function readSelectedAddonsFromDOM(){
-    const els = document.querySelectorAll('#addons-options input[name="addon"]:checked');
-    const arr = [];
-    els.forEach(chk => {
-      arr.push({ id: chk.value, price: parseFloat(chk.dataset.price || '0') || 0 });
-    });
-    return arr;
-  }
+  function readSelectedShippingFromDOM(){
+  const el = document.querySelector('input[name="shipping"]:checked');
+  if(!el) return { id: null, fee: 0, label: '' };
+  const fee = parseFloat(el.dataset.fee || '0') || 0;
+  const labelText = (el.nextElementSibling?.textContent || el.value).trim();
+  return { id: el.value, fee, label: labelText };
+}
 
   function sumAddonFees(addons){
     return (addons || []).reduce((a,b)=> a + (parseFloat(b.price)||0), 0);
