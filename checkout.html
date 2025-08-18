@@ -525,85 +525,36 @@ function tick(){
   document.getElementById('qrTimer').textContent = `${m}:${s}`;
   if(remain <= 0){ clearInterval(countdown); }
 }
-// ===== OneMap postal -> address autofill =====
-// Docs: https://www.onemap.gov.sg/apidocs/search  (Search API: searchVal, getAddrDetails=Y)
-// ===== OneMap postal -> address autofill (via proxy) =====
+// ===== OneMap postal -> address autofill (DROP-IN REPLACEMENT) =====
 async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
 
-  // Ask the proxy to hit OneMap elastic with auth
-  const data = await proxyFetch('elastic', { searchVal: clean, size: '8' });
-  const rows = Array.isArray(data?.results) ? data.results : [];
-
-  // exact POSTAL match
-  const exact = rows.find(r => String(r.POSTAL) === String(clean));
-  if (!exact) throw new Error('POSTAL_NOT_FOUND');
-
-  const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = exact;
-  const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
-
-  return {
-    addr1: line1 || '',
-    addr2: BUILDING || '',
-    city: 'Singapore',
-    postal: POSTAL || clean,
-    fullAddress: ADDRESS || ''
-  };
-}
-
-  // --- Try 1: standard commonapi/search (exact postal) ---
   try {
+    // Use the elastic endpoint via your GAS proxy; look for exact POSTAL match
     const data = await proxyFetch('elastic', { searchVal: clean, size: '8' });
+    const rows = Array.isArray(data?.results) ? data.results : [];
+    const exact = rows.find(r => String(r.POSTAL) === clean);
 
-    console.debug('[OneMap commonapi via proxy] raw:', data);
+    if (!exact) throw new Error('POSTAL_NOT_FOUND');
 
-    const rows  = Array.isArray(data?.results) ? data.results : [];
-    const exact = rows.find(r => String(r.POSTAL) === String(clean));
-    if (exact) return toAddr(exact);
-    // fallthrough
+    const { BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL } = exact;
+    const line1 = (ADDRESS && ADDRESS.trim()) || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
+
+    return {
+      addr1: line1 || '',
+      addr2: BUILDING || '',
+      city: 'Singapore',
+      postal: POSTAL || clean,
+      fullAddress: ADDRESS || ''
+    };
   } catch (err) {
-    console.warn('[OneMap commonapi via proxy] error:', err);
-    if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
-    if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
+    // Normalize network/HTTP errors so your UI hint logic can key on them
+    const m = String(err?.message || '');
+    if (m.startsWith('HTTP_'))   throw new Error('LOOKUP_HTTP');
+    if (m.startsWith('TypeError')) throw new Error('LOOKUP_NET');
+    throw err; // rethrow INPUT_6_DIGITS or POSTAL_NOT_FOUND
   }
-
-  // --- Try 2: broaden the query slightly (still commonapi) ---
-  try {
-    const data2 = await proxyFetch('search', {
-      searchVal: `${clean} Singapore`,
-      returnGeom: 'N',
-      getAddrDetails: 'Y',
-      pageNum: '1'
-    });
-    console.debug('[OneMap commonapi fallback via proxy] raw:', data2);
-
-    const rows2  = Array.isArray(data2?.results) ? data2.results : [];
-    const exact2 = rows2.find(r => String(r.POSTAL) === String(clean));
-    if (exact2) return toAddr(exact2);
-    // fallthrough
-  } catch (err) {
-    console.warn('[OneMap commonapi fallback via proxy] error:', err);
-    if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
-    if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
-  }
-
-  // --- Try 3: elastic endpoint (more forgiving) ---
-  try {
-    const data3 = await proxyFetch('elastic', { searchVal: clean, size: '5' });
-    console.debug('[OneMap elastic via proxy] raw:', data3);
-
-    const rows3  = Array.isArray(data3?.results) ? data3.results : [];
-    const exact3 = rows3.find(r => String(r.POSTAL) === String(clean));
-    if (exact3) return toAddr(exact3);
-  } catch (err) {
-    console.warn('[OneMap elastic via proxy] error:', err);
-    if (String(err?.message || '').startsWith('HTTP_')) throw new Error('LOOKUP_HTTP');
-    if (String(err?.message || '').startsWith('TypeError')) throw new Error('LOOKUP_NET');
-  }
-
-  // If we got here, we genuinely didn’t find an exact postal match
-  throw new Error('POSTAL_NOT_FOUND');
 }
 
 // Fill the form safely
