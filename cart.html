@@ -198,6 +198,31 @@
 @media (max-width: 767.98px){
   .hero{ will-change: max-height; }  /* smoother animation */
 }
+  /* === Desktop: scrollaway header (collapses hero + trims padding) === */
+@media (min-width: 768px){
+  .site-shell{
+    transition: max-height .28s ease, opacity .22s ease;
+    max-height: 260px;                           /* match your hero’s max height */
+    overflow: hidden;
+  }
+  .site-shell .hero{
+    transition: max-height .28s ease, opacity .22s ease;
+    max-height: clamp(160px, 28vw, 260px);       /* your existing hero height */
+  }
+  .site-shell.is-collapsed .hero{
+    max-height: 0;
+    opacity: 0;
+  }
+  .site-shell.is-collapsed .shell-pad{
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: padding .28s ease;
+  }
+  .site-shell.is-collapsed{
+    max-height: 0;
+    opacity: 0;
+  }
+}
 
     /* === qty & remove controls (match mini-cart look) === */
     .icon-btn{
@@ -1489,106 +1514,110 @@ document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
 updateCheckoutDisabled();
 });
 
-  // === Hide header on scroll (mobile only) — listens to the right scroll areas ===
-  (function(){
-    const siteShell = document.querySelector('.site-shell');
-    if(!siteShell) return;
+  // === Hide header on scroll (mobile + desktop) — listens to the right scroll areas ===
+(function(){
+  const siteShell = document.querySelector('.site-shell');
+  if(!siteShell) return;
 
-    const MOBILE_MAX = 767.98;
-    const DOWN_THRESHOLD = 2;  // hide after ~5px downward scroll
-    const UP_THRESHOLD   = 10;  // show after 10px upward scroll
-    let lastYByEl = new WeakMap();
-    let locked = false;
+  const MOBILE_MAX = 767.98;
 
-    function isMobile(){
-      return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
-    }
+  // Mobile thresholds (current behavior)
+  const M_DOWN = 2;
+  const M_UP   = 10;
 
-    function onScrollFactory(el){
-      return function onScroll(){
-        // Only act on mobile
-        if(!isMobile()){
-          siteShell.classList.remove('is-collapsed');
-          return;
-        }
+  // Desktop thresholds (tweak to taste)
+  const D_DOWN = 10;   // collapse after ~40px downward scroll
+  const D_UP   = 14;   // reveal after ~14px upward scroll
 
-        // Current scroll position for this source
-        const y = (el === window) ? window.scrollY : el.scrollTop;
-        const last = lastYByEl.get(el) ?? y;
-        const delta = y - last;
+  let lastYByEl = new WeakMap();
+  let locked = false;
 
-        if(locked){
-          lastYByEl.set(el, y);
-          return;
-        }
+  function isMobile(){
+    return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
+  }
 
-        // Hide on downward scroll
-        if(delta > DOWN_THRESHOLD && y > 0){
-          siteShell.classList.add('is-collapsed');
-          locked = true; setTimeout(()=> locked = false, 160);
-        }
-        // Show on upward scroll
-        else if(delta < -UP_THRESHOLD){
-          siteShell.classList.remove('is-collapsed');
-          locked = true; setTimeout(()=> locked = false, 160);
-        }
+  function onScrollFactory(el){
+    return function onScroll(){
+      const mobile = isMobile();
+      const DOWN = mobile ? M_DOWN : D_DOWN;
+      const UP   = mobile ? M_UP   : D_UP;
 
+      // Current scroll position for this source
+      const y = (el === window) ? window.scrollY : el.scrollTop;
+      const last = lastYByEl.get(el) ?? y;
+      const delta = y - last;
+
+      if(locked){
         lastYByEl.set(el, y);
-      };
-    }
-
-    // Pick ONE scroll source depending on layout
-    function getScrollSource(){
-      if (isMobile()){
-        // Mobile: ONLY react to the cart list scroller
-        return document.getElementById('cart-list')
-            || document.querySelector('#cart-list-panel .cart-list')
-            || window; // fallback
+        return;
       }
-      // Desktop: use the items table scroller; fallback to window
-      return document.querySelector('.items-panel .cart-scroll') || window;
-    }
 
-    // Keep a single active binding
-    let currentSource = getScrollSource();
-    let currentHandler = onScrollFactory(currentSource);
-    const opts = { passive: true };
-
-    function bind(){
-      if (!currentSource) return;
-      if (currentSource === window){
-        window.addEventListener('scroll', currentHandler, opts);
-      } else {
-        currentSource.addEventListener('scroll', currentHandler, opts);
-        // seed so first delta is correct
-        lastYByEl.set(currentSource, currentSource.scrollTop);
+      // Hide on downward scroll
+      if (delta > DOWN && y > 0){
+        siteShell.classList.add('is-collapsed');
+        locked = true; setTimeout(()=> locked = false, 160);
       }
-    }
-
-    function unbind(){
-      if (!currentSource) return;
-      if (currentSource === window){
-        window.removeEventListener('scroll', currentHandler, opts);
-      } else {
-        currentSource.removeEventListener('scroll', currentHandler, opts);
-      }
-    }
-
-    bind();
-
-    // Rebind when layout/source changes (e.g., rotate, resize, CSS switches)
-    window.addEventListener('resize', () => {
-      const newSource = getScrollSource();
-      if (newSource !== currentSource){
-        unbind();
-        currentSource = newSource;
-        currentHandler = onScrollFactory(currentSource);
-        bind();
-      }
-      // Ensure header is expanded on desktop
-      if(!isMobile()){
+      // Show on upward scroll
+      else if (delta < -UP){
         siteShell.classList.remove('is-collapsed');
+        locked = true; setTimeout(()=> locked = false, 160);
       }
+
+      lastYByEl.set(el, y);
+    };
+  }
+
+  // Pick ONE scroll source depending on layout
+  function getScrollSource(){
+    if (isMobile()){
+      // Mobile: react to the cart list scroller
+      return document.getElementById('cart-list')
+          || document.querySelector('#cart-list-panel .cart-list')
+          || window; // fallback
+    }
+    // Desktop: use the items table scroller; fallback to window
+    return document.querySelector('.items-panel .cart-scroll') || window;
+  }
+
+  // Keep a single active binding
+  let currentSource = getScrollSource();
+  let currentHandler = onScrollFactory(currentSource);
+  const opts = { passive: true };
+
+  function bind(){
+    if (!currentSource) return;
+    if (currentSource === window){
+      window.addEventListener('scroll', currentHandler, opts);
+    } else {
+      currentSource.addEventListener('scroll', currentHandler, opts);
+      // seed so first delta is correct
+      lastYByEl.set(currentSource, currentSource.scrollTop);
+    }
+  }
+
+  function unbind(){
+    if (!currentSource) return;
+    if (currentSource === window){
+      window.removeEventListener('scroll', currentHandler, opts);
+    } else {
+      currentSource.removeEventListener('scroll', currentHandler, opts);
+    }
+  }
+
+  bind();
+
+  // Rebind when layout/source changes
+  window.addEventListener('resize', () => {
+    const newSource = getScrollSource();
+    if (newSource !== currentSource){
+      unbind();
+      currentSource = newSource;
+      currentHandler = onScrollFactory(currentSource);
+      bind();
+    }
+    // do NOT force-expand on desktop here
+  });
+})();
 
 // Initialize button state on load
 updateCheckoutDisabled();
