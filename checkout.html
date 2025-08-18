@@ -116,7 +116,7 @@
             <div class="row">
               <div>
                 <label class="req">Phone (+65)</label>
-                <input id="fPhone" type="tel" required inputmode="numeric" placeholder="8-digit number"/>
+                <input id="fPhone" type="tel" required inputmode="numeric" maxlength="8" pattern="^\d{8}$" placeholder="8-digit number"/>
               </div>
               <div>
                 <label class="req">Postal Code</label>
@@ -131,7 +131,7 @@
             </div>
             <div>
               <label class="req">Unit No.</label>
-              <input id="fUnit" required autocomplete="off" placeholder="#XX-XXX"/>
+              <input id="fUnit" type="text" required inputmode="numeric" maxlength="7" pattern="^\d{1,7}$" placeholder="Unit No. (max 7 digits)" autocomplete="off"/>
             </div>
             <div class="row">
               <div>
@@ -421,42 +421,59 @@ function init(){
 
   let lastPostalReqId = 0;
 
-  async function tryLookupPostal(){
-    if (!postalEl) return;
-    const val = postalEl.value.replace(/\D/g,'');
-    if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
-
-    const myId = ++lastPostalReqId;
-    hint('Looking up…');
-
-    try {
-      const addr = await fetchSGAddressByPostal(val);
-      if (myId !== lastPostalReqId) return;
-      fillAddressFields(addr);
-      hint('Address found ✓','ok');
-    } catch(err){
-      if (myId !== lastPostalReqId) return;
-      const m = String(err?.message || '');
-      if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
-      else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
-      else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
-      else                               hint('Lookup error. Please try again.','err');
-      console.warn('[Postal lookup failed]', err);
-    }
+async function tryLookupPostal(){
+  if (!postalEl) return;
+  const val = postalEl.value.replace(/\D/g,'');
+  if (val.length !== 6) { 
+    hint(''); 
+    postalEl.dataset.state = ''; 
+    return; 
   }
 
-  // fire immediately at 6 digits
-  postalEl?.addEventListener('input', () => {
-    const digits = postalEl.value.replace(/\D/g,'');
-    if (digits.length === 6) tryLookupPostal(true);
-  });
+  const myId = ++lastPostalReqId;
+  hint('Looking up…');
 
-  // debounce for edits after 6 digits (avoid double fire)
-  postalEl?.addEventListener('input', debounce(() => {
-    const digits = postalEl.value.replace(/\D/g,'');
-    if (digits.length === 6) return;
-    tryLookupPostal();
-  }, 400));
+  try {
+    const addr = await fetchSGAddressByPostal(val);
+    if (myId !== lastPostalReqId) return; // ignore stale response
+    fillAddressFields(addr);
+    hint('Address found ✓','ok');
+  } catch(err){
+    if (myId !== lastPostalReqId) return; // ignore stale error
+    const m = String(err?.message || '');
+    if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+    else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+    else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+    else                               hint('Lookup error. Please try again.','err');
+    console.warn('[Postal lookup failed]', err);
+  }
+}
+
+/* Phone: digits only, max 8 */
+const phoneEl = document.getElementById('fPhone');
+phoneEl?.addEventListener('input', () => {
+  phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
+  syncPayCta();
+});
+
+/* Unit: digits only, max 7 */
+const unitEl = document.getElementById('fUnit');
+unitEl?.addEventListener('input', () => {
+  unitEl.value = unitEl.value.replace(/\D/g,'').slice(0,7);
+  syncPayCta();
+});
+
+/* Postal: immediate on 6th digit + debounced fallback */
+postalEl?.addEventListener('input', () => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) tryLookupPostal(true);
+});
+postalEl?.addEventListener('input', debounce(() => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) return; // already handled above
+  tryLookupPostal();
+}, 400));
+postalEl?.addEventListener('blur', () => tryLookupPostal());
 
 } // <-- close init()
 
