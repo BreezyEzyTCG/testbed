@@ -33,6 +33,7 @@
     --size-row:14px;
     --size-total:16.5px;
   }
+
   body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-size:var(--size-base); background:var(--page-bg); color:var(--text); }
   .wrap{ max-width:1040px; margin:18px auto; padding:12px; }
   .grid{ display:grid; gap:14px; grid-template-columns:1.15fr .85fr; }
@@ -60,7 +61,14 @@
   .pay-cta.show{ display:block; }
   .summary{ border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); position:sticky; top:12px; align-self:start; font-family:'Outfit',sans-serif; }
   .summary *{ font-family:inherit; }
-  .sum-header{ padding:12px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); color:var(--text); font-weight:700; font-size:var(--size-h3) * 1.2); }
+  .sum-header{
+  padding:12px 14px;
+  background:var(--surface-2);
+  border-bottom:1px solid var(--border);
+  color:var(--text);
+  font-weight:700;
+  font-size: calc(var(--size-h3) * 1.2);
+}
   .sum-body{ background:#fff; padding:10px 14px; }
   .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
   .sum-row .price{ font-weight:400; }
@@ -73,7 +81,21 @@
   .qr-dialog{ width:min(660px,96vw); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; }
   .qr-head{ background:var(--surface-2); color:var(--text); padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); font-size:var(--size-h3); }
   .qr-body{ padding:14px; display:grid; gap:10px; }
-  .qr-body img{ max-width:220px; width:100%; border:1px solid rgba(0,0,0,.1); border-radius:10px; }
+
+  /* Dynamic QR box takes the image’s place/size */
+#qrBox { 
+  width: 220px; 
+  height: 220px; 
+  border:1px solid rgba(0,0,0,.1); 
+  border-radius:10px; 
+  overflow:hidden;
+}
+#qrBox img, 
+#qrBox canvas { 
+  width: 100%; 
+  height: 100%; 
+  display:block; 
+}
   .qr-info{ font-size:var(--size-row); }
   .qr-flex{ display:flex; gap:14px; align-items:flex-start; }
   @media (max-width:600px){ .qr-flex{ flex-direction:column; align-items:stretch; } }
@@ -88,6 +110,7 @@
     .sum-header,.sum-total{ padding:9px 12px; }
   }
 </style>
+<script src="assets/js/qrcode.min.js" defer></script>
 </head>
 <body>
   <div class="wrap">
@@ -132,8 +155,8 @@
             </div>
             <div>
               <label class="req">Unit No.</label>
-          <input id="fUnit" type="text" required inputmode="numeric" maxlength="8"
-                pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
+          <input id="fUnit" type="text" required inputmode="text" maxlength="8"
+       pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
             </div>
             <div class="row">
               <div>
@@ -185,7 +208,7 @@
         </div>
         <div class="qr-body">
           <div class="qr-flex">
-            <img id="qrImage" alt="PayNow QR"/>
+            <div id="qrBox" aria-label="QR code will render here"></div>
             <div class="qr-info">
               <div style="margin-bottom:8px;">
                 <div><strong>Pay to:</strong> <span id="qrPayTo">—</span></div>
@@ -215,6 +238,10 @@
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 
+/* PayNow config (MOBILE mode) */
+const MERCHANT_DISPLAY = 'BreezyEzyTCG';
+const PAYNOW_MOBILE = normalizeSGMobile('+6580719821'); // normalize to +65XXXXXXXX
+  
 /* ========= Helper: JSONP proxy to Apps Script (bypasses CORS) ========= */
 function proxyFetch(endpoint, params) {
   return new Promise((resolve, reject) => {
@@ -272,6 +299,16 @@ function applySavedShippingToForm(){
     if (hidden) hidden.value = '';
     if (label)  label.value  = '';
   }
+}
+  
+function normalizeSGMobile(m){
+  // Accept "+6591234567", "91234567", or "65 9123 4567" and normalize to "+6591234567"
+  const digits = String(m).replace(/\D/g,'');
+  if (digits.length === 8) return '+65' + digits;
+  if (digits.length === 10 && digits.startsWith('65')) return '+' + digits;
+  if (digits.length === 11 && digits.startsWith('065')) return '+' + digits.slice(1);
+  if (digits.length === 11 && digits.startsWith('659')) return '+' + digits; // already 65 prefix + 8-digit
+  return '+65' + digits; // last resort
 }
 
 /* ========= Summary ========= */
@@ -333,22 +370,83 @@ function syncPayCta(){
 /* ========= QR Modal ========= */
 let countdown = null, endTime = 0;
 function genOrderId(){ const t = Date.now().toString(36).toUpperCase().slice(-6); const r = Math.random().toString(36).toUpperCase().slice(2,6); return `BE-${t}${r}`; }
-function openQr(){
-  const total = document.getElementById('sumTotal').textContent;
-  const orderId = genOrderId();
-  const payToLabel = "BreezyEzyTCG (UEN XXXXXXXXA)"; // <-- adjust
-  const qrSrc = "assets/paynow-static.png";          // <-- adjust
-  document.getElementById('qrPayTo').textContent = payToLabel;
-  document.getElementById('qrAmount').textContent = total;
-  document.getElementById('qrOrderId').textContent = orderId;
-  document.getElementById('qrImage').src = qrSrc;
-  sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total }));
-  endTime = Date.now() + 15*60*1000; tick(); countdown = setInterval(tick, 1000);
+/* Use qrcode.min.js to render into #qrBox */
+let qrInstance = null;
+
+function renderQr(text){
+  const box = document.getElementById('qrBox');
+  if (!box) return;
+  box.innerHTML = ''; // clear previous QR if any
+  // QRCode is provided by assets/js/qrcode.min.js
+  qrInstance = new QRCode(box, {
+    text,
+    width: 220,
+    height: 220,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+/* Build a simple demo payload using MOBILE instead of UEN.
+   NOTE: This is NOT a spec-compliant SGQR/PayNow string—it's a readable demo.
+   Scanners will decode the text shown. For real PayNow, we’ll swap this to EMV later. */
+function buildPaymentPayload({ mobile, amount, orderId }){
+  // Keep it human-readable for now:
+  // Example: PAYNOW|TO_MOB:+6591234567|AMT:12.34|REF:BE-ABC123
+  return `PAYNOW|TO_MOB:${mobile}|AMT:${amount}|REF:${orderId}`;
+}
+
+// Optional: safely parse "$1,234.56" -> 1234.56
+function parseCurrencyToNumber(s){
+  if (!s) return 0;
+  const n = Number(String(s).replace(/[^0-9.]/g,''));
+  return Number.isFinite(n) ? n : 0;
+}
+  function openQr(){
+  const totalText = document.getElementById('sumTotal').textContent;
+  const totalNum  = parseCurrencyToNumber(totalText);
+  const orderId   = genOrderId();
+
+  // Show who to pay to (UI only)
+  const payToLabel = `${MERCHANT_DISPLAY} (Mobile ${PAYNOW_MOBILE})`;
+  document.getElementById('qrPayTo').textContent  = payToLabel;
+  document.getElementById('qrAmount').textContent = totalText;
+  document.getElementById('qrOrderId').textContent= orderId;
+
+  // Build the QR content text (what scanners will decode)
+  // Replace buildPaymentPayload(...) with your real SGQR/PayNow payload builder later.
+  const qrText = buildPaymentPayload({
+  mobile: PAYNOW_MOBILE,
+  amount: totalNum.toFixed(2),
+  orderId
+});
+
+  // Render the QR into #qrBox
+  renderQr(qrText);
+
+  // Save pending order
+  sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
+
+  // Start 15-min timer and show modal
+  endTime = Date.now() + 15*60*1000; 
+  tick(); 
+  countdown = setInterval(tick, 1000);
   document.getElementById('qrModal').hidden = false;
 }
-function closeQr(){ document.getElementById('qrModal').hidden = true; clearInterval(countdown); }
-function tick(){ const remain = Math.max(0, Math.floor((endTime - Date.now())/1000)); const m = String(Math.floor(remain/60)).padStart(2,'0'); const s = String(remain%60).padStart(2,'0'); document.getElementById('qrTimer').textContent = `${m}:${s}`; if(remain<=0){ clearInterval(countdown); } }
-
+  
+function closeQr(){
+  document.getElementById('qrModal').hidden = true;
+  clearInterval(countdown);
+}
+function tick(){
+  const remain = Math.max(0, Math.floor((endTime - Date.now())/1000));
+  const m = String(Math.floor(remain/60)).padStart(2,'0');
+  const s = String(remain%60).padStart(2,'0');
+  const el = document.getElementById('qrTimer');
+  if (el) el.textContent = `${m}:${s}`;
+  if(remain<=0){
+    clearInterval(countdown);
+  }
+}
 /* ========= OneMap postal -> address (via proxy) ========= */
 const postalCache = Object.create(null);
 try { Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}')); } catch {}
@@ -469,6 +567,11 @@ unitEl?.addEventListener('input', () => {
   unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
   syncPayCta();
 });
+  
+// Quick sanity check: did the QR library load?
+if (typeof QRCode === 'undefined') {
+  console.warn('qrcode.min.js did not load. Check the script path.');
+}
 
 /* Postal: immediate on 6th digit + debounced fallback */
 postalEl?.addEventListener('input', () => {
