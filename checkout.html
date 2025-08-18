@@ -303,7 +303,7 @@ input:focus, select:focus, textarea:focus{
             <div class="row">
               <div>
                 <label class="req">City</label>
-                <input id="fCity" required value="Singapore"/>
+                <input id="fCity" required value="Singapore" readonly />
               </div>
               <div>
                 <label class="req">Selected Mailing Option</label>
@@ -331,7 +331,6 @@ input:focus, select:focus, textarea:focus{
             <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
             <div class="hint">Button appears when all required fields are valid.</div>
           </div>
-        </div>
       </section>
 
       <!-- RIGHT: Order Summary -->
@@ -507,29 +506,114 @@ function tick(){
   document.getElementById('qrTimer').textContent = `${m}:${s}`;
   if(remain <= 0){ clearInterval(countdown); }
 }
+// ===== OneMap postal -> address autofill =====
+// Docs: https://www.onemap.gov.sg/apidocs/search  (Search API: searchVal, getAddrDetails=Y)
+async function fetchSGAddressByPostal(postal) {
+  const clean = String(postal || '').replace(/\D/g, '');
+  if (clean.length !== 6) throw new Error('Postal must be 6 digits');
+
+  const url = `https://developers.onemap.sg/commonapi/search?searchVal=${clean}&returnGeom=N&getAddrDetails=Y&pageNum=1`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Lookup failed');
+  const data = await res.json();
+
+  const first = (data && Array.isArray(data.results) && data.results[0]) || null;
+  if (!first) throw new Error('Postal not found');
+
+  // Typical keys from OneMap
+  const {
+    BLK_NO, ROAD_NAME, BUILDING, ADDRESS, POSTAL
+  } = first;
+
+  // Prefer a structured line 1, fall back to ADDRESS string
+  // You can tweak to your preference
+  const line1 = ADDRESS || [BLK_NO, ROAD_NAME].filter(Boolean).join(' ');
+  const line2 = BUILDING || '';
+
+  return {
+    addr1: line1 || ADDRESS || '',
+    addr2: line2,
+    city: 'Singapore',
+    postal: POSTAL || clean,
+    fullAddress: ADDRESS || ''
+  };
+}
+
+// Fill the form safely
+function fillAddressFields(addr) {
+  const a1 = document.getElementById('fAddr1');
+  const a2 = document.getElementById('fAddr2');
+  const city = document.getElementById('fCity');
+  const postalEl = document.getElementById('fPostal');
+
+  if (a1 && addr.addr1 && !a1.value) a1.value = addr.addr1;
+  if (a2 && addr.addr2 && !a2.value) a2.value = addr.addr2;
+  if (city && !city.value) city.value = addr.city || 'Singapore';
+  if (postalEl && addr.postal) postalEl.value = addr.postal;
+
+  // Re-run summary/CTA checks since fields changed
+  renderSummary();
+  syncPayCta();
+}
+
+// Debounce helper for key events
+function debounce(fn, ms=300){
+  let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+}
 
 /* Events */
 function init(){
   renderSummary();
   syncPayCta();
 
+  // Recalc + validate on any form change
   document.querySelectorAll('#shipForm input, #shipForm select')
     .forEach(el=>{
       el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
       el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
     });
 
-  document.getElementById('btnPay').addEventListener('click', openQr);
-  document.getElementById('qrClose').addEventListener('click', closeQr);
-  document.getElementById('qrCancel').addEventListener('click', closeQr);
+  // QR modal bindings
+  document.getElementById('btnPay')?.addEventListener('click', openQr);
+  document.getElementById('qrClose')?.addEventListener('click', closeQr);
+  document.getElementById('qrCancel')?.addEventListener('click', closeQr);
 
-  document.getElementById('qrPaid').addEventListener('click', ()=>{
-    const file = document.getElementById('proofFile').files?.[0] || null;
+  document.getElementById('qrPaid')?.addEventListener('click', ()=>{
+    const file = document.getElementById('proofFile')?.files?.[0] || null;
     window.location.href = "thank-you.html";
   });
 
-  document.getElementById('fMethod').addEventListener('change', renderSummary);
+  document.getElementById('fMethod')?.addEventListener('change', renderSummary);
+
+  // === Auto-fill address from SG postal ===
+  const postalEl = document.getElementById('fPostal');
+
+  const hint = (msg, state='info') => {
+    if (!postalEl) return;
+    postalEl.dataset.state = state; // optional: style with [data-state]
+    postalEl.title = msg || '';     // quick tooltip status
+  };
+
+  async function tryLookupPostal() {
+    if (!postalEl) return;
+    const val = postalEl.value.replace(/\D/g,'');
+    if (val.length !== 6) return; // only lookup when 6 digits are present
+    hint('Looking up address…');
+
+    try {
+      const addr = await fetchSGAddressByPostal(val); // uses your helper
+      fillAddressFields(addr);                         // populates the fields
+      hint('Address found ✓', 'ok');
+    } catch (err) {
+      hint('Postal not found. Please key address manually.', 'err');
+    }
+  }
+
+  // Trigger lookup on stop-typing and on blur
+  postalEl?.addEventListener('input', debounce(tryLookupPostal, 400));
+  postalEl?.addEventListener('blur', tryLookupPostal);
 }
+
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
