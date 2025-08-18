@@ -5,155 +5,151 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Checkout</title>
 
-<!-- Brand font (same as store) -->
 <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
 <style>
   /* ===== THEME TOKENS (match your site) ===== */
   :root{
-  /* Greys */
-  --page-bg:#e9ecef;          /* whole-page shell (soft grey) */
-  --surface:#ffffff;          /* cards */
-  --surface-2:#f6f7f9;        /* subtle panels */
-  --border:rgba(15,23,42,.10);/* light neutral border */
-  --shadow:0 10px 24px rgba(2,6,23,.08);
+    /* Greys */
+    --page-bg:#e9ecef;          /* whole-page shell (soft grey) */
+    --surface:#ffffff;          /* cards */
+    --surface-2:#f6f7f9;        /* subtle panels */
+    --border:rgba(15,23,42,.10);/* light neutral border */
+    --shadow:0 10px 24px rgba(2,6,23,.08);
 
-  /* Brand / accents (kept) */
-  --accent:#ef4444;
+    /* Brand / accents */
+    --accent:#ef4444;
 
-  /* Text */
-  --text:#0f172a;
-  --muted:#475569;
+    /* Text */
+    --text:#0f172a;
+    --muted:#475569;
 
-  /* Badges / chips */
-  --chip-bg:#0f172a;
-  --chip-fg:#fff;
-}
+    /* Badges / chips */
+    --chip-bg:#0f172a;
+    --chip-fg:#fff;
 
-    /* BW summary option (if enabled on cart) */
+    /* ✅ FIXED: keep BW tokens INSIDE :root (previously broken) */
     --bw-bg:#111;
     --bw-fg:#fff;
     --bw-border:#e5e7eb;
   }
 
   body{
-  margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--page-bg);
-  color: var(--text);
-}
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--text);
+  }
   .wrap{ max-width: 1100px; margin: 24px auto; padding: 16px; }
 
-  /* header (simple match) */
-  .hero{
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 14px 16px; border-radius: 16px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  font-family: "Poetsen One", system-ui, sans-serif;
-}
-  .hero h1{ margin:0; font-size:1.35rem; letter-spacing:.3px; }
-
-  /* layout */
+  /* ===== LAYOUT ===== */
   .grid{ display:grid; gap:16px; grid-template-columns: 1.1fr .9fr; }
-@media (max-width: 900px){ .grid{ grid-template-columns: 1fr; } }
+  @media (max-width: 900px){ .grid{ grid-template-columns: 1fr; } }
 
-  /* card */
+  /* ===== LEFT CONTAINER (Form card) ===== */
   .card{
-  background: var(--surface);
-  border-radius:14px;
-  padding:18px 18px 16px;
-  border:1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-.card h2{
-  margin:0 0 14px;
-  font-size:1.05rem;
-  letter-spacing:.2px;
-}
+    background: var(--surface);
+    border-radius:14px;
+    padding:0;                          /* CHANGE-A: header is inside card */
+    border:1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .form-header{                         /* CHANGE-A: in-card top bar w/ Back */
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .back-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 10px; border-radius:10px;
+    text-decoration:none; font-weight:600;
+    color:#111; background:#fff; border:1px solid rgba(0,0,0,.12);
+  }
+  .form-title{ margin-left:auto; font-weight:800; font-family:"Poetsen One", system-ui, sans-serif; letter-spacing:.3px; }
+
+  .card-body{ padding:18px; }           /* content area */
+  .card-body h2{ margin:0 0 14px; font-size:1.05rem; letter-spacing:.2px; }
 
   /* fields */
   .fields{ display:grid; gap:12px; }
   .row{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
   @media (max-width: 600px){ .row{ grid-template-columns:1fr; } }
 
-  label{ font-size:.92rem; font-weight:600; display:block; margin-bottom:6px; }
+  label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); }
   .req::after{ content:" *"; color:#ef4444; }
   input, select, textarea{
-  width:100%;
-  padding:10px 12px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:#fff;
-  font-size:.95rem;
-  outline:none;
-  transition: box-shadow .15s ease, border-color .15s ease;
-}
-input:focus, select:focus, textarea:focus{
-  border-color:#cbd5e1;
-  box-shadow:0 0 0 4px rgba(99,102,241,.10);
-}
-label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); }
-.hint{ font-size:.85rem; color:var(--muted); margin-top:6px; }
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:#fff;
+    font-size:.95rem;
+    outline:none;
+    transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  input:focus, select:focus, textarea:focus{
+    border-color:#cbd5e1;
+    box-shadow:0 0 0 4px rgba(99,102,241,.10);
+  }
+  .hint{ font-size:.85rem; color:var(--muted); margin-top:6px; }
 
-
-  /* make payment CTA (hidden until form valid) */
+  /* CTA */
   .pay-cta{
-  display:none;
-  margin-top:16px;
-  width:100%;
-  padding:12px 14px;
-  border-radius:12px;
-  font-weight:700;
-  border:1px solid transparent;
-  cursor:pointer;
-  background: var(--chip-bg);
-  color: var(--chip-fg);
-  transition: opacity .15s ease, transform .05s ease;
-}
-.pay-cta:hover:not([disabled]){ transform: translateY(-1px); }
-.pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
-.pay-cta.show{ display:block; }
+    display:none;
+    margin-top:16px;
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    font-weight:700;
+    border:1px solid transparent;
+    cursor:pointer;
+    background: var(--chip-bg);
+    color: var(--chip-fg);
+    transition: opacity .15s ease, transform .05s ease;
+  }
+  .pay-cta:hover:not([disabled]){ transform: translateY(-1px); }
+  .pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
+  .pay-cta.show{ display:block; }
 
-  /* order summary (BW theme like your cart option) */
+  /* ===== RIGHT CONTAINER (Summary) ===== */
   .summary{
-  border-radius:14px; overflow:hidden;
-  background: var(--surface);
-  border:1px solid var(--border);
-  box-shadow: var(--shadow);
-  position: sticky; top: 16px; /* makes it follow on desktop */
-}
-.sum-header{
-  padding: 14px 16px;
-  background: var(--surface-2);
-  border-bottom:1px solid var(--border);
-  color: var(--text);
-  font-weight:700;
-}
-.sum-body{ background:#fff; padding: 12px 16px; }
-.sum-row{ display:flex; justify-content:space-between; padding:8px 0; }
-.sum-total{
-  background: var(--surface-2);
-  color: var(--text);
-  padding:12px 16px;
-  font-weight:800;
-  border-top:1px solid var(--border);
-  display:flex; justify-content:space-between;
-}
+    border-radius:14px; overflow:hidden;
+    background: var(--surface);
+    border:1px solid var(--border);
+    box-shadow: var(--shadow);
+    position: sticky; top: 16px;
+  }
+  .sum-header{
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border-bottom:1px solid var(--border);
+    color: var(--text);
+    font-weight:700;
+  }
+  .sum-body{ background:#fff; padding: 12px 16px; }
+  .sum-row{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; }
+  .sum-total{
+    background: var(--surface-2);
+    color: var(--text);
+    padding:12px 16px;
+    font-weight:800;
+    border-top:1px solid var(--border);
+    display:flex; justify-content:space-between;
+  }
 
-  /* disclaimer checkbox block (reuse your style) */
+  /* disclaimers */
   .option-group { display: grid; gap: 8px; }
   .option-list { gap: 6px; }
   .opt-item{
-  display:grid; grid-template-columns: 20px 1fr; gap: 10px; align-items:start;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-}
-.disc-text{ font-size:.9rem; color:var(--muted); }
+    display:grid; grid-template-columns: 20px 1fr; gap: 10px; align-items:start;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .disc-text{ font-size:.9rem; color:var(--muted); }
 
   /* QR modal */
   #qrModal[hidden]{ display:none; }
@@ -166,12 +162,12 @@ label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); 
     box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden;
   }
   .qr-head{
-  background: var(--surface-2);
-  color: var(--text);
-  padding:14px 16px;
-  display:flex; justify-content:space-between; align-items:center;
-  border-bottom:1px solid var(--border);
-}
+    background: var(--surface-2);
+    color: var(--text);
+    padding:14px 16px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--border);
+  }
   .qr-head h3{ margin:0; font-size:1.05rem; }
   .qr-body{ padding:16px; display:grid; gap:12px; }
   .qr-body img{ max-width:240px; width:100%; border:1px solid rgba(0,0,0,.1); border-radius:10px; }
@@ -182,98 +178,88 @@ label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); 
   .danger{ background: var(--accent); color:#fff; border:1px solid rgba(0,0,0,.04); }
   .outline{ background:#fff; color:#0f172a; border:1px solid rgba(0,0,0,.12); }
   .btn{ padding:10px 12px; border-radius:10px; font-weight:700; cursor:pointer; }
-
-  /* proof upload */
-  .proof{ display:grid; gap:8px; }
-  .proof input[type="file"]{ padding:8px; }
-  .proof .hint{ margin:0; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="hero">
-      <h1>Checkout</h1>
-      <a href="cart.html" class="btn outline" style="text-decoration:none;">← Back to Cart</a>
-    </header>
-
     <div class="grid">
-      <!-- Shipping Details -->
+      
+      <!-- ===== LEFT CONTAINER: Back + Shipping Details in one card ===== -->
       <section class="card">
-        <h2>Shipping Details</h2>
-        <div class="fields" id="shipForm">
-          <div class="row">
-            <div>
-              <label class="req">Full Name</label>
-              <input id="fName" required autocomplete="name" placeholder="e.g., Jane Doe"/>
+        <div class="form-header"><a href="cart.html" class="back-btn">← Back</a><div class="form-title">Checkout</div></div> <!-- CHANGE-A -->
+        <div class="card-body">
+          <h2>Shipping Details</h2>
+          <div class="fields" id="shipForm">
+            <div class="row">
+              <div>
+                <label class="req">Full Name</label>
+                <input id="fName" required autocomplete="name" placeholder="e.g., Jane Doe"/>
+              </div>
+              <div>
+                <label class="req">Email</label>
+                <input id="fEmail" type="email" required autocomplete="email" placeholder="john.doe@example.com"/>
+              </div>
             </div>
-            <div>
-              <label class="req">Email</label>
-              <input id="fEmail" type="email" required autocomplete="email" placeholder="john.doe@example.com"/>
-            </div>
-          </div>
 
-          <div class="row">
-            <div>
-              <label class="req">Phone (+65)</label>
-              <input id="fPhone" type="tel" required inputmode="numeric" placeholder="8-digit number"/>
-              <div class="hint">Providing accurate information helps us deliver your order smoothly</div>
+            <div class="row">
+              <div>
+                <label class="req">Phone (+65)</label>
+                <input id="fPhone" type="tel" required inputmode="numeric" placeholder="8-digit number"/>
+                <div class="hint">Providing accurate information helps us deliver your order smoothly</div>
+              </div>
+              <div>
+                <label class="req">Postal Code</label>
+                <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits"/>
+              </div>
             </div>
-            <div>
-              <label class="req">Postal Code</label>
-              <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits"/>
-            </div>
-          </div>
 
-          <div>
-            <label class="req">Address Line 1</label>
-            <input id="fAddr1" required placeholder="Block/Street, Unit #"/>
-          </div>
-          <div>
-            <label>Address Line 2 (Optional)</label>
-            <input id="fAddr2" placeholder="Building, landmark"/>
-          </div>
-          <div class="row">
             <div>
-              <label class="req">City</label>
-              <input id="fCity" required value="Singapore"/>
+              <label class="req">Address Line 1</label>
+              <input id="fAddr1" required placeholder="Block/Street, Unit #"/>
             </div>
             <div>
-              <label class="req">Selected Mailing Option</label>
-              <select id="fMethod" required>
-                <!-- ADJUST: add/remove shipping methods; values used in waybill -->
-                <option value="">Select…</option>
-                <option value="NinjaVan Standard">NinjaVan Standard</option>
-                <option value="Qxpress">Qxpress</option>
-                <option value="Registered Mail">Registered Mail</option>
-                <option value="Self-collection">Self-collection</option>
-              </select>
+              <label>Address Line 2 (Optional)</label>
+              <input id="fAddr2" placeholder="Building, landmark"/>
             </div>
-          </div>
+            <div class="row">
+              <div>
+                <label class="req">City</label>
+                <input id="fCity" required value="Singapore"/>
+              </div>
+              <div>
+                <label class="req">Selected Mailing Option</label>
+                <select id="fMethod" required>
+                  <option value="">Select…</option>
+                  <option value="NinjaVan Standard">NinjaVan Standard</option>
+                  <option value="Qxpress">Qxpress</option>
+                  <option value="Registered Mail">Registered Mail</option>
+                  <option value="Self-collection">Self-collection</option>
+                </select>
+              </div>
+            </div>
 
-          <!-- disclaimers you used on cart -->
-          <div class="option-group option-list" style="margin-top:10px;">
-            <label class="opt-item">
-              <input type="checkbox" id="disc1" required>
-              <span class="disc-text">Buyers are responsible for additional shipping costs arising from incorrect mailing selection.</span>
-            </label>
-            <label class="opt-item">
-              <input type="checkbox" id="disc2" required>
-              <span class="disc-text">We ship around our work schedules; orders may take time to process.</span>
-            </label>
-          </div>
+            <div class="option-group option-list" style="margin-top:10px;">
+              <label class="opt-item">
+                <input type="checkbox" id="disc1" required>
+                <span class="disc-text">Buyers are responsible for additional shipping costs arising from incorrect mailing selection.</span>
+              </label>
+              <label class="opt-item">
+                <input type="checkbox" id="disc2" required>
+                <span class="disc-text">We ship around our work schedules; orders may take time to process.</span>
+              </label>
+            </div>
 
-          <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
-          <div class="hint">Button appears when all required fields are valid.</div>
+            <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
+            <div class="hint">Button appears when all required fields are valid.</div>
+          </div>
         </div>
       </section>
 
-      <!-- Order Summary -->
+      <!-- ===== RIGHT CONTAINER: Order Summary ===== -->
       <aside class="summary">
         <div class="sum-header"><strong>Detailed Order Summary</strong></div>
         <div class="sum-body" id="sumBody">
-          <!-- items (simple list) -->
           <div id="sumItems" style="margin-bottom:8px;"></div>
-
           <div class="sum-row"><span>Subtotal</span><strong id="sumSubtotal">$0.00</strong></div>
           <div class="sum-row"><span>Shipping</span><strong id="sumShipping">$0.00</strong></div>
         </div>
@@ -284,7 +270,7 @@ label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); 
     </div>
   </div>
 
-  <!-- QR Modal -->
+  <!-- ===== QR Modal (unchanged) ===== -->
   <div id="qrModal" hidden>
     <div class="qr-backdrop" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
       <div class="qr-dialog">
@@ -305,7 +291,6 @@ label{ font-size:.9rem; font-weight:600; margin-bottom:6px; color:var(--muted); 
               <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
               <div class="proof" style="margin-top:12px;">
                 <label>Upload payment screenshot (optional)</label>
-                <!-- ADJUST: this only stores in-memory; see security notes below -->
                 <input id="proofFile" type="file" accept="image/*"/>
                 <p class="hint">You may also WhatsApp/DM us your proof if you prefer.</p>
               </div>
@@ -357,16 +342,17 @@ function renderSummary(){
     subtotal += qty*price;
 
     const row = document.createElement('div');
-row.className = 'sum-row';
-row.innerHTML = `
-  <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-    ${it.name} × ${qty}
-  </span>
-  <strong>${fmt(qty*price)}</strong>
-`;
-sumItems.appendChild(row);
+    row.className = 'sum-row';
+    row.innerHTML = `
+      <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        ${it.name} × ${qty}
+      </span>
+      <strong>${fmt(qty*price)}</strong>
+    `;
+    sumItems.appendChild(row);
+  }); /* ✅ FIXED: close forEach properly */
 
-  // ADJUST: set your shipping fee rules here
+  /* Shipping calc should be OUTSIDE the loop */
   let shipping = 0;
   const method = document.getElementById('fMethod')?.value || '';
   if(method === 'Registered Mail') shipping = 3.2;
@@ -388,21 +374,17 @@ function allValid(){
     if(el.type === 'checkbox'){ if(!el.checked) return false; }
     else if(!el.value?.trim()) return false;
   }
-  // basic SG checks
   const phone = document.getElementById('fPhone').value.replace(/\D/g,'');
   const postal = document.getElementById('fPostal').value.replace(/\D/g,'');
   if(phone.length !== 8) return false;
   if(postal.length !== 6) return false;
-
-  // cart must have items
   if(getCart().length === 0) return false;
-
   return true;
 }
 function syncPayCta(){
   const btn = document.getElementById('btnPay');
   if(allValid()){ btn.classList.add('show'); btn.disabled = false; }
-  else{ btn.disabled = true; btn.classList.add('show'); } // keep visible but disabled once revealed
+  else{ btn.disabled = true; btn.classList.add('show'); }
 }
 
 /* ===== QR Modal logic ===== */
@@ -410,40 +392,26 @@ let countdown = null;
 let endTime = 0;
 
 function genOrderId(){
-  // ADJUST: short Order ID seed; include timestamp + 4 random chars
   const t = Date.now().toString(36).toUpperCase().slice(-6);
   const r = Math.random().toString(36).toUpperCase().slice(2,6);
   return `BE-${t}${r}`;
 }
 
 function openQr(){
-  // collect snapshot
   const cart = getCart();
   const total = document.getElementById('sumTotal').textContent;
   const orderId = genOrderId();
 
-  // ADJUST: your PayNow label (UEN or mobile name) shows here
   const payToLabel = "BreezyEzyTCG (UEN XXXXXXXXA)"; // <-- ADJUST
-
-  // ADJUST: your PayNow QR image path.
-  // If you generate static QR WITHOUT amount, use a static image in /assets/paynow.png.
-  // If you have per-amount QR, you could export QR images per tier and swap here.
-  const qrSrc = "assets/paynow-static.png"; // <-- ADJUST
+  const qrSrc = "assets/paynow-static.png";          // <-- ADJUST
 
   document.getElementById('qrPayTo').textContent = payToLabel;
   document.getElementById('qrAmount').textContent = total;
   document.getElementById('qrOrderId').textContent = orderId;
   document.getElementById('qrImage').src = qrSrc;
 
-  // Store a lightweight pending order in sessionStorage (no PII)
-  sessionStorage.setItem('pendingOrder', JSON.stringify({
-    id: orderId,
-    total,
-    // DO NOT store full address here; keep PII out of client storage if possible
-    // We’ll carry PII only to the Thank You page via URL-safe tokenless approach: not at all.
-  }));
+  sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total }));
 
-  // start 15:00 countdown
   endTime = Date.now() + 15*60*1000;
   tick();
   countdown = setInterval(tick, 1000);
@@ -467,7 +435,6 @@ function init(){
   renderSummary();
   syncPayCta();
 
-  // respond to any field changes
   document.querySelectorAll('#shipForm input, #shipForm select')
     .forEach(el=>{
       el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
@@ -479,14 +446,10 @@ function init(){
   document.getElementById('qrCancel').addEventListener('click', closeQr);
 
   document.getElementById('qrPaid').addEventListener('click', ()=>{
-    // (Optional) read file just to confirm presence; we won't upload on GitHub Pages
     const file = document.getElementById('proofFile').files?.[0] || null;
-    // You could set a flag like "proofAttached: !!file" in pendingOrder if you need
-    // Redirect to thank-you
     window.location.href = "thank-you.html";
   });
 
-  // re-calc shipping when method changes
   document.getElementById('fMethod').addEventListener('change', renderSummary);
 }
 
