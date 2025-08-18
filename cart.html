@@ -1309,9 +1309,7 @@ function reconcileCart(cart, stockMap){
     if (sumSubtotal) sumSubtotal.textContent = fmtMoney(subtotal);
     if (sumShipping) sumShipping.textContent = fmtMoney(shippingFee);
     if (sumTotal)    sumTotal.textContent    = fmtMoney(total);
-    if (totalDisplay) totalDisplay.innerText = `Order Total: ${fmtMoney(total)}`;
-  }
-
+   
 async function renderCart() {
   // Ensure we have inventory loaded at least once
 if (!allProducts.length) {
@@ -1500,6 +1498,9 @@ function updateCheckoutDisabled(){
 document.getElementById('disc1')?.addEventListener('change', updateCheckoutDisabled);
 document.getElementById('disc2')?.addEventListener('change', updateCheckoutDisabled);
 
+    // ✅ Initialize button state on load
+updateCheckoutDisabled();
+
 // Bind checkout link click guard
 document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
   if (!disclaimersAccepted()) {
@@ -1619,10 +1620,6 @@ updateCheckoutDisabled();
   });
 })();
 
-// Initialize button state on load
-updateCheckoutDisabled();
-    });
-  })();
     /* ===== Live refresh every REFRESH_MS (preserves scroll + selections) ===== */
 function snapshotScrollPositions(){
   const desktopScroll = document.querySelector('.items-panel .cart-scroll');
