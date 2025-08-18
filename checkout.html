@@ -376,24 +376,110 @@ let qrInstance = null;
 function renderQr(text){
   const box = document.getElementById('qrBox');
   if (!box) return;
-  box.innerHTML = ''; // clear previous QR if any
-  // QRCode is provided by assets/js/qrcode.min.js
-  qrInstance = new QRCode(box, {
-    text,
-    width: 220,
-    height: 220,
-    correctLevel: QRCode.CorrectLevel.M
-  });
+
+  // Clear anything from previous renders
+  box.innerHTML = '';
+
+  // ✅ Only check for the library *right now* when we need it
+  if (typeof QRCode === 'undefined' || typeof QRCode !== 'function') {
+    console.error('[QR] qrcode.min.js not available at render time. Check script path or load order.');
+    // Simple, user-friendly fallback so the buyer isn’t stuck with a blank box
+    const warn = document.createElement('div');
+    warn.style.cssText = 'font: 600 14px/1.4 system-ui; padding:10px; color:#b91c1c; text-align:center;';
+    warn.textContent = 'QR library failed to load. Please refresh or contact us.';
+    box.appendChild(warn);
+    return;
+  }
+
+  // Render the QR (library is present)
+  try {
+    new QRCode(box, {
+      text,
+      width: 220,
+      height: 220,
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch (err) {
+    console.error('[QR] Failed to render QR:', err);
+    const warn = document.createElement('div');
+    warn.style.cssText = 'font: 600 14px/1.4 system-ui; padding:10px; color:#b91c1c; text-align:center;';
+    warn.textContent = 'Could not generate QR. Please try again.';
+    box.appendChild(warn);
+  }
 }
 
-/* Build a simple demo payload using MOBILE instead of UEN.
-   NOTE: This is NOT a spec-compliant SGQR/PayNow string—it's a readable demo.
-   Scanners will decode the text shown. For real PayNow, we’ll swap this to EMV later. */
-function buildPaymentPayload({ mobile, amount, orderId }){
-  // Keep it human-readable for now:
-  // Example: PAYNOW|TO_MOB:+6591234567|AMT:12.34|REF:BE-ABC123
-  return `PAYNOW|TO_MOB:${mobile}|AMT:${amount}|REF:${orderId}`;
+// ---- PayNow (Mobile) EMV builder ----
+// References: EMVCo MPQR + PayNow field mappings (mobile proxy, amount, bill no). 
+// - ID "00" = "01" (Payload Format Indicator)
+// - ID "01" = "12" (Point of Initiation: dynamic)
+// - ID "26" Merchant Account Info (PayNow nested):
+//      "00" = "SG.PAYNOW" (GUI)
+//      "01" = "0" (proxy type: mobile)
+//      "02" = "+65xxxxxxxx" (proxy value: mobile incl. +65)
+//      "03" = "0" fixed amount, "1" editable
+// - ID "52" = "0000" (MCC not applicable)
+// - ID "53" = "702" (SGD ISO 4217 numeric)
+// - ID "54" = amount (e.g. "18.00")
+// - ID "58" = "SG" (country)
+// - ID "59" = merchant display name (UI only)
+// - ID "60" = city (use "Singapore")
+// - ID "62" Additional Data Template -> "01" Bill Number (use your orderId)
+// - ID "63" CRC (CRC-16/CCITT, initial 0xFFFF, poly 0x1021, over payload + "6304")
+function buildPaymentPayload({ mobile, amount, orderId, editable = false, merchantName = MERCHANT_DISPLAY }) {
+  function tlv(id, value) {
+    const len = String(value.length).padStart(2, '0');
+    return `${id}${len}${value}`;
+  }
+
+  // CRC-16/CCITT (Kermit off) per EMVCo (init 0xFFFF, poly 0x1021)
+  function crc16ccitt(hexStr) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < hexStr.length; i++) {
+      crc ^= hexStr.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+        crc &= 0xFFFF;
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  const normalizedMobile = normalizeSGMobile(mobile); // ensures +65xxxxxxxx
+  const name25 = String(merchantName || 'NA').slice(0, 25);
+
+  // PayNow nested merchant account info (ID 26)
+  const paynowInner =
+    tlv('00', 'SG.PAYNOW') +                // GUI
+    tlv('01', '0') +                        // proxy type: 0 = mobile
+    tlv('02', normalizedMobile) +           // proxy value
+    tlv('03', editable ? '1' : '0');        // amount editable flag
+
+  const merchantAcctInfo = tlv('26', paynowInner);
+
+  // Additional data: Bill Number = orderId
+  const additional = tlv('62', tlv('01', String(orderId).slice(0, 25)));
+
+  // Root payload (without CRC)
+  let payload =
+    tlv('00', '01') +                       // Payload Format Indicator
+    tlv('01', '12') +                       // Dynamic QR
+    merchantAcctInfo +
+    tlv('52', '0000') +                     // MCC
+    tlv('53', '702') +                      // Currency: SGD
+    tlv('54', amount) +                     // Amount (e.g. "18.00")
+    tlv('58', 'SG') +                       // Country
+    tlv('59', name25) +                     // Merchant Name (UI only)
+    tlv('60', 'Singapore') +                // City
+    additional;
+
+  // Append CRC
+  const toCheck = payload + '6304';         // "63" + length "04"
+  const crc = crc16ccitt(toCheck);
+  payload += `63 04 ${crc}`.replace(/ /g, ''); // concatenate as TLV
+
+  return payload;
 }
+
 
 // Optional: safely parse "$1,234.56" -> 1234.56
 function parseCurrencyToNumber(s){
@@ -416,8 +502,10 @@ function parseCurrencyToNumber(s){
   // Replace buildPaymentPayload(...) with your real SGQR/PayNow payload builder later.
   const qrText = buildPaymentPayload({
   mobile: PAYNOW_MOBILE,
-  amount: totalNum.toFixed(2),
-  orderId
+  amount: totalNum.toFixed(2),  // e.g. "18.00"
+  orderId,
+  editable: false,              // false = user cannot alter amount
+  merchantName: MERCHANT_DISPLAY
 });
 
   // Render the QR into #qrBox
@@ -524,16 +612,48 @@ function init(){
     if (postalEl) { postalEl.dataset.state = state; postalEl.title = msg || ''; }
   };
 
-  let lastPostalReqId = 0;
+let lastPostalReqId = 0;
 
-async function tryLookupPostal(){
+async function tryLookupPostal(force = false){
   if (!postalEl) return;
   const val = postalEl.value.replace(/\D/g,'');
+
   if (val.length !== 6) { 
     hint(''); 
     postalEl.dataset.state = ''; 
     return; 
   }
+
+  const myId = ++lastPostalReqId;
+  hint('Looking up…');
+
+  try {
+    const addr = await fetchSGAddressByPostal(val);
+    if (myId !== lastPostalReqId) return; // ignore stale response
+    fillAddressFields(addr);
+    hint('Address found ✓','ok');
+  } catch(err){
+    if (myId !== lastPostalReqId) return; // ignore stale error
+    const m = String(err?.message || '');
+    if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+    else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+    else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+    else                               hint('Lookup error. Please try again.','err');
+    console.warn('[Postal lookup failed]', err);
+  }
+}
+
+// Attach listeners ONCE (still inside init)
+postalEl?.addEventListener('input', () => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) tryLookupPostal(true);
+});
+postalEl?.addEventListener('input', debounce(() => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) return; // already handled above
+  tryLookupPostal();
+}, 400));
+postalEl?.addEventListener('blur', () => tryLookupPostal());
 
   const myId = ++lastPostalReqId;
   hint('Looking up…');
@@ -567,25 +687,6 @@ unitEl?.addEventListener('input', () => {
   unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
   syncPayCta();
 });
-  
-// Quick sanity check: did the QR library load?
-if (typeof QRCode === 'undefined') {
-  console.warn('qrcode.min.js did not load. Check the script path.');
-}
-
-/* Postal: immediate on 6th digit + debounced fallback */
-postalEl?.addEventListener('input', () => {
-  const digits = postalEl.value.replace(/\D/g,'');
-  if (digits.length === 6) tryLookupPostal(true);
-});
-postalEl?.addEventListener('input', debounce(() => {
-  const digits = postalEl.value.replace(/\D/g,'');
-  if (digits.length === 6) return; // already handled above
-  tryLookupPostal();
-}, 400));
-postalEl?.addEventListener('blur', () => tryLookupPostal());
-
-} // <-- close init()
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
