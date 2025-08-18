@@ -10,12 +10,11 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://www.onemap.gov.sg">
 
-
 <style>
   :root{
     --page-bg:#e9ecef;
     --surface:#ffffff;
-    --surface-2:#ECECEC;
+    --surface-2:#ECECEC;            /* fixed: single # */
     --border:rgba(15,23,42,.10);
     --shadow:0 10px 24px rgba(2,6,23,.08);
     --accent:#ef4444;
@@ -53,7 +52,6 @@
   .req::after{ content:" *"; color:#ef4444; }
   input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
   input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
-  /* Read-only shipping label look */
   #fMethodLabel[readonly]{ background:#fff; color:inherit; opacity:1; cursor:default; }
   .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
   .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
@@ -142,9 +140,7 @@
               </div>
               <div>
                 <label class="req">Selected Mailing Option</label>
-                <!-- visible, read-only label from cart -->
                 <input id="fMethodLabel" readonly placeholder="Choose on cart page"/>
-                <!-- hidden value to satisfy required validation -->
                 <input type="hidden" id="fMethod" required />
                 <div class="hint">Selected on cart page. Go back to change.</div>
               </div>
@@ -215,23 +211,17 @@
 
 <script>
 /* ========= CONFIG ========= */
-// Use your latest GAS Web App deployment URL (must end with /exec)
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 
 /* ========= Helper: JSONP proxy to Apps Script (bypasses CORS) ========= */
 function proxyFetch(endpoint, params) {
   return new Promise((resolve, reject) => {
     const cb = `onemap_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
-    const qs = new URLSearchParams({
-      ...params,
-      endpoint,
-      callback: cb,
-      _: Date.now()
-    });
+    const qs = new URLSearchParams({ ...params, endpoint, callback: cb, _: Date.now() });
     const s = document.createElement('script');
     s.src = `${ONEMAP_PROXY}?${qs.toString()}`;
 
-    const timeout = setTimeout(() => { cleanup(); reject(new Error('JSONP_TIMEOUT')); }, 12000);
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('JSONP_TIMEOUT')); }, 8000);
     function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
 
     window[cb] = (data) => { cleanup(); resolve(data); };
@@ -248,15 +238,14 @@ function getCart(){
 }
 function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
 
-/* ========= Read shipping saved by cart.html ========= */
-// Supports new shape {id, fee, label} and legacy plain string ids.
+/* ========= Shipping from cart ========= */
 function getSavedShippingFromCart(){
   const RAW = localStorage.getItem('shippingMethod');
   if (!RAW) return null;
   try {
     const obj = JSON.parse(RAW);
     if (obj && (obj.id || obj.label)) return obj;
-  } catch(e) { /* fall through for legacy */ }
+  } catch(e) {}
   const id = String(RAW).trim().toLowerCase();
   const LABELS = {
     consolidate:'Consolidate Order — $0.00',
@@ -270,12 +259,10 @@ function getSavedShippingFromCart(){
   if (id in FEES) return { id, fee: FEES[id], label: LABELS[id] };
   return null;
 }
-
-/* Put saved shipping into the form (hidden value + visible label) */
 function applySavedShippingToForm(){
   const saved  = getSavedShippingFromCart();
-  const hidden = document.getElementById('fMethod');       // hidden required value (id)
-  const label  = document.getElementById('fMethodLabel');  // visible readonly label
+  const hidden = document.getElementById('fMethod');
+  const label  = document.getElementById('fMethodLabel');
   if (saved && saved.id){
     if (hidden) hidden.value = saved.id;
     if (label)  label.value  = saved.label || saved.id;
@@ -357,52 +344,39 @@ function tick(){ const remain = Math.max(0, Math.floor((endTime - Date.now())/10
 
 /* ========= OneMap postal -> address (via proxy) ========= */
 const postalCache = Object.create(null);
-try {
-  Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}'));
-} catch {}
-function savePostalCache(){
-  try { sessionStorage.setItem('postalCache', JSON.stringify(postalCache)); } catch {}
-}
-  async function fetchSGAddressByPostal(postal) {
+try { Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}')); } catch {}
+function savePostalCache(){ try { sessionStorage.setItem('postalCache', JSON.stringify(postalCache)); } catch {} }
+
+async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
 
-  // ① Instant return if we’ve already seen this postal
   if (postalCache[clean]) return postalCache[clean];
 
-  // ② Smaller/faster payload from OneMap
-  try {
-    const data = await proxyFetch('elastic', {
-      searchVal: clean,
-      size: '5',          // smaller page = faster
-      returnGeom: 'N',    // we don't need geometry
-      getAddrDetails: 'Y',
-      pageNum: '1'
-    });
+  const data = await proxyFetch('elastic', {
+    searchVal: clean,
+    size: '5',
+    returnGeom: 'N',
+    getAddrDetails: 'Y',
+    pageNum: '1'
+  });
 
-    const rows = Array.isArray(data?.results) ? data.results : [];
-    const exact = rows.find(r => String(r.POSTAL) === clean) || rows[0];
-    if (!exact) throw new Error('POSTAL_NOT_FOUND');
+  const rows = Array.isArray(data?.results) ? data.results : [];
+  const exact = rows.find(r => String(r.POSTAL) === clean) || rows[0];
+  if (!exact) throw new Error('POSTAL_NOT_FOUND');
 
-    const { BLK_NO, ROAD_NAME, POSTAL } = exact;
-    const addr = {
-      addr1: [BLK_NO, ROAD_NAME].filter(Boolean).join(' '),
-      city: 'Singapore',
-      postal: POSTAL || clean
-    };
+  const { BLK_NO, ROAD_NAME, POSTAL } = exact;
+  const addr = {
+    addr1: [BLK_NO, ROAD_NAME].filter(Boolean).join(' '),
+    city: 'Singapore',
+    postal: POSTAL || clean
+  };
 
-    // ③ Cache for near-instant next time
-    postalCache[clean] = addr;
-    savePostalCache();
-
-    return addr;
-  } catch (err) {
-    const m = String(err?.message || '');
-    if (m.startsWith('HTTP_'))     throw new Error('LOOKUP_HTTP');
-    if (m.startsWith('TypeError')) throw new Error('LOOKUP_NET');
-    throw err;
-  }
+  postalCache[clean] = addr;
+  savePostalCache();
+  return addr;
 }
+
 function fillAddressFields(addr){
   const a1 = document.getElementById('fAddr1');
   const city = document.getElementById('fCity');
@@ -421,10 +395,7 @@ function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = s
 
 /* ========= Init ========= */
 function init(){
-  // 1) Reflect cart’s mailing option into the form first
   applySavedShippingToForm();
-
-  // 2) Now render totals & CTA with that method
   renderSummary();
   syncPayCta();
 
@@ -450,49 +421,46 @@ function init(){
 
   let lastPostalReqId = 0;
 
-async function tryLookupPostal(){
-  if (!postalEl) return;
-  const val = postalEl.value.replace(/\D/g,'');
-  if (val.length !== 6) { 
-    hint(''); 
-    postalEl.dataset.state = ''; 
-    return; 
+  async function tryLookupPostal(){
+    if (!postalEl) return;
+    const val = postalEl.value.replace(/\D/g,'');
+    if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
+
+    const myId = ++lastPostalReqId;
+    hint('Looking up…');
+
+    try {
+      const addr = await fetchSGAddressByPostal(val);
+      if (myId !== lastPostalReqId) return;
+      fillAddressFields(addr);
+      hint('Address found ✓','ok');
+    } catch(err){
+      if (myId !== lastPostalReqId) return;
+      const m = String(err?.message || '');
+      if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+      else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+      else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+      else                               hint('Lookup error. Please try again.','err');
+      console.warn('[Postal lookup failed]', err);
+    }
   }
 
-  const myId = ++lastPostalReqId;
-  hint('Looking up…');
+  // fire immediately at 6 digits
+  postalEl?.addEventListener('input', () => {
+    const digits = postalEl.value.replace(/\D/g,'');
+    if (digits.length === 6) tryLookupPostal(true);
+  });
 
-  try {
-    const addr = await fetchSGAddressByPostal(val);
-    if (myId !== lastPostalReqId) return; // ignore stale response
-    fillAddressFields(addr);
-    hint('Address found ✓','ok');
-  } catch(err){
-    if (myId !== lastPostalReqId) return; // ignore stale error
-    const m = String(err?.message || '');
-    if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
-    else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
-    else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
-    else                               hint('Lookup error. Please try again.','err');
-    console.warn('[Postal lookup failed]', err);
-  }
-}
+  // debounce for edits after 6 digits (avoid double fire)
+  postalEl?.addEventListener('input', debounce(() => {
+    const digits = postalEl.value.replace(/\D/g,'');
+    if (digits.length === 6) return;
+    tryLookupPostal();
+  }, 400));
 
-// 🔹 Fire immediately when 6th digit is entered
-postalEl?.addEventListener('input', () => {
-  const digits = postalEl.value.replace(/\D/g,'');
-  if (digits.length === 6) tryLookupPostal(true);
-});
-
-// 🔹 Debounce for edits after 6 digits (no double fire)
-postalEl?.addEventListener('input', debounce(() => {
-  const digits = postalEl.value.replace(/\D/g,'');
-  if (digits.length === 6) return; // already handled above
-  tryLookupPostal();
-}, 400));
+} // <-- close init()
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
-
