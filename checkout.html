@@ -255,7 +255,7 @@ const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwti
 
 /* === Payment proof upload endpoint (Apps Script Web App URL) ===
    Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
-const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbzDr-v14UPn1C_GpM7qz60dqWUtl_ZgzCedlvwyLIwqk20Q621kr8XmnGYFUL4LFj8B/exec';
+const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbzDr-v14UPn1C_GpM7qz60dqWUtl_ZgzCedlvwyLIwqk20Q621kr8XmnGYFUL4LFj8B/exec?v=2';
 
 /* Simple JSONP fetch (works on static sites without CORS headaches) */
 function jsonpFetch(baseUrl, params) {
@@ -495,6 +495,9 @@ async function uploadPaymentProof(){
       mimeType: file.type || 'application/octet-stream',
       contentB64: base64
     };
+
+    console.log('[proof] sending keys:', Object.keys(payload));
+    console.log('[proof] b64 head:', payload.contentB64?.slice(0,30), 'len=', payload.contentB64?.length);
 
     const res   = await fetch(PROOF_UPLOAD_API, {
       method: 'POST',
