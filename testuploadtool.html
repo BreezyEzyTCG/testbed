@@ -22,6 +22,7 @@
     <h2>Upload payment proof</h2>
     <p class="hint">Your file goes privately to the owner. Others can’t view your upload.</p>
 
+    <!-- NOTE: We keep action for reference, but the JS will prevent the default submit -->
     <form id="uform" action="https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec" method="POST">
       <!-- Visible inputs -->
       <div class="row">
@@ -32,11 +33,11 @@
 
       <div class="row">
         <label>Note (optional)
-          <input name="note" type="text" placeholder="Order #1234" />
+          <input name="note" id="note" type="text" placeholder="Order #1234" />
         </label>
       </div>
 
-      <!-- Hidden fields actually posted -->
+      <!-- Hidden fields (we still fill these; Ajax will read from them) -->
       <input type="hidden" name="file_b64" id="file_b64" />
       <input type="hidden" name="filename" id="filename" />
       <input type="hidden" name="mimetype" id="mimetype" />
@@ -54,6 +55,7 @@
 
   <script>
     const fileInput = document.getElementById('file');
+    const noteInput = document.getElementById('note');
     const b64Field  = document.getElementById('file_b64');
     const nameField = document.getElementById('filename');
     const mimeField = document.getElementById('mimetype');
@@ -110,15 +112,82 @@
       reader.readAsDataURL(f);
     });
 
-    form.addEventListener('submit', (e) => {
+    // ---- NEW: Ajax/Fetch submit (no redirect) ----
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault(); // <— stop the browser from navigating
       if (!fileReady || !b64Field.value) {
-        e.preventDefault();
         statusEl.textContent = 'Choose a file first.';
         return;
       }
+
+      submitBtn.disabled = true;
       statusEl.textContent = 'Uploading…';
-      // Let the standard HTML POST submit to the Apps Script URL (no CORS issues).
+
+      // Build the same payload your Apps Script already expects
+      const payload = {
+        file_b64: b64Field.value,
+        filename: nameField.value,
+        mimetype: mimeField.value,
+        note: noteInput?.value || ''
+      };
+
+      // We try CORS first (best case: Apps Script returns JSON + CORS headers).
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },   // <— send JSON
+          body: JSON.stringify(payload),
+          // mode: 'cors'  // default; we keep it implicit
+        });
+
+        // If Apps Script sends JSON, show real result:
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await res.json();
+          if (data && (data.ok || data.success)) {
+            statusEl.textContent = 'Upload complete ✓';
+            statusEl.classList.add('ok');
+            statusEl.classList.remove('err');
+            return;
+          } else {
+            throw new Error(data?.error || 'Upload failed at server');
+          }
+        }
+
+        // If it wasn't JSON, we still treat 200s as success
+        if (res.ok) {
+          statusEl.textContent = 'Upload complete ✓';
+          statusEl.classList.add('ok');
+          statusEl.classList.remove('err');
+          return;
+        }
+
+        // Non-OK HTTP
+        throw new Error('Server returned ' + res.status);
+      } catch (errCors) {
+        // Fallback for when Apps Script doesn’t have CORS enabled.
+        // We send again in "no-cors" mode (we can’t read the response, but the server will still receive it).
+        try {
+          await fetch(form.action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            mode: 'no-cors' // <— fire-and-forget; cannot read response
+          });
+          // We optimistically show success (because we can’t read the reply in no-cors).
+          statusEl.textContent = 'Upload sent ✓ (waiting on server)';
+          statusEl.classList.add('ok');
+          statusEl.classList.remove('err');
+        } catch (errNoCors) {
+          console.error(errNoCors);
+          statusEl.textContent = 'Upload failed. Please try again.';
+          statusEl.classList.add('err');
+          statusEl.classList.remove('ok');
+          submitBtn.disabled = false;
+        }
+      }
     });
+    // ---- end NEW ----
   </script>
 </body>
 </html>
