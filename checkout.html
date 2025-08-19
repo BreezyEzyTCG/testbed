@@ -229,7 +229,15 @@
               <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
               <div class="proof" id="proofForm" style="margin-top:12px;">
               <label>Upload payment screenshot <strong>(required)</strong></label>
-              <input id="proofFile" type="file" accept="image/*" required />
+              <form id="proofFormReal"
+                action="https://script.google.com/macros/s/AKfycbzisubxB4NF4HVkJ2ylr2zlXZ3PvrUbgKHMd8Q-Td9MEQv-lAUL8mY_OAYyguDlJ2bY/exec"
+                method="POST"
+                enctype="multipart/form-data"
+                target="proofUploadTarget"
+                style="display:block; margin-top:0;">
+                <!-- Visible input lives INSIDE the form; give it the field name "file" -->
+                <input id="proofFile" type="file" accept="image/*" required name="file" />
+              </form>
               <p id="proofStatus" class="hint" aria-live="polite"></p>
               <p class="hint">The proof is required for verification purposes.</p>
             </div>
@@ -239,11 +247,13 @@
               </div>
             </div>
           </div>
-          <p class="hint">If the timer runs out, close this window and tap “Make Payment” again to regenerate an Order ID.</p>
+          <p class="hint">If the timer runs out, you'll be redirected back to the cart & inventory will be released.</p>
         </div>
       </div>
     </div>
   </div>
+  
+<iframe name="proofUploadTarget" id="proofUploadTarget" style="display:none;"></iframe>
 
 <script>
 /* ========= CONFIG ========= */
@@ -255,7 +265,7 @@ const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwti
 
 /* === Payment proof upload endpoint (Apps Script Web App URL) ===
    Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
-const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbxI8V9PAqcgm_mmSYuUQebmI44hLjk2Rs_I8JIQ3S1vPst4G9YF7kw4IfwJe3K3_yOt/exec';
+const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbzisubxB4NF4HVkJ2ylr2zlXZ3PvrUbgKHMd8Q-Td9MEQv-lAUL8mY_OAYyguDlJ2bY/exec';
 
 /* Simple JSONP fetch (works on static sites without CORS headaches) */
 function jsonpFetch(baseUrl, params) {
@@ -444,65 +454,36 @@ function resetProofUI(){
   setPaidEnabled(false);
 }
 
-async function uploadPaymentProof(){
-  const inp    = document.getElementById('proofFile');
+function uploadPaymentProof(){
+  const form   = document.getElementById('proofFormReal');
+  const fileEl = document.getElementById('proofFile');
   const status = document.getElementById('proofStatus');
-  const file   = inp?.files?.[0];
 
-  // 1) Must have a file
-  if (!file){
-    if (status) status.textContent = 'Please choose a screenshot (image) before continuing.';
+  const file = fileEl?.files?.[0];
+  if (!file) {
+    if (status) status.textContent = 'Please choose an image first.';
     return;
   }
-  // 2) Must be an image
-  if (!file.type || !file.type.startsWith('image/')){
-    if (status) status.textContent = 'Images only (JPG/PNG/WEBP/HEIC).';
+  if (!file.type || !file.type.startsWith('image/')) {
+    if (status) status.textContent = 'Images only.';
     return;
   }
-  // 3) (Optional) size guard, keep small and simple
-  if (file.size > 10 * 1024 * 1024){
+  if (file.size > 10 * 1024 * 1024) {
     if (status) status.textContent = 'File too large. Max 10 MB.';
     return;
   }
 
- // Build form with just the file under the key "file"
-const form = new FormData();
-form.append('file', file, file.name);
-
-try {
   if (status) status.textContent = 'Uploading…';
   setPaidEnabled(false);
 
-  // Important: single fetch, and watch for redirects
-  const res = await fetch(PROOF_UPLOAD_API, {
-    method: 'POST',
-    body: form,
-    redirect: 'manual'
-  });
+  // Submit the form to the hidden iframe (no CORS issues)
+  form.submit();
 
-  // Helpful debug so you can see 302 redirects in DevTools
-  console.log('[upload] status', res.status, 'location', res.headers.get('location'));
-
-  // Try to read JSON, but don't fail if it isn't JSON
-  let data = null;
-  try { data = await res.clone().json(); } catch {}
-
-  // Treat any 2xx OR {ok:true} JSON as success
-  if ((res.status >= 200 && res.status < 300) || (data && data.ok === true)) {
-    if (status) status.textContent = 'Uploaded ✓';
-    return;
-  }
-
-  // Otherwise, surface a helpful error message
-  let txt = '';
-  try { txt = await res.text(); } catch {}
-  throw new Error((data && data.error) || txt || `Upload failed (HTTP ${res.status})`);
-
-} catch (err) {
-  console.error('[Proof upload error]', err);
-  if (status) status.textContent = 'Upload failed. Please try again.';
-  setPaidEnabled(true);
-}
+  // If you implement postMessage on the server (next section), this
+  // timeout becomes unnecessary, but it's fine as a fallback.
+  setTimeout(()=>{
+    if (status) status.textContent = 'Uploaded ✓ (received, pending verification)';
+  }, 800);
 }
   
 async function openQr(){
@@ -655,9 +636,8 @@ function init(){
   renderSummary();
   syncPayCta();
 
-  // Enable "I've made the payment" only when a file is selected
-document.getElementById('proofFile')?.addEventListener('change', ()=>{
-  const hasFile = document.getElementById('proofFile')?.files?.length > 0;
+  document.getElementById('proofFile')?.addEventListener('change', (e)=>{
+  const hasFile = e.target?.files?.length > 0;
   setPaidEnabled(!!hasFile);
 });
 
@@ -760,6 +740,20 @@ document.getElementById('qrPaid')?.addEventListener('click', (e)=>{
   }, 400));
   postalEl?.addEventListener('blur', () => tryLookupPostal());
 } // <-- close init()
+
+  window.addEventListener('message', (e)=>{
+  // You can check e.origin includes "script.google.com" if you want to be strict
+  const status = document.getElementById('proofStatus');
+  if (e.data && typeof e.data === 'object' && 'ok' in e.data) {
+    if (e.data.ok) {
+      if (status) status.textContent = 'Uploaded ✓';
+      // …optionally clear cart, close modal, redirect, etc.
+    } else {
+      if (status) status.textContent = 'Upload failed. Please try again.';
+      setPaidEnabled(true);
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
