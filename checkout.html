@@ -247,9 +247,28 @@
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 
-/* PayNow config (MOBILE mode) */
-const MERCHANT_DISPLAY = 'BreezyEzyTCG';
-const PAYNOW_MOBILE = normalizeSGMobile('+6580719821'); // normalize to +65XXXXXXXX
+/* === PayNow backend endpoint (Apps Script Web App URL) ===
+   Replace with YOUR deployed URL from step B-4 */
+const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
+
+/* Simple JSONP fetch (works on static sites without CORS headaches) */
+function jsonpFetch(baseUrl, params) {
+  return new Promise((resolve, reject) => {
+    const cb = `pay_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+    const qs = new URLSearchParams({ ...params, callback: cb, _: Date.now() });
+    const s = document.createElement('script');
+    s.src = `${baseUrl}?${qs.toString()}`;
+
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('PAY_JSONP_TIMEOUT')); }, 10000);
+    function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
+
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error('PAY_JSONP_LOAD_ERROR')); };
+
+    document.head.appendChild(s);
+  });
+}
+
   
 /* ========= Helper: JSONP proxy to Apps Script (bypasses CORS) ========= */
 function proxyFetch(endpoint, params) {
@@ -397,15 +416,6 @@ function renderQr(text){
     correctLevel: QRCode.CorrectLevel.M
   });
 }
-
-/* ==== EMV/PayNow payload builder (mobile proxy, fixed amount) ==== */
-function buildPaymentPayload({ mobile, amount, orderId, editable = false, merchantName = MERCHANT_DISPLAY }){
-  function tlv(id, value){
-    const v = String(value ?? '');
-    const len = String(v.length).padStart(2, '0');
-    return `${id}${len}${v}`;
-  }
-
   // CRC-16/CCITT (poly 0x1021, init 0xFFFF), over ASCII of payload + "6304"
   function crc16ccitt(data){
     let crc = 0xFFFF;
@@ -464,7 +474,7 @@ function parseCurrencyToNumber(s){
   return Number.isFinite(n) ? n : 0;
 }
 
-function openQr(){
+async function openQr(){
   // Clear any old timer
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
@@ -473,26 +483,36 @@ function openQr(){
   const totalNum  = parseCurrencyToNumber(totalText);
   const orderId   = genOrderId();
 
-  const payToLabel = `${MERCHANT_DISPLAY} (Mobile ${PAYNOW_MOBILE})`;
-  document.getElementById('qrPayTo').textContent   = payToLabel;
-  document.getElementById('qrAmount').textContent  = totalText;
-  document.getElementById('qrOrderId').textContent = orderId;
+  // === NEW: ask backend for payload (and a safe label to show) ===
+  try {
+    const res = await jsonpFetch(PAYNOW_API, {
+      endpoint: 'pay',
+      amount: totalNum.toFixed(2),
+      orderId: orderId
+    });
+    if (!res || !res.ok || !res.payload) throw new Error(res && res.error || 'PAY_BAD_RESPONSE');
 
-  const qrText = buildPaymentPayload({
-    mobile: PAYNOW_MOBILE,
-    amount: totalNum.toFixed(2),
-    orderId
-  });
-  renderQr(qrText);
+    // Fill UI without revealing your number
+    document.getElementById('qrPayTo').textContent   = res.payToLabel || 'PayNow';
+    document.getElementById('qrAmount').textContent  = totalText;
+    document.getElementById('qrOrderId').textContent = orderId;
 
-  sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
+    // Render QR from server-provided payload
+    renderQr(res.payload);
 
-  // Start 10-min timer
-  endTime = Date.now() + TIMER_MS;
-  tick();
-  countdown = setInterval(tick, 1000);
+    // Save pending order for your flow
+    sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
 
-  document.getElementById('qrModal').hidden = false;
+    // Start 10-min timer and open modal
+    endTime = Date.now() + TIMER_MS;
+    tick();
+    countdown = setInterval(tick, 1000);
+    document.getElementById('qrModal').hidden = false;
+
+  } catch (err) {
+    console.error('[PayNow] fetch failed:', err);
+    alert('Sorry, we could not generate the payment QR right now. Please try again.');
+  }
 }
 
 function closeQr(){
