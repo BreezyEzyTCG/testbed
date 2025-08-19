@@ -59,6 +59,7 @@
   .pay-cta:hover:not([disabled]){ transform:translateY(-1px); }
   .pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
   .pay-cta.show{ display:block; }
+  .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;}
   .summary{ border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); position:sticky; top:12px; align-self:start; font-family:'Outfit',sans-serif; }
   .summary *{ font-family:inherit; }
   .sum-header{
@@ -226,11 +227,12 @@
                 <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
               </div>
               <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
-              <div class="proof" style="margin-top:12px;">
-                <label>Upload payment screenshot (optional)</label>
-                <input id="proofFile" type="file" accept="image/*"/>
-                <p class="hint">You may also WhatsApp/DM us your proof if you prefer.</p>
-              </div>
+              <div class="proof" id="proofForm" style="margin-top:12px;">
+              <label>Upload payment screenshot <strong>(required)</strong></label>
+              <input id="proofFile" type="file" accept="image/*" required />
+              <p id="proofStatus" class="hint" aria-live="polite"></p>
+              <p class="hint">The proof is required for verification purposes.</p>
+            </div>
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
                 <button class="btn danger" id="qrPaid">I’ve made the payment</button>
@@ -250,6 +252,10 @@ const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9K
 /* === PayNow backend endpoint (Apps Script Web App URL) ===
    Replace with YOUR deployed URL from step B-4 */
 const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
+
+/* === Payment proof upload endpoint (Apps Script Web App URL) ===
+   Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
+const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbxitzu0gpIAIvc3IrCQLw-9yJ02KBTco_g11yornIoIUsb6yRI0D9lHdhNOM1UIHkAZ/exec';
 
 /* Simple JSONP fetch (works on static sites without CORS headaches) */
 function jsonpFetch(baseUrl, params) {
@@ -424,6 +430,83 @@ function parseCurrencyToNumber(s){
   return Number.isFinite(n) ? n : 0;
 }
 
+  function setPaidEnabled(enabled){
+  const btn = document.getElementById('qrPaid');
+  if (!btn) return;
+  btn.disabled = !enabled;
+}
+
+function resetProofUI(){
+  const inp = document.getElementById('proofFile');
+  const status = document.getElementById('proofStatus');
+  if (inp) inp.value = '';
+  if (status) status.textContent = '';
+  setPaidEnabled(false);
+}
+
+async function uploadPaymentProof(){
+  const fileInput = document.getElementById('proofFile');
+  const status    = document.getElementById('proofStatus');
+  const file      = fileInput?.files?.[0];
+
+  if (!file){
+    if (status) status.textContent = 'Please select a screenshot to proceed.';
+    return;
+  }
+
+  // Gather order + buyer info as metadata
+  const pending  = JSON.parse(sessionStorage.getItem('pendingOrder') || '{}');
+  const orderId  = pending.id || document.getElementById('qrOrderId')?.textContent || '';
+  const amount   = String(parseCurrencyToNumber(document.getElementById('sumTotal')?.textContent));
+  const name     = document.getElementById('fName')?.value || '';
+  const email    = document.getElementById('fEmail')?.value || '';
+  const phone    = normalizeSGMobile(document.getElementById('fPhone')?.value || '');
+  const postal   = document.getElementById('fPostal')?.value || '';
+  const addr1    = document.getElementById('fAddr1')?.value || '';
+  const unit     = document.getElementById('fUnit')?.value  || '';
+  const shipMeth = document.getElementById('fMethod')?.value || '';
+
+  const form = new FormData();
+  form.append('file', file, file.name);
+  form.append('orderId', orderId);
+  form.append('amount', amount);
+  form.append('name', name);
+  form.append('email', email);
+  form.append('phone', phone);
+  form.append('postal', postal);
+  form.append('addr1', addr1);
+  form.append('unit', unit);
+  form.append('shipMethod', shipMeth);
+
+  try{
+    if (status) status.textContent = 'Uploading proof… please wait.';
+    setPaidEnabled(false);
+
+    const res  = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
+
+    // Success: swap modal content to a Thank-you message
+    const title = document.getElementById('qrTitle');
+    if (title) title.textContent = 'Thanks!';
+    const info = document.querySelector('.qr-info');
+    if (info){
+      info.innerHTML = `
+        <p><strong>Thanks! We’ve received your payment proof.</strong><br>
+        We’ll verify and email confirmation soon.</p>
+        <p>Order ID: <code>${orderId}</code></p>
+      `;
+    }
+    if (status) status.textContent = '';
+
+    // (We’ll handle redirect + clearing cart later)
+  }catch(err){
+    console.error('[Proof upload error]', err);
+    if (status) status.textContent = 'Upload failed. Please try again or WhatsApp us your proof.';
+    setPaidEnabled(true);
+  }
+}
+  
 async function openQr(){
   // Clear any old timer
   if (countdown) { clearInterval(countdown); countdown = null; }
@@ -446,6 +529,10 @@ async function openQr(){
     document.getElementById('qrPayTo').textContent   = res.payToLabel || 'PayNow';
     document.getElementById('qrAmount').textContent  = totalText;
     document.getElementById('qrOrderId').textContent = orderId;
+    
+    // reset proof UI for a fresh upload
+resetProofUI();
+
 
     // Render QR from server-provided payload
     renderQr(res.payload);
@@ -570,6 +657,12 @@ function init(){
   renderSummary();
   syncPayCta();
 
+  // Enable "I've made the payment" only when a file is selected
+document.getElementById('proofFile')?.addEventListener('change', ()=>{
+  const hasFile = document.getElementById('proofFile')?.files?.length > 0;
+  setPaidEnabled(!!hasFile);
+});
+
   document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
     el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
@@ -595,10 +688,10 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-// "I’ve made the payment" goes straight to thank-you
-document.getElementById('qrPaid')?.addEventListener('click', ()=>{ 
-  const file = document.getElementById('proofFile')?.files?.[0] || null; 
-  window.location.href = "thank-you.html"; 
+// "I’ve made the payment" -> upload proof, then show thanks message
+document.getElementById('qrPaid')?.addEventListener('click', (e)=>{
+  e.preventDefault();
+  uploadPaymentProof();
 });
 
   const postalEl = document.getElementById('fPostal');
