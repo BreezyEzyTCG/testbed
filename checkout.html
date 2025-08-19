@@ -465,30 +465,45 @@ async function uploadPaymentProof(){
     return;
   }
 
- const form = new FormData();
+ // Build form with just the file under the key "file"
+const form = new FormData();
 form.append('file', file, file.name);
-await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
 
-  try{
-    if (status) status.textContent = 'Uploading…';
-    setPaidEnabled(false);
+try {
+  if (status) status.textContent = 'Uploading…';
+  setPaidEnabled(false);
 
-    const res  = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
-    const data = await res.json().catch(()=> ({}));
+  // Important: single fetch, and watch for redirects
+  const res = await fetch(PROOF_UPLOAD_API, {
+    method: 'POST',
+    body: form,
+    redirect: 'manual'
+  });
 
-    if (!res.ok || !data.ok) {
-      throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
-    }
+  // Helpful debug so you can see 302 redirects in DevTools
+  console.log('[upload] status', res.status, 'location', res.headers.get('location'));
 
+  // Try to read JSON, but don't fail if it isn't JSON
+  let data = null;
+  try { data = await res.clone().json(); } catch {}
+
+  // Treat any 2xx OR {ok:true} JSON as success
+  if ((res.status >= 200 && res.status < 300) || (data && data.ok === true)) {
     if (status) status.textContent = 'Uploaded ✓';
-    // keep user on modal; we’re only proving upload works for now
-  }catch(err){
-    console.error('[Proof upload error]', err);
-    if (status) status.textContent = 'Upload failed. Please try again.';
-    setPaidEnabled(true);
+    return;
   }
-}
 
+  // Otherwise, surface a helpful error message
+  let txt = '';
+  try { txt = await res.text(); } catch {}
+  throw new Error((data && data.error) || txt || `Upload failed (HTTP ${res.status})`);
+
+} catch (err) {
+  console.error('[Proof upload error]', err);
+  if (status) status.textContent = 'Upload failed. Please try again.';
+  setPaidEnabled(true);
+}
+}
   
 async function openQr(){
   // Clear any old timer
