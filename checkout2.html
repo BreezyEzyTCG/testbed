@@ -14,7 +14,7 @@
   :root{
     --page-bg:#f6f7f9;
     --surface:#ffffff;
-    --surface-2:#FAFAFA;            /* fixed: single # */
+    --surface-2:#FAFAFA;
     --border:rgba(15,23,42,.10);
     --shadow:0 10px 24px rgba(2,6,23,.08);
     --accent:#ef4444;
@@ -61,14 +61,7 @@
   .pay-cta.show{ display:block; }
   .summary{ border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); position:sticky; top:12px; align-self:start; font-family:'Outfit',sans-serif; }
   .summary *{ font-family:inherit; }
-  .sum-header{
-  padding:12px 14px;
-  background:var(--surface-2);
-  border-bottom:1px solid var(--border);
-  color:var(--text);
-  font-weight:700;
-  font-size: calc(var(--size-h3) * 1.2);
-}
+  .sum-header{ padding:12px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); color:var(--text); font-weight:700; font-size: calc(var(--size-h3) * 1.2); }
   .sum-body{ background:#fff; padding:10px 14px; }
   .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
   .sum-row .price{ font-weight:400; }
@@ -81,21 +74,8 @@
   .qr-dialog{ width:min(660px,96vw); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; }
   .qr-head{ background:var(--surface-2); color:var(--text); padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); font-size:var(--size-h3); }
   .qr-body{ padding:14px; display:grid; gap:10px; }
-
-  /* Dynamic QR box takes the image’s place/size */
-#qrBox { 
-  width: 220px; 
-  height: 220px; 
-  border:1px solid rgba(0,0,0,.1); 
-  border-radius:10px; 
-  overflow:hidden;
-}
-#qrBox img, 
-#qrBox canvas { 
-  width: 100%; 
-  height: 100%; 
-  display:block; 
-}
+  #qrBox { width: 220px; height: 220px; border:1px solid rgba(0,0,0,.1); border-radius:10px; overflow:hidden; }
+  #qrBox img, #qrBox canvas { width: 100%; height: 100%; display:block; }
   .qr-info{ font-size:var(--size-row); }
   .qr-flex{ display:flex; gap:14px; align-items:flex-start; }
   @media (max-width:600px){ .qr-flex{ flex-direction:column; align-items:stretch; } }
@@ -109,15 +89,8 @@
     .sum-body{ padding:9px 12px; }
     .sum-header,.sum-total{ padding:9px 12px; }
   }
-  /* Hide the Close button in the QR modal header */
-#qrClose { display: none; }
-
-  /* Timer turns red when under 60s */
-#qrTimer.timer-urgent {
-  color: #dc2626;       /* red-600 */
-  font-weight: 800;
-}
-
+  #qrClose { display: none; }
+  #qrTimer.timer-urgent { color: #dc2626; font-weight: 800; }
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -164,8 +137,8 @@
             </div>
             <div>
               <label class="req">Unit No.</label>
-          <input id="fUnit" type="text" required inputmode="text" maxlength="8"
-       pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
+              <input id="fUnit" type="text" required inputmode="text" maxlength="8"
+                     pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
             </div>
             <div class="row">
               <div>
@@ -227,10 +200,25 @@
               </div>
               <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
               <div class="proof" style="margin-top:12px;">
-                <label>Upload payment screenshot (optional)</label>
-                <input id="proofFile" type="file" accept="image/*"/>
+                <label>Upload payment screenshot <strong>(required)</strong></label>
+                <input id="proofFile" type="file" accept="image/*" required />
                 <p class="hint">You may also WhatsApp/DM us your proof if you prefer.</p>
               </div>
+
+              <!-- Hidden target so the page doesn't navigate on submit -->
+              <iframe name="uploadBridgeTarget" style="display:none"></iframe>
+
+              <!-- Posts directly to your Apps Script web app -->
+              <form id="appsScriptBridge"
+                    action="https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec"
+                    method="POST"
+                    target="uploadBridgeTarget">
+                <input type="hidden" name="file_b64"  id="bridge_file_b64">
+                <input type="hidden" name="filename"  id="bridge_filename">
+                <input type="hidden" name="mimetype"  id="bridge_mimetype">
+                <input type="hidden" name="note"      id="bridge_note">
+              </form>
+
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
                 <button class="btn danger" id="qrPaid">I’ve made the payment</button>
@@ -247,11 +235,10 @@
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 
-/* === PayNow backend endpoint (Apps Script Web App URL) ===
-   Replace with YOUR deployed URL from step B-4 */
+/* === PayNow backend endpoint (Apps Script Web App URL) === */
 const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 
-/* Simple JSONP fetch (works on static sites without CORS headaches) */
+/* Simple JSONP fetch */
 function jsonpFetch(baseUrl, params) {
   return new Promise((resolve, reject) => {
     const cb = `pay_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
@@ -269,7 +256,6 @@ function jsonpFetch(baseUrl, params) {
   });
 }
 
-  
 /* ========= Helper: JSONP proxy to Apps Script (bypasses CORS) ========= */
 function proxyFetch(endpoint, params) {
   return new Promise((resolve, reject) => {
@@ -328,96 +314,27 @@ function applySavedShippingToForm(){
     if (label)  label.value  = '';
   }
 }
-  
-function normalizeSGMobile(m){
-  // Accept "+6591234567", "91234567", or "65 9123 4567" and normalize to "+6591234567"
-  const digits = String(m).replace(/\D/g,'');
-  if (digits.length === 8) return '+65' + digits;
-  if (digits.length === 10 && digits.startsWith('65')) return '+' + digits;
-  if (digits.length === 11 && digits.startsWith('065')) return '+' + digits.slice(1);
-  if (digits.length === 11 && digits.startsWith('659')) return '+' + digits; // already 65 prefix + 8-digit
-  return '+65' + digits; // last resort
-}
-
-/* ========= Summary ========= */
-function renderSummary(){
-  const cart = getCart();
-  const sumItems = document.getElementById('sumItems');
-  const sumSubtotal = document.getElementById('sumSubtotal');
-  const sumShipping = document.getElementById('sumShipping');
-  const sumTotal = document.getElementById('sumTotal');
-
-  let subtotal = 0;
-  sumItems.innerHTML = '';
-  cart.forEach(it=>{
-    const qty = Number(it.quantity ?? it.qty) || 1;
-    const price = Number(it.price)||0;
-    subtotal += qty*price;
-    const row = document.createElement('div');
-    row.className = 'sum-row';
-row.innerHTML = `
-  <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-    ${it.name} × ${qty}
-  </span>
-  <span class="price">${fmt(qty*price)}</span>
-`;
-    sumItems.appendChild(row);
-  });
-
-  let shipping = 0;
-  const savedShip = getSavedShippingFromCart();
-  if (savedShip && Number.isFinite(Number(savedShip.fee))) shipping = Number(savedShip.fee);
-
-  sumSubtotal.textContent = fmt(subtotal);
-  sumShipping.textContent = fmt(shipping);
-  sumTotal.textContent = fmt(subtotal + shipping);
-}
-
-/* ========= Validation ========= */
-function allValid(){
-  const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
-  for(const id of reqIds){
-    const el = document.getElementById(id);
-    if(!el || !el.value?.trim()) return false;
-  }
-  const phone = document.getElementById('fPhone').value.replace(/\D/g,'');
-  const postal = document.getElementById('fPostal').value.replace(/\D/g,'');
-  if(phone.length !== 8) return false;
-  if(postal.length !== 6) return false;
-  const d1 = document.getElementById('disc1');
-  if(!d1?.checked) return false;
-  if(getCart().length === 0) return false;
-  return true;
-}
-function syncPayCta(){
-  const btn = document.getElementById('btnPay');
-  if(allValid()){ btn.classList.add('show'); btn.disabled = false; }
-  else{ btn.disabled = true; btn.classList.add('show'); }
-}
 
 /* ===== Payment timer length (10 minutes) ===== */
 const TIMER_MS = 10 * 60 * 1000;
 
+/* Track order id for tagging upload */
+let currentOrderId = null;
+
 /* ========= QR Modal ========= */
 let countdown = null, endTime = 0;
 function genOrderId(){ const t = Date.now().toString(36).toUpperCase().slice(-6); const r = Math.random().toString(36).toUpperCase().slice(2,6); return `BE-${t}${r}`; }
-/* Use qrcode.min.js to render into #qrBox */
 let qrInstance = null;
 
 function renderQr(text){
   const box = document.getElementById('qrBox');
   if (!box) return;
-  box.innerHTML = ''; // clear previous QR if any
-  // QRCode is provided by assets/js/qrcode.min.js
+  box.innerHTML = '';
   qrInstance = new QRCode(box, {
-    text,
-    width: 220,
-    height: 220,
-    correctLevel: QRCode.CorrectLevel.M
+    text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M
   });
 }
-  
-// Optional: safely parse "$1,234.56" -> 1234.56
+
 function parseCurrencyToNumber(s){
   if (!s) return 0;
   const n = Number(String(s).replace(/[^0-9.]/g,''));
@@ -425,15 +342,14 @@ function parseCurrencyToNumber(s){
 }
 
 async function openQr(){
-  // Clear any old timer
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
   const totalText = document.getElementById('sumTotal').textContent;
   const totalNum  = parseCurrencyToNumber(totalText);
   const orderId   = genOrderId();
+  currentOrderId  = orderId;  // <-- set it here
 
-  // === NEW: ask backend for payload (and a safe label to show) ===
   try {
     const res = await jsonpFetch(PAYNOW_API, {
       endpoint: 'pay',
@@ -442,18 +358,14 @@ async function openQr(){
     });
     if (!res || !res.ok || !res.payload) throw new Error(res && res.error || 'PAY_BAD_RESPONSE');
 
-    // Fill UI without revealing your number
     document.getElementById('qrPayTo').textContent   = res.payToLabel || 'PayNow';
     document.getElementById('qrAmount').textContent  = totalText;
     document.getElementById('qrOrderId').textContent = orderId;
 
-    // Render QR from server-provided payload
     renderQr(res.payload);
 
-    // Save pending order for your flow
     sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
 
-    // Start 10-min timer and open modal
     endTime = Date.now() + TIMER_MS;
     tick();
     countdown = setInterval(tick, 1000);
@@ -472,13 +384,12 @@ function closeQr(){
 
   const t = document.getElementById('qrTimer');
   if (t) {
-  t.classList.remove('timer-urgent');
-  t.textContent = mmss(TIMER_MS); // shows "10:00"
+    t.classList.remove('timer-urgent');
+    t.textContent = mmss(TIMER_MS);
+  }
 }
 
-}
-
-  function confirmAbortAndExit(){
+function confirmAbortAndExit(){
   const ok = window.confirm(
     'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to your cart.'
   );
@@ -487,6 +398,7 @@ function closeQr(){
   closeQr();
   window.location.href = 'cart.html';
 }
+
 function mmss(ms){
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
@@ -504,14 +416,12 @@ function tick(){
     else el.classList.remove('timer-urgent');
   }
   if (remainMs <= 0){
-  clearInterval(countdown);
-  countdown = null;
-  // Auto-close and return to cart when expired
-  closeQr();
-  window.location.href = "cart.html";
+    clearInterval(countdown);
+    countdown = null;
+    closeQr();
+    window.location.href = "cart.html";
   }
 }
-
 
 /* ========= OneMap postal -> address (via proxy) ========= */
 const postalCache = Object.create(null);
@@ -525,11 +435,7 @@ async function fetchSGAddressByPostal(postal) {
   if (postalCache[clean]) return postalCache[clean];
 
   const data = await proxyFetch('elastic', {
-    searchVal: clean,
-    size: '5',
-    returnGeom: 'N',
-    getAddrDetails: 'Y',
-    pageNum: '1'
+    searchVal: clean, size: '5', returnGeom: 'N', getAddrDetails: 'Y', pageNum: '1'
   });
 
   const rows = Array.isArray(data?.results) ? data.results : [];
@@ -575,31 +481,66 @@ function init(){
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
   });
 
-  // Open QR modal when "Make Payment" is clicked
-document.getElementById('btnPay')?.addEventListener('click', openQr);
+  document.getElementById('btnPay')?.addEventListener('click', openQr);
+  document.getElementById('qrClose')?.addEventListener('click', confirmAbortAndExit);
+  document.getElementById('qrCancel')?.addEventListener('click', confirmAbortAndExit);
 
-// Close/cancel actions should always confirm first
-document.getElementById('qrClose')?.addEventListener('click', confirmAbortAndExit);
-document.getElementById('qrCancel')?.addEventListener('click', confirmAbortAndExit);
+  document.querySelector('#qrModal .qr-backdrop')?.addEventListener('click', (e)=>{
+    if (e.target.classList.contains('qr-backdrop')) confirmAbortAndExit();
+  });
 
-// Backdrop click also asks for confirmation
-document.querySelector('#qrModal .qr-backdrop')?.addEventListener('click', (e)=>{
-  if (e.target.classList.contains('qr-backdrop')) confirmAbortAndExit();
-});
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && !document.getElementById('qrModal').hidden){
+      e.preventDefault();
+      confirmAbortAndExit();
+    }
+  });
 
-// ESC key closes with confirmation too
-document.addEventListener('keydown', (e)=>{
-  if (e.key === 'Escape' && !document.getElementById('qrModal').hidden){
-    e.preventDefault();
-    confirmAbortAndExit();
+  // Disable the "paid" button until a file is chosen
+  const paidBtn = document.getElementById('qrPaid');
+  const proof   = document.getElementById('proofFile');
+  if (paidBtn && proof){
+    paidBtn.disabled = true;
+    proof.addEventListener('change', () => {
+      paidBtn.disabled = !proof.files.length;
+    });
   }
-});
 
-// "I’ve made the payment" goes straight to thank-you
-document.getElementById('qrPaid')?.addEventListener('click', ()=>{ 
-  const file = document.getElementById('proofFile')?.files?.[0] || null; 
-  window.location.href = "thank-you.html"; 
-});
+  // Upload handler
+  document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('proofFile');
+    const f = fileInput?.files?.[0] || null;
+
+    if (!f) { alert('Please choose a payment screenshot before continuing.'); return; }
+
+    const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
+    if (!okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return; }
+    if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return; }
+
+    paidBtn.disabled = true; // prevent double clicks
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result; // "data:image/png;base64,AAAA..."
+      const comma = dataUrl.indexOf(',');
+      document.getElementById('bridge_file_b64').value = dataUrl.slice(comma + 1);
+      document.getElementById('bridge_filename').value = f.name;
+      document.getElementById('bridge_mimetype').value = f.type || 'application/octet-stream';
+
+      const amt = document.getElementById('qrAmount')?.textContent || '';
+      document.getElementById('bridge_note').value =
+        `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`;
+
+      document.getElementById('appsScriptBridge').submit();
+
+      setTimeout(() => {
+        window.location.href = 'thank-you.html';
+      }, 500);
+    };
+    reader.onerror = () => { alert('Could not read the file.'); paidBtn.disabled = false; };
+    reader.readAsDataURL(f);
+  });
 
   const postalEl = document.getElementById('fPostal');
   const postalHintEl = document.getElementById('postalHint');
@@ -613,22 +554,18 @@ document.getElementById('qrPaid')?.addEventListener('click', ()=>{
   async function tryLookupPostal(){
     if (!postalEl) return;
     const val = postalEl.value.replace(/\D/g,'');
-    if (val.length !== 6) { 
-      hint(''); 
-      postalEl.dataset.state = ''; 
-      return; 
-    }
+    if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
 
     const myId = ++lastPostalReqId;
     hint('Looking up…');
 
     try {
       const addr = await fetchSGAddressByPostal(val);
-      if (myId !== lastPostalReqId) return; // ignore stale response
+      if (myId !== lastPostalReqId) return;
       fillAddressFields(addr);
       hint('Address found ✓','ok');
     } catch(err){
-      if (myId !== lastPostalReqId) return; // ignore stale error
+      if (myId !== lastPostalReqId) return;
       const m = String(err?.message || '');
       if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
       else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
@@ -638,7 +575,6 @@ document.getElementById('qrPaid')?.addEventListener('click', ()=>{
     }
   }
 
-  /* Phone: digits only, max 8 */
   const phoneEl = document.getElementById('fPhone');
   phoneEl?.addEventListener('input', () => {
     phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
@@ -647,24 +583,21 @@ document.getElementById('qrPaid')?.addEventListener('click', ()=>{
 
   const unitEl = document.getElementById('fUnit');
   unitEl?.addEventListener('input', () => {
-    // allow digits + dash only, max length 8
     unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
     syncPayCta();
   });
-  
-  // Quick sanity check: did the QR library load?
+
   if (typeof QRCode === 'undefined') {
     console.warn('qrcode.min.js did not load. Check the script path.');
   }
 
-  /* Postal: immediate on 6th digit + debounced fallback */
   postalEl?.addEventListener('input', () => {
     const digits = postalEl.value.replace(/\D/g,'');
     if (digits.length === 6) tryLookupPostal(true);
   });
   postalEl?.addEventListener('input', debounce(() => {
     const digits = postalEl.value.replace(/\D/g,'');
-    if (digits.length === 6) return; // already handled above
+    if (digits.length === 6) return;
     tryLookupPostal();
   }, 400));
   postalEl?.addEventListener('blur', () => tryLookupPostal());
