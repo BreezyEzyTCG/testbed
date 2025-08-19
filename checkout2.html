@@ -59,7 +59,6 @@
   .pay-cta:hover:not([disabled]){ transform:translateY(-1px); }
   .pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
   .pay-cta.show{ display:block; }
-  .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;}
   .summary{ border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); position:sticky; top:12px; align-self:start; font-family:'Outfit',sans-serif; }
   .summary *{ font-family:inherit; }
   .sum-header{
@@ -227,33 +226,22 @@
                 <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
               </div>
               <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
-              <div class="proof" id="proofForm" style="margin-top:12px;">
-              <label>Upload payment screenshot <strong>(required)</strong></label>
-              <form id="proofFormReal"
-                action="https://script.google.com/macros/s/AKfycbzisubxB4NF4HVkJ2ylr2zlXZ3PvrUbgKHMd8Q-Td9MEQv-lAUL8mY_OAYyguDlJ2bY/exec"
-                method="POST"
-                enctype="multipart/form-data"
-                target="proofUploadTarget"
-                style="display:block; margin-top:0;">
-                <!-- Visible input lives INSIDE the form; give it the field name "file" -->
-                <input id="proofFile" type="file" accept="image/*" required name="file" />
-              </form>
-              <p id="proofStatus" class="hint" aria-live="polite"></p>
-              <p class="hint">The proof is required for verification purposes.</p>
-            </div>
+              <div class="proof" style="margin-top:12px;">
+                <label>Upload payment screenshot (optional)</label>
+                <input id="proofFile" type="file" accept="image/*"/>
+                <p class="hint">You may also WhatsApp/DM us your proof if you prefer.</p>
+              </div>
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
                 <button class="btn danger" id="qrPaid">I’ve made the payment</button>
               </div>
             </div>
           </div>
-          <p class="hint">If the timer runs out, you'll be redirected back to the cart & inventory will be released.</p>
+          <p class="hint">If the timer runs out, close this window and tap “Make Payment” again to regenerate an Order ID.</p>
         </div>
       </div>
     </div>
   </div>
-  
-<iframe name="proofUploadTarget" id="proofUploadTarget" style="display:none;"></iframe>
 
 <script>
 /* ========= CONFIG ========= */
@@ -262,10 +250,6 @@ const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9K
 /* === PayNow backend endpoint (Apps Script Web App URL) ===
    Replace with YOUR deployed URL from step B-4 */
 const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
-
-/* === Payment proof upload endpoint (Apps Script Web App URL) ===
-   Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
-const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbzisubxB4NF4HVkJ2ylr2zlXZ3PvrUbgKHMd8Q-Td9MEQv-lAUL8mY_OAYyguDlJ2bY/exec';
 
 /* Simple JSONP fetch (works on static sites without CORS headaches) */
 function jsonpFetch(baseUrl, params) {
@@ -440,60 +424,6 @@ function parseCurrencyToNumber(s){
   return Number.isFinite(n) ? n : 0;
 }
 
-  function setPaidEnabled(enabled){
-  const btn = document.getElementById('qrPaid');
-  if (!btn) return;
-  btn.disabled = !enabled;
-}
-
-function resetProofUI(){
-  const inp = document.getElementById('proofFile');
-  const status = document.getElementById('proofStatus');
-  if (inp) inp.value = '';
-  if (status) status.textContent = '';
-  setPaidEnabled(false);
-}
-
-function uploadPaymentProof(){
-  const form   = document.getElementById('proofFormReal');
-  const fileEl = document.getElementById('proofFile');
-  const status = document.getElementById('proofStatus');
-
-  const file = fileEl?.files?.[0];
-  if (!file) {
-    if (status) status.textContent = 'Please choose an image first.';
-    return;
-  }
-  if (!file.type || !file.type.startsWith('image/')) {
-    if (status) status.textContent = 'Images only.';
-    return;
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    if (status) status.textContent = 'File too large. Max 10 MB.';
-    return;
-  }
-
-  if (status) status.textContent = 'Uploading…';
-  setPaidEnabled(false);
-
-  // Submit the form to the hidden iframe (no CORS issues)
-  form.submit();
-
-  // If you implement postMessage on the server (next section), this
-  // timeout becomes unnecessary, but it's fine as a fallback.
-  // Wait for a real confirmation from the server (postMessage).
-// If nothing arrives, show a failure after 20s.
-if (status) status.textContent = 'Uploading… waiting for server confirmation';
-setPaidEnabled(false);
-
-clearTimeout(window.__proofTimeout);
-window.__proofTimeout = setTimeout(()=>{
-  if (status) status.textContent = 'Upload failed (no server confirmation). Please try again.';
-  setPaidEnabled(true);
-}, 20000);
-}
-
-  
 async function openQr(){
   // Clear any old timer
   if (countdown) { clearInterval(countdown); countdown = null; }
@@ -516,10 +446,6 @@ async function openQr(){
     document.getElementById('qrPayTo').textContent   = res.payToLabel || 'PayNow';
     document.getElementById('qrAmount').textContent  = totalText;
     document.getElementById('qrOrderId').textContent = orderId;
-    
-    // reset proof UI for a fresh upload
-resetProofUI();
-
 
     // Render QR from server-provided payload
     renderQr(res.payload);
@@ -644,11 +570,6 @@ function init(){
   renderSummary();
   syncPayCta();
 
-  document.getElementById('proofFile')?.addEventListener('change', (e)=>{
-  const hasFile = e.target?.files?.length > 0;
-  setPaidEnabled(!!hasFile);
-});
-
   document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
     el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
@@ -674,10 +595,10 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-// "I’ve made the payment" -> upload proof, then show thanks message
-document.getElementById('qrPaid')?.addEventListener('click', (e)=>{
-  e.preventDefault();
-  uploadPaymentProof();
+// "I’ve made the payment" goes straight to thank-you
+document.getElementById('qrPaid')?.addEventListener('click', ()=>{ 
+  const file = document.getElementById('proofFile')?.files?.[0] || null; 
+  window.location.href = "thank-you.html"; 
 });
 
   const postalEl = document.getElementById('fPostal');
@@ -748,20 +669,6 @@ document.getElementById('qrPaid')?.addEventListener('click', (e)=>{
   }, 400));
   postalEl?.addEventListener('blur', () => tryLookupPostal());
 } // <-- close init()
-
-  window.addEventListener('message', (e)=>{
-  // You can check e.origin includes "script.google.com" if you want to be strict
-  const status = document.getElementById('proofStatus');
-  if (e.data && typeof e.data === 'object' && 'ok' in e.data) {
-    if (e.data.ok) {
-      if (status) status.textContent = 'Uploaded ✓';
-      // …optionally clear cart, close modal, redirect, etc.
-    } else {
-      if (status) status.textContent = 'Upload failed. Please try again.';
-      setPaidEnabled(true);
-    }
-  }
-});
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
