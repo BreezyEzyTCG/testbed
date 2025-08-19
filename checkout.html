@@ -416,57 +416,7 @@ function renderQr(text){
     correctLevel: QRCode.CorrectLevel.M
   });
 }
-  // CRC-16/CCITT (poly 0x1021, init 0xFFFF), over ASCII of payload + "6304"
-  function crc16ccitt(data){
-    let crc = 0xFFFF;
-    for (let i = 0; i < data.length; i++){
-      crc ^= (data.charCodeAt(i) & 0xFF) << 8;
-      for (let j = 0; j < 8; j++){
-        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
-        crc &= 0xFFFF;
-      }
-    }
-    return crc.toString(16).toUpperCase().padStart(4, '0');
-  }
-
-  const normalizedMobile = normalizeSGMobile(mobile); // "+65xxxxxxxx"
-  const name25 = String(merchantName || 'NA').slice(0, 25);
-
-  // Merchant Account Info (ID 26) — PayNow nested template
-  const paynowInner =
-    tlv('00', 'SG.PAYNOW') +         // Global Unique Identifier
-    tlv('01', '0') +                 // Proxy type: 0 = mobile
-    tlv('02', normalizedMobile) +    // Proxy value
-    tlv('03', editable ? '1' : '0'); // Amount editable flag
-
-  const mAccountInfo = tlv('26', paynowInner);
-
-  // Additional Data (ID 62): Bill Number (ID 01)
-  const additional = tlv('62', tlv('01', String(orderId).slice(0, 25)));
-
-  // Root (without CRC)
-  // 00 PFI=01, 01 POI=12 (dynamic), 52 MCC=0000, 53 Currency=702 (SGD), 54 Amount (fixed),
-  // 58 SG, 59 Name (<=25 chars), 60 City=Singapore
-  let payload =
-    tlv('00', '01') +
-    tlv('01', '12') +
-    mAccountInfo +
-    tlv('52', '0000') +
-    tlv('53', '702') +
-    tlv('54', amount) +        // include 54 since fixed amount
-    tlv('58', 'SG') +
-    tlv('59', name25) +
-    tlv('60', 'Singapore') +
-    additional;
-
-  // Append CRC (ID 63 length 04 + value)
-  const toCheck = payload + '6304';
-  const crc = crc16ccitt(toCheck);
-  payload += `6304${crc}`;
-
-  return payload;
-}
-
+  
 // Optional: safely parse "$1,234.56" -> 1234.56
 function parseCurrencyToNumber(s){
   if (!s) return 0;
