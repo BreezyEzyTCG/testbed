@@ -533,10 +533,6 @@ function init(){
         `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`;
 
       document.getElementById('appsScriptBridge').submit();
-
-      setTimeout(() => {
-        window.location.href = 'thank-you.html';
-      }, 500);
     };
     reader.onerror = () => { alert('Could not read the file.'); paidBtn.disabled = false; };
     reader.readAsDataURL(f);
