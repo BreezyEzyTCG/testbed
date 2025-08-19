@@ -486,22 +486,37 @@ async function uploadPaymentProof(){
   console.log('FormData', k, v instanceof File ? `(File ${v.name}, ${v.size} bytes)` : v);
 }
 
-    const res  = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
-    const data = await res.json().catch(()=> ({}));
-    if (!res.ok || !data.ok) throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
+   // Log what we're actually sending
+console.log('[proof] selected file:', file && file.name, file && file.size);
+for (const [k,v] of form.entries()) {
+  console.log('[proof] FormData', k, (v instanceof File) ? `(File ${v.name}, ${v.size} bytes)` : v);
+}
 
-    // Success: swap modal content to a Thank-you message
-    const title = document.getElementById('qrTitle');
-    if (title) title.textContent = 'Thanks!';
-    const info = document.querySelector('.qr-info');
-    if (info){
-      info.innerHTML = `
-        <p><strong>Thanks! We’ve received your payment proof.</strong><br>
-        We’ll verify and email confirmation soon.</p>
-        <p>Order ID: <code>${orderId}</code></p>
-      `;
-    }
-    if (status) status.textContent = '';
+const res   = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
+const text  = await res.text();
+console.log('[proof] raw response:', res.status, text);
+
+// Try to parse JSON; if it isn’t JSON, fail with the raw text
+let data;
+try { data = JSON.parse(text); }
+catch (e) { throw new Error(`BAD_JSON: ${text.slice(0,200)}`); }
+
+if (!res.ok || !data.ok) {
+  throw new Error(data.error || `UPLOAD_ERROR_HTTP_${res.status}`);
+}
+
+// Success UI
+const title = document.getElementById('qrTitle');
+if (title) title.textContent = 'Thanks!';
+const info = document.querySelector('.qr-info');
+if (info){
+  info.innerHTML = `
+    <p><strong>Thanks! We’ve received your payment proof.</strong><br>
+    We’ll verify and email confirmation soon.</p>
+    <p>Order ID: <code>${orderId}</code></p>
+  `;
+}
+if (status) status.textContent = '';
 
     // (We’ll handle redirect + clearing cart later)
   }catch(err){
