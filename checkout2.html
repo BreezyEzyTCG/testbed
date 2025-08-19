@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Checkout</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://www.onemap.gov.sg">
+
+<style>
+  :root{
+    --page-bg:#f6f7f9;
+    --surface:#ffffff;
+    --surface-2:#FAFAFA;            /* fixed: single # */
+    --border:rgba(15,23,42,.10);
+    --shadow:0 10px 24px rgba(2,6,23,.08);
+    --accent:#ef4444;
+    --text:#0f172a;
+    --muted:#475569;
+    --chip-bg:#0f172a;
+    --chip-fg:#fff;
+    --bw-bg:#111;
+    --bw-fg:#fff;
+    --bw-border:#e5e7eb;
+    --size-base:14.5px;
+    --size-label:12.75px;
+    --size-input:14px;
+    --size-h2:15px;
+    --size-h3:14px;
+    --size-row:14px;
+    --size-total:16.5px;
+  }
+
+  body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-size:var(--size-base); background:var(--page-bg); color:var(--text); }
+  .wrap{ max-width:1040px; margin:18px auto; padding:12px; }
+  .grid{ display:grid; gap:14px; grid-template-columns:1.15fr .85fr; }
+  @media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
+  .card{ background:var(--surface); border-radius:12px; padding:0; border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+  .form-header{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); }
+  .back-btn{ display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border-radius:10px; text-decoration:none; font-weight:600; color:#111; background:#fff; border:1px solid rgba(0,0,0,.12); }
+  .card-body{ padding:14px; }
+  .card-body h2{ margin:0 0 10px; font-size:var(--size-h2); letter-spacing:.2px; }
+  .card-body > .hint{ background:var(--surface-2); padding:8px 10px; border-radius:8px; font-size:13px; margin-bottom:12px; display:block; }
+  #fPostal[data-state="ok"]{ border-color:#16a34a; }
+  #fPostal[data-state="err"]{ border-color:#ef4444; }
+  .fields{ display:grid; gap:10px; }
+  .row{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
+  @media (max-width:600px){ .row{ grid-template-columns:1fr; } }
+  label{ font-size:var(--size-label); font-weight:600; margin-bottom:5px; color:var(--muted); }
+  .req::after{ content:" *"; color:#ef4444; }
+  input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
+  input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+  #fMethodLabel[readonly]{ background:#fff; color:inherit; opacity:1; cursor:default; }
+  .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
+  .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
+  .pay-cta:hover:not([disabled]){ transform:translateY(-1px); }
+  .pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
+  .pay-cta.show{ display:block; }
+  .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;}
+  .summary{ border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); position:sticky; top:12px; align-self:start; font-family:'Outfit',sans-serif; }
+  .summary *{ font-family:inherit; }
+  .sum-header{
+  padding:12px 14px;
+  background:var(--surface-2);
+  border-bottom:1px solid var(--border);
+  color:var(--text);
+  font-weight:700;
+  font-size: calc(var(--size-h3) * 1.2);
+}
+  .sum-body{ background:#fff; padding:10px 14px; }
+  .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
+  .sum-row .price{ font-weight:400; }
+  .sum-total{ background:var(--surface-2); color:var(--text); padding:10px 14px; font-weight:800; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:var(--size-total); }
+  .option-group{ display:grid; gap:8px; }
+  .opt-item{ display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:start; padding:9px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
+  .disc-text{ font-size:13px; color:var(--muted); }
+  #qrModal[hidden]{ display:none; }
+  .qr-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .qr-dialog{ width:min(660px,96vw); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; }
+  .qr-head{ background:var(--surface-2); color:var(--text); padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); font-size:var(--size-h3); }
+  .qr-body{ padding:14px; display:grid; gap:10px; }
+
+  /* Dynamic QR box takes the image’s place/size */
+#qrBox { 
+  width: 220px; 
+  height: 220px; 
+  border:1px solid rgba(0,0,0,.1); 
+  border-radius:10px; 
+  overflow:hidden;
+}
+#qrBox img, 
+#qrBox canvas { 
+  width: 100%; 
+  height: 100%; 
+  display:block; 
+}
+  .qr-info{ font-size:var(--size-row); }
+  .qr-flex{ display:flex; gap:14px; align-items:flex-start; }
+  @media (max-width:600px){ .qr-flex{ flex-direction:column; align-items:stretch; } }
+  .danger{ background:var(--accent); color:#fff; border:1px solid rgba(0,0,0,.04); }
+  .outline{ background:#fff; color:#0f172a; border:1px solid rgba(0,0,0,.12); }
+  .btn{ padding:9px 11px; border-radius:10px; font-weight:700; cursor:pointer; font-size:14px; }
+  @media (max-height:820px) and (min-width:981px){
+    :root{ --size-base:13.75px; --size-label:12.25px; --size-input:13.25px; --size-h2:14px; --size-row:13.25px; --size-total:15.5px; }
+    .wrap{ margin:14px auto; }
+    .card-body{ padding:12px; }
+    .sum-body{ padding:9px 12px; }
+    .sum-header,.sum-total{ padding:9px 12px; }
+  }
+  /* Hide the Close button in the QR modal header */
+#qrClose { display: none; }
+
+  /* Timer turns red when under 60s */
+#qrTimer.timer-urgent {
+  color: #dc2626;       /* red-600 */
+  font-weight: 800;
+}
+
+</style>
+<script src="assets/js/qrcode.min.js" defer></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid">
+      <section class="card">
+        <div class="form-header">
+          <a href="cart.html" class="back-btn">← Back</a>
+        </div>
+        <div class="card-body">
+          <h2>Shipping Details</h2>
+          <div class="hint" style="margin-bottom:10px;">
+            Note: Providing accurate information helps us deliver your order smoothly (^_<)〜☆
+          </div>
+
+          <div class="fields" id="shipForm">
+            <div class="row">
+              <div>
+                <label class="req">Full Name</label>
+                <input id="fName" required autocomplete="name" placeholder="e.g., Jane Doe"/>
+              </div>
+              <div>
+                <label class="req">Email</label>
+                <input id="fEmail" type="email" required autocomplete="email" placeholder="jane.doe@example.com"/>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label class="req">Phone (+65)</label>
+                <input id="fPhone" type="tel" required inputmode="numeric" maxlength="8" pattern="^\d{8}$" placeholder="8-digit number"/>
+              </div>
+              <div>
+                <label class="req">Postal Code</label>
+                <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits" pattern="^\d{6}$" autocomplete="postal-code">
+                <div id="postalHint" class="hint" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <div>
+              <label class="req">Address Line 1</label>
+              <input id="fAddr1" required placeholder="Block & Street Name"/>
+            </div>
+            <div>
+              <label class="req">Unit No.</label>
+          <input id="fUnit" type="text" required inputmode="text" maxlength="8"
+       pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
+            </div>
+            <div class="row">
+              <div>
+                <label class="req">City</label>
+                <input id="fCity" required value="Singapore" readonly />
+              </div>
+              <div>
+                <label class="req">Selected Mailing Option</label>
+                <input id="fMethodLabel" readonly placeholder="Choose on cart page"/>
+                <input type="hidden" id="fMethod" required />
+                <div class="hint">Selected on cart page. Go back to change.</div>
+              </div>
+            </div>
+
+            <div class="option-group option-list" style="margin-top:8px;">
+              <label class="opt-item">
+                <input type="checkbox" id="disc1">
+                <span class="disc-text">By proceeding, you agree that the information above is correct.</span>
+              </label>
+            </div>
+
+            <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
+            <div class="hint">Button is greyed out until all required fields are valid.</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="summary">
+        <div class="sum-header"><strong>Detailed Order Summary</strong></div>
+        <div class="sum-body" id="sumBody">
+          <div id="sumItems" style="margin-bottom:6px;"></div>
+          <div class="sum-row"><span><strong>Subtotal</strong></span><strong id="sumSubtotal">$0.00</strong></div>
+          <div class="sum-row"><span><strong>Shipping</strong></span><strong id="sumShipping">$0.00</strong></div>
+        </div>
+        <div class="sum-total">
+          <span>Total</span><span id="sumTotal">$0.00</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- QR Modal -->
+  <div id="qrModal" hidden>
+    <div class="qr-backdrop" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+      <div class="qr-dialog">
+        <div class="qr-head">
+          <h3 id="qrTitle">PayNow Payment</h3>
+          <button class="btn outline" id="qrClose">Close</button>
+        </div>
+        <div class="qr-body">
+          <div class="qr-flex">
+            <div id="qrBox" aria-label="QR code will render here"></div>
+            <div class="qr-info">
+              <div style="margin-bottom:8px;">
+                <div><strong>Pay to:</strong> <span id="qrPayTo">—</span></div>
+                <div><strong>Amount:</strong> <span id="qrAmount">$0.00</span></div>
+                <div><strong>Order ID:</strong> <span id="qrOrderId">—</span></div>
+                <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
+              </div>
+              <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
+              <div class="proof" id="proofForm" style="margin-top:12px;">
+              <label>Upload payment screenshot <strong>(required)</strong></label>
+              <form id="proofFormReal"
+                action="https://script.google.com/macros/s/AKfycbzisubxB4NF4HVkJ2ylr2zlXZ3PvrUbgKHMd8Q-Td9MEQv-lAUL8mY_OAYyguDlJ2bY/exec"
+                method="POST"
+                enctype="multipart/form-data"
+                target="proofUploadTarget"
+                style="display:block; margin-top:0;">
+                <!-- Visible input lives INSIDE the form; give it the field name "file" -->
+                <input id="proofFile" type="file" accept="image/*" required name="file" />
+              </form>
+              <p id="proofStatus" class="hint" aria-live="polite"></p>
+              <p class="hint">The proof is required for verification purposes.</p>
+            </div>
+              <div style="display:flex; gap:8px; margin-top:12px;">
+                <button class="btn outline" id="qrCancel">Cancel</button>
+                <button class="btn danger" id="qrPaid">I’ve made the payment</button>
+              </div>
+            </div>
+          </div>
+          <p class="hint">If the timer runs out, you'll be redirected back to the cart & inventory will be released.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<iframe name="proofUploadTarget" id="proofUploadTarget" style="display:none;"></iframe>
+
+<script>
+/* ========= CONFIG ========= */
+const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
+
+/* === PayNow backend endpoint (Apps Script Web App URL) ===
+   Replace with YOUR deployed URL from step B-4 */
+const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
+
+/* === Payment proof upload endpoint (Apps Script Web App URL) ===
+   Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
+const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbzisubxB4NF4HVkJ2ylr2zlXZ3PvrUbgKHMd8Q-Td9MEQv-lAUL8mY_OAYyguDlJ2bY/exec';
+
+/* Simple JSONP fetch (works on static sites without CORS headaches) */
+function jsonpFetch(baseUrl, params) {
+  return new Promise((resolve, reject) => {
+    const cb = `pay_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+    const qs = new URLSearchParams({ ...params, callback: cb, _: Date.now() });
+    const s = document.createElement('script');
+    s.src = `${baseUrl}?${qs.toString()}`;
+
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('PAY_JSONP_TIMEOUT')); }, 10000);
+    function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
+
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error('PAY_JSONP_LOAD_ERROR')); };
+
+    document.head.appendChild(s);
+  });
+}
+
+  
+/* ========= Helper: JSONP proxy to Apps Script (bypasses CORS) ========= */
+function proxyFetch(endpoint, params) {
+  return new Promise((resolve, reject) => {
+    const cb = `onemap_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+    const qs = new URLSearchParams({ ...params, endpoint, callback: cb, _: Date.now() });
+    const s = document.createElement('script');
+    s.src = `${ONEMAP_PROXY}?${qs.toString()}`;
+
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('JSONP_TIMEOUT')); }, 8000);
+    function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
+
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error('JSONP_LOAD_ERROR')); };
+
+    document.head.appendChild(s);
+  });
+}
+
+/* ========= Cart helpers ========= */
+function getCart(){
+  try{ const raw = JSON.parse(localStorage.getItem("cart") || "[]"); return Array.isArray(raw)? raw:[]; }
+  catch{ return []; }
+}
+function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
+
+/* ========= Shipping from cart ========= */
+function getSavedShippingFromCart(){
+  const RAW = localStorage.getItem('shippingMethod');
+  if (!RAW) return null;
+  try {
+    const obj = JSON.parse(RAW);
+    if (obj && (obj.id || obj.label)) return obj;
+  } catch(e) {}
+  const id = String(RAW).trim().toLowerCase();
+  const LABELS = {
+    consolidate:'Consolidate Order — $0.00',
+    letter:'Letterbox-sized package — $3.00',
+    s:'S-sized package — $3.50',
+    m:'M-sized package — $4.00',
+    l:'L-sized package — $5.00',
+    xl:'XL-sized package — $15.00'
+  };
+  const FEES = { consolidate:0, letter:3.00, s:3.50, m:4.00, l:5.00, xl:15.00 };
+  if (id in FEES) return { id, fee: FEES[id], label: LABELS[id] };
+  return null;
+}
+function applySavedShippingToForm(){
+  const saved  = getSavedShippingFromCart();
+  const hidden = document.getElementById('fMethod');
+  const label  = document.getElementById('fMethodLabel');
+  if (saved && saved.id){
+    if (hidden) hidden.value = saved.id;
+    if (label)  label.value  = saved.label || saved.id;
+  } else {
+    if (hidden) hidden.value = '';
+    if (label)  label.value  = '';
+  }
+}
+  
+function normalizeSGMobile(m){
+  // Accept "+6591234567", "91234567", or "65 9123 4567" and normalize to "+6591234567"
+  const digits = String(m).replace(/\D/g,'');
+  if (digits.length === 8) return '+65' + digits;
+  if (digits.length === 10 && digits.startsWith('65')) return '+' + digits;
+  if (digits.length === 11 && digits.startsWith('065')) return '+' + digits.slice(1);
+  if (digits.length === 11 && digits.startsWith('659')) return '+' + digits; // already 65 prefix + 8-digit
+  return '+65' + digits; // last resort
+}
+
+/* ========= Summary ========= */
+function renderSummary(){
+  const cart = getCart();
+  const sumItems = document.getElementById('sumItems');
+  const sumSubtotal = document.getElementById('sumSubtotal');
+  const sumShipping = document.getElementById('sumShipping');
+  const sumTotal = document.getElementById('sumTotal');
+
+  let subtotal = 0;
+  sumItems.innerHTML = '';
+  cart.forEach(it=>{
+    const qty = Number(it.quantity ?? it.qty) || 1;
+    const price = Number(it.price)||0;
+    subtotal += qty*price;
+    const row = document.createElement('div');
+    row.className = 'sum-row';
+row.innerHTML = `
+  <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+    ${it.name} × ${qty}
+  </span>
+  <span class="price">${fmt(qty*price)}</span>
+`;
+    sumItems.appendChild(row);
+  });
+
+  let shipping = 0;
+  const savedShip = getSavedShippingFromCart();
+  if (savedShip && Number.isFinite(Number(savedShip.fee))) shipping = Number(savedShip.fee);
+
+  sumSubtotal.textContent = fmt(subtotal);
+  sumShipping.textContent = fmt(shipping);
+  sumTotal.textContent = fmt(subtotal + shipping);
+}
+
+/* ========= Validation ========= */
+function allValid(){
+  const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
+  for(const id of reqIds){
+    const el = document.getElementById(id);
+    if(!el || !el.value?.trim()) return false;
+  }
+  const phone = document.getElementById('fPhone').value.replace(/\D/g,'');
+  const postal = document.getElementById('fPostal').value.replace(/\D/g,'');
+  if(phone.length !== 8) return false;
+  if(postal.length !== 6) return false;
+  const d1 = document.getElementById('disc1');
+  if(!d1?.checked) return false;
+  if(getCart().length === 0) return false;
+  return true;
+}
+function syncPayCta(){
+  const btn = document.getElementById('btnPay');
+  if(allValid()){ btn.classList.add('show'); btn.disabled = false; }
+  else{ btn.disabled = true; btn.classList.add('show'); }
+}
+
+/* ===== Payment timer length (10 minutes) ===== */
+const TIMER_MS = 10 * 60 * 1000;
+
+/* ========= QR Modal ========= */
+let countdown = null, endTime = 0;
+function genOrderId(){ const t = Date.now().toString(36).toUpperCase().slice(-6); const r = Math.random().toString(36).toUpperCase().slice(2,6); return `BE-${t}${r}`; }
+/* Use qrcode.min.js to render into #qrBox */
+let qrInstance = null;
+
+function renderQr(text){
+  const box = document.getElementById('qrBox');
+  if (!box) return;
+  box.innerHTML = ''; // clear previous QR if any
+  // QRCode is provided by assets/js/qrcode.min.js
+  qrInstance = new QRCode(box, {
+    text,
+    width: 220,
+    height: 220,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+  
+// Optional: safely parse "$1,234.56" -> 1234.56
+function parseCurrencyToNumber(s){
+  if (!s) return 0;
+  const n = Number(String(s).replace(/[^0-9.]/g,''));
+  return Number.isFinite(n) ? n : 0;
+}
+
+  function setPaidEnabled(enabled){
+  const btn = document.getElementById('qrPaid');
+  if (!btn) return;
+  btn.disabled = !enabled;
+}
+
+function resetProofUI(){
+  const inp = document.getElementById('proofFile');
+  const status = document.getElementById('proofStatus');
+  if (inp) inp.value = '';
+  if (status) status.textContent = '';
+  setPaidEnabled(false);
+}
+
+function uploadPaymentProof(){
+  const form   = document.getElementById('proofFormReal');
+  const fileEl = document.getElementById('proofFile');
+  const status = document.getElementById('proofStatus');
+
+  const file = fileEl?.files?.[0];
+  if (!file) {
+    if (status) status.textContent = 'Please choose an image first.';
+    return;
+  }
+  if (!file.type || !file.type.startsWith('image/')) {
+    if (status) status.textContent = 'Images only.';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    if (status) status.textContent = 'File too large. Max 10 MB.';
+    return;
+  }
+
+  if (status) status.textContent = 'Uploading…';
+  setPaidEnabled(false);
+
+  // Submit the form to the hidden iframe (no CORS issues)
+  form.submit();
+
+  // If you implement postMessage on the server (next section), this
+  // timeout becomes unnecessary, but it's fine as a fallback.
+  // Wait for a real confirmation from the server (postMessage).
+// If nothing arrives, show a failure after 20s.
+if (status) status.textContent = 'Uploading… waiting for server confirmation';
+setPaidEnabled(false);
+
+clearTimeout(window.__proofTimeout);
+window.__proofTimeout = setTimeout(()=>{
+  if (status) status.textContent = 'Upload failed (no server confirmation). Please try again.';
+  setPaidEnabled(true);
+}, 20000);
+}
+
+  
+async function openQr(){
+  // Clear any old timer
+  if (countdown) { clearInterval(countdown); countdown = null; }
+  endTime = 0;
+
+  const totalText = document.getElementById('sumTotal').textContent;
+  const totalNum  = parseCurrencyToNumber(totalText);
+  const orderId   = genOrderId();
+
+  // === NEW: ask backend for payload (and a safe label to show) ===
+  try {
+    const res = await jsonpFetch(PAYNOW_API, {
+      endpoint: 'pay',
+      amount: totalNum.toFixed(2),
+      orderId: orderId
+    });
+    if (!res || !res.ok || !res.payload) throw new Error(res && res.error || 'PAY_BAD_RESPONSE');
+
+    // Fill UI without revealing your number
+    document.getElementById('qrPayTo').textContent   = res.payToLabel || 'PayNow';
+    document.getElementById('qrAmount').textContent  = totalText;
+    document.getElementById('qrOrderId').textContent = orderId;
+    
+    // reset proof UI for a fresh upload
+resetProofUI();
+
+
+    // Render QR from server-provided payload
+    renderQr(res.payload);
+
+    // Save pending order for your flow
+    sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
+
+    // Start 10-min timer and open modal
+    endTime = Date.now() + TIMER_MS;
+    tick();
+    countdown = setInterval(tick, 1000);
+    document.getElementById('qrModal').hidden = false;
+
+  } catch (err) {
+    console.error('[PayNow] fetch failed:', err);
+    alert('Sorry, we could not generate the payment QR right now. Please try again.');
+  }
+}
+
+function closeQr(){
+  document.getElementById('qrModal').hidden = true;
+  if (countdown) { clearInterval(countdown); countdown = null; }
+  endTime = 0;
+
+  const t = document.getElementById('qrTimer');
+  if (t) {
+  t.classList.remove('timer-urgent');
+  t.textContent = mmss(TIMER_MS); // shows "10:00"
+}
+
+}
+
+  function confirmAbortAndExit(){
+  const ok = window.confirm(
+    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to your cart.'
+  );
+  if (!ok) return;
+
+  closeQr();
+  window.location.href = 'cart.html';
+}
+function mmss(ms){
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const s = String(totalSec % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function tick(){
+  const remainMs = Math.max(0, endTime - Date.now());
+  const el = document.getElementById('qrTimer');
+  if (el) {
+    el.textContent = mmss(remainMs);
+    const remainSec = Math.floor(remainMs / 1000);
+    if (remainSec <= 60) el.classList.add('timer-urgent');
+    else el.classList.remove('timer-urgent');
+  }
+  if (remainMs <= 0){
+  clearInterval(countdown);
+  countdown = null;
+  // Auto-close and return to cart when expired
+  closeQr();
+  window.location.href = "cart.html";
+  }
+}
+
+
+/* ========= OneMap postal -> address (via proxy) ========= */
+const postalCache = Object.create(null);
+try { Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}')); } catch {}
+function savePostalCache(){ try { sessionStorage.setItem('postalCache', JSON.stringify(postalCache)); } catch {} }
+
+async function fetchSGAddressByPostal(postal) {
+  const clean = String(postal || '').replace(/\D/g, '');
+  if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
+
+  if (postalCache[clean]) return postalCache[clean];
+
+  const data = await proxyFetch('elastic', {
+    searchVal: clean,
+    size: '5',
+    returnGeom: 'N',
+    getAddrDetails: 'Y',
+    pageNum: '1'
+  });
+
+  const rows = Array.isArray(data?.results) ? data.results : [];
+  const exact = rows.find(r => String(r.POSTAL) === clean) || rows[0];
+  if (!exact) throw new Error('POSTAL_NOT_FOUND');
+
+  const { BLK_NO, ROAD_NAME, POSTAL } = exact;
+  const addr = {
+    addr1: [BLK_NO, ROAD_NAME].filter(Boolean).join(' '),
+    city: 'Singapore',
+    postal: POSTAL || clean
+  };
+
+  postalCache[clean] = addr;
+  savePostalCache();
+  return addr;
+}
+
+function fillAddressFields(addr){
+  const a1 = document.getElementById('fAddr1');
+  const city = document.getElementById('fCity');
+  const postalEl = document.getElementById('fPostal');
+
+  if (a1) a1.value = addr.addr1 || '';
+  if (city) city.value = addr.city || 'Singapore';
+  if (postalEl && addr.postal) postalEl.value = addr.postal;
+
+  renderSummary();
+  syncPayCta();
+}
+
+/* ========= Utilities ========= */
+function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
+
+/* ========= Init ========= */
+function init(){
+  applySavedShippingToForm();
+  renderSummary();
+  syncPayCta();
+
+  document.getElementById('proofFile')?.addEventListener('change', (e)=>{
+  const hasFile = e.target?.files?.length > 0;
+  setPaidEnabled(!!hasFile);
+});
+
+  document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
+    el.addEventListener('input', ()=>{ renderSummary(); syncPayCta(); });
+    el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
+  });
+
+  // Open QR modal when "Make Payment" is clicked
+document.getElementById('btnPay')?.addEventListener('click', openQr);
+
+// Close/cancel actions should always confirm first
+document.getElementById('qrClose')?.addEventListener('click', confirmAbortAndExit);
+document.getElementById('qrCancel')?.addEventListener('click', confirmAbortAndExit);
+
+// Backdrop click also asks for confirmation
+document.querySelector('#qrModal .qr-backdrop')?.addEventListener('click', (e)=>{
+  if (e.target.classList.contains('qr-backdrop')) confirmAbortAndExit();
+});
+
+// ESC key closes with confirmation too
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape' && !document.getElementById('qrModal').hidden){
+    e.preventDefault();
+    confirmAbortAndExit();
+  }
+});
+
+// "I’ve made the payment" -> upload proof, then show thanks message
+document.getElementById('qrPaid')?.addEventListener('click', (e)=>{
+  e.preventDefault();
+  uploadPaymentProof();
+});
+
+  const postalEl = document.getElementById('fPostal');
+  const postalHintEl = document.getElementById('postalHint');
+  const hint = (msg, state='info') => {
+    if (postalHintEl) postalHintEl.textContent = msg || '';
+    if (postalEl) { postalEl.dataset.state = state; postalEl.title = msg || ''; }
+  };
+
+  let lastPostalReqId = 0;
+
+  async function tryLookupPostal(){
+    if (!postalEl) return;
+    const val = postalEl.value.replace(/\D/g,'');
+    if (val.length !== 6) { 
+      hint(''); 
+      postalEl.dataset.state = ''; 
+      return; 
+    }
+
+    const myId = ++lastPostalReqId;
+    hint('Looking up…');
+
+    try {
+      const addr = await fetchSGAddressByPostal(val);
+      if (myId !== lastPostalReqId) return; // ignore stale response
+      fillAddressFields(addr);
+      hint('Address found ✓','ok');
+    } catch(err){
+      if (myId !== lastPostalReqId) return; // ignore stale error
+      const m = String(err?.message || '');
+      if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+      else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+      else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+      else                               hint('Lookup error. Please try again.','err');
+      console.warn('[Postal lookup failed]', err);
+    }
+  }
+
+  /* Phone: digits only, max 8 */
+  const phoneEl = document.getElementById('fPhone');
+  phoneEl?.addEventListener('input', () => {
+    phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
+    syncPayCta();
+  });
+
+  const unitEl = document.getElementById('fUnit');
+  unitEl?.addEventListener('input', () => {
+    // allow digits + dash only, max length 8
+    unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
+    syncPayCta();
+  });
+  
+  // Quick sanity check: did the QR library load?
+  if (typeof QRCode === 'undefined') {
+    console.warn('qrcode.min.js did not load. Check the script path.');
+  }
+
+  /* Postal: immediate on 6th digit + debounced fallback */
+  postalEl?.addEventListener('input', () => {
+    const digits = postalEl.value.replace(/\D/g,'');
+    if (digits.length === 6) tryLookupPostal(true);
+  });
+  postalEl?.addEventListener('input', debounce(() => {
+    const digits = postalEl.value.replace(/\D/g,'');
+    if (digits.length === 6) return; // already handled above
+    tryLookupPostal();
+  }, 400));
+  postalEl?.addEventListener('blur', () => tryLookupPostal());
+} // <-- close init()
+
+  window.addEventListener('message', (e)=>{
+  // You can check e.origin includes "script.google.com" if you want to be strict
+  const status = document.getElementById('proofStatus');
+  if (e.data && typeof e.data === 'object' && 'ok' in e.data) {
+    if (e.data.ok) {
+      if (status) status.textContent = 'Uploaded ✓';
+      // …optionally clear cart, close modal, redirect, etc.
+    } else {
+      if (status) status.textContent = 'Upload failed. Please try again.';
+      setPaidEnabled(true);
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
