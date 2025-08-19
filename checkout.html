@@ -481,10 +481,17 @@ function uploadPaymentProof(){
 
   // If you implement postMessage on the server (next section), this
   // timeout becomes unnecessary, but it's fine as a fallback.
-  setTimeout(()=>{
-    if (status) status.textContent = 'Uploaded ✓ (received, pending verification)';
-  }, 800);
-}
+  // Wait for a real confirmation from the server (postMessage).
+// If nothing arrives, show a failure after 20s.
+if (status) status.textContent = 'Uploading… waiting for server confirmation';
+setPaidEnabled(false);
+
+clearTimeout(window.__proofTimeout);
+window.__proofTimeout = setTimeout(()=>{
+  if (status) status.textContent = 'Upload failed (no server confirmation). Please try again.';
+  setPaidEnabled(true);
+}, 20000);
+
   
 async function openQr(){
   // Clear any old timer
