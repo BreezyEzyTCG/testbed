@@ -481,6 +481,10 @@ async function uploadPaymentProof(){
   try{
     if (status) status.textContent = 'Uploading proof… please wait.';
     setPaidEnabled(false);
+    
+    for (const [k,v] of form.entries()) {
+  console.log('FormData', k, v instanceof File ? `(File ${v.name}, ${v.size} bytes)` : v);
+}
 
     const res  = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
     const data = await res.json().catch(()=> ({}));
