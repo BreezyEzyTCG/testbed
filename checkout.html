@@ -255,7 +255,7 @@ const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwti
 
 /* === Payment proof upload endpoint (Apps Script Web App URL) ===
    Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
-const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbxitzu0gpIAIvc3IrCQLw-9yJ02KBTco_g11yornIoIUsb6yRI0D9lHdhNOM1UIHkAZ/exec';
+const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbxI8V9PAqcgm_mmSYuUQebmI44hLjk2Rs_I8JIQ3S1vPst4G9YF7kw4IfwJe3K3_yOt/exec';
 
 /* Simple JSONP fetch (works on static sites without CORS headaches) */
 function jsonpFetch(baseUrl, params) {
@@ -445,67 +445,50 @@ function resetProofUI(){
 }
 
 async function uploadPaymentProof(){
-  const fileInput = document.getElementById('proofFile');
-  const status    = document.getElementById('proofStatus');
-  const file      = fileInput?.files?.[0];
+  const inp    = document.getElementById('proofFile');
+  const status = document.getElementById('proofStatus');
+  const file   = inp?.files?.[0];
 
+  // 1) Must have a file
   if (!file){
-    if (status) status.textContent = 'Please select a screenshot to proceed.';
+    if (status) status.textContent = 'Please choose a screenshot (image) before continuing.';
+    return;
+  }
+  // 2) Must be an image
+  if (!file.type || !file.type.startsWith('image/')){
+    if (status) status.textContent = 'Images only (JPG/PNG/WEBP/HEIC).';
+    return;
+  }
+  // 3) (Optional) size guard, keep small and simple
+  if (file.size > 10 * 1024 * 1024){
+    if (status) status.textContent = 'File too large. Max 10 MB.';
     return;
   }
 
-  // Gather order + buyer info as metadata
-  const pending  = JSON.parse(sessionStorage.getItem('pendingOrder') || '{}');
-  const orderId  = pending.id || document.getElementById('qrOrderId')?.textContent || '';
-  const amount   = String(parseCurrencyToNumber(document.getElementById('sumTotal')?.textContent));
-  const name     = document.getElementById('fName')?.value || '';
-  const email    = document.getElementById('fEmail')?.value || '';
-  const phone    = normalizeSGMobile(document.getElementById('fPhone')?.value || '');
-  const postal   = document.getElementById('fPostal')?.value || '';
-  const addr1    = document.getElementById('fAddr1')?.value || '';
-  const unit     = document.getElementById('fUnit')?.value  || '';
-  const shipMeth = document.getElementById('fMethod')?.value || '';
-
-  const form = new FormData();
-  form.append('file', file, file.name);
-  form.append('orderId', orderId);
-  form.append('amount', amount);
-  form.append('name', name);
-  form.append('email', email);
-  form.append('phone', phone);
-  form.append('postal', postal);
-  form.append('addr1', addr1);
-  form.append('unit', unit);
-  form.append('shipMethod', shipMeth);
+ const form = new FormData();
+form.append('file', file, file.name);
+await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
 
   try{
-    if (status) status.textContent = 'Uploading proof… please wait.';
+    if (status) status.textContent = 'Uploading…';
     setPaidEnabled(false);
 
     const res  = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
     const data = await res.json().catch(()=> ({}));
-    if (!res.ok || !data.ok) throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
 
-    // Success: swap modal content to a Thank-you message
-    const title = document.getElementById('qrTitle');
-    if (title) title.textContent = 'Thanks!';
-    const info = document.querySelector('.qr-info');
-    if (info){
-      info.innerHTML = `
-        <p><strong>Thanks! We’ve received your payment proof.</strong><br>
-        We’ll verify and email confirmation soon.</p>
-        <p>Order ID: <code>${orderId}</code></p>
-      `;
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
     }
-    if (status) status.textContent = '';
 
-    // (We’ll handle redirect + clearing cart later)
+    if (status) status.textContent = 'Uploaded ✓';
+    // keep user on modal; we’re only proving upload works for now
   }catch(err){
     console.error('[Proof upload error]', err);
-    if (status) status.textContent = 'Upload failed. Please try again or WhatsApp us your proof.';
+    if (status) status.textContent = 'Upload failed. Please try again.';
     setPaidEnabled(true);
   }
 }
+
   
 async function openQr(){
   // Clear any old timer
