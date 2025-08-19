@@ -109,6 +109,15 @@
     .sum-body{ padding:9px 12px; }
     .sum-header,.sum-total{ padding:9px 12px; }
   }
+  /* Hide the Close button in the QR modal header */
+#qrClose { display: none; }
+
+  /* Timer turns red when under 60s */
+#qrTimer.timer-urgent {
+  color: #dc2626;       /* red-600 */
+  font-weight: 800;
+}
+
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -214,7 +223,7 @@
                 <div><strong>Pay to:</strong> <span id="qrPayTo">—</span></div>
                 <div><strong>Amount:</strong> <span id="qrAmount">$0.00</span></div>
                 <div><strong>Order ID:</strong> <span id="qrOrderId">—</span></div>
-                <div><strong>Time left:</strong> <span id="qrTimer">15:00</span></div>
+                <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
               </div>
               <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
               <div class="proof" style="margin-top:12px;">
@@ -367,6 +376,9 @@ function syncPayCta(){
   else{ btn.disabled = true; btn.classList.add('show'); }
 }
 
+/* ===== Payment timer length (10 minutes) ===== */
+const TIMER_MS = 10 * 60 * 1000;
+
 /* ========= QR Modal ========= */
 let countdown = null, endTime = 0;
 function genOrderId(){ const t = Date.now().toString(36).toUpperCase().slice(-6); const r = Math.random().toString(36).toUpperCase().slice(2,6); return `BE-${t}${r}`; }
@@ -453,50 +465,83 @@ function parseCurrencyToNumber(s){
 }
 
 function openQr(){
+  // Clear any old timer
+  if (countdown) { clearInterval(countdown); countdown = null; }
+  endTime = 0;
+
   const totalText = document.getElementById('sumTotal').textContent;
   const totalNum  = parseCurrencyToNumber(totalText);
   const orderId   = genOrderId();
 
-  // Show who to pay to (UI only)
   const payToLabel = `${MERCHANT_DISPLAY} (Mobile ${PAYNOW_MOBILE})`;
-  document.getElementById('qrPayTo').textContent  = payToLabel;
-  document.getElementById('qrAmount').textContent = totalText;
-  document.getElementById('qrOrderId').textContent= orderId;
+  document.getElementById('qrPayTo').textContent   = payToLabel;
+  document.getElementById('qrAmount').textContent  = totalText;
+  document.getElementById('qrOrderId').textContent = orderId;
 
-  // Build EMV/PayNow payload (non-editable amount)
   const qrText = buildPaymentPayload({
     mobile: PAYNOW_MOBILE,
     amount: totalNum.toFixed(2),
     orderId
   });
-
-  // Render the QR into #qrBox
   renderQr(qrText);
 
-  // Save pending order
   sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
 
-  // Start 15-min timer and show modal
-  endTime = Date.now() + 15*60*1000; 
-  tick(); 
+  // Start 10-min timer
+  endTime = Date.now() + TIMER_MS;
+  tick();
   countdown = setInterval(tick, 1000);
+
   document.getElementById('qrModal').hidden = false;
 }
-  
+
 function closeQr(){
   document.getElementById('qrModal').hidden = true;
-  clearInterval(countdown);
+  if (countdown) { clearInterval(countdown); countdown = null; }
+  endTime = 0;
+
+  const t = document.getElementById('qrTimer');
+  if (t) {
+  t.classList.remove('timer-urgent');
+  t.textContent = mmss(TIMER_MS); // shows "10:00"
 }
+
+}
+
+  function confirmAbortAndExit(){
+  const ok = window.confirm(
+    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to your cart.'
+  );
+  if (!ok) return;
+
+  closeQr();
+  window.location.href = 'cart.html';
+}
+function mmss(ms){
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const s = String(totalSec % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 function tick(){
-  const remain = Math.max(0, Math.floor((endTime - Date.now())/1000));
-  const m = String(Math.floor(remain/60)).padStart(2,'0');
-  const s = String(remain%60).padStart(2,'0');
+  const remainMs = Math.max(0, endTime - Date.now());
   const el = document.getElementById('qrTimer');
-  if (el) el.textContent = `${m}:${s}`;
-  if(remain<=0){
-    clearInterval(countdown);
+  if (el) {
+    el.textContent = mmss(remainMs);
+    const remainSec = Math.floor(remainMs / 1000);
+    if (remainSec <= 60) el.classList.add('timer-urgent');
+    else el.classList.remove('timer-urgent');
+  }
+  if (remainMs <= 0){
+  clearInterval(countdown);
+  countdown = null;
+  // Auto-close and return to cart when expired
+  closeQr();
+  window.location.href = "cart.html";
   }
 }
+
 
 /* ========= OneMap postal -> address (via proxy) ========= */
 const postalCache = Object.create(null);
@@ -560,13 +605,31 @@ function init(){
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
   });
 
-  document.getElementById('btnPay')?.addEventListener('click', openQr);
-  document.getElementById('qrClose')?.addEventListener('click', closeQr);
-  document.getElementById('qrCancel')?.addEventListener('click', closeQr);
-  document.getElementById('qrPaid')?.addEventListener('click', ()=>{ 
-    const file = document.getElementById('proofFile')?.files?.[0] || null; 
-    window.location.href = "thank-you.html"; 
-  });
+  // Open QR modal when "Make Payment" is clicked
+document.getElementById('btnPay')?.addEventListener('click', openQr);
+
+// Close/cancel actions should always confirm first
+document.getElementById('qrClose')?.addEventListener('click', confirmAbortAndExit);
+document.getElementById('qrCancel')?.addEventListener('click', confirmAbortAndExit);
+
+// Backdrop click also asks for confirmation
+document.querySelector('#qrModal .qr-backdrop')?.addEventListener('click', (e)=>{
+  if (e.target.classList.contains('qr-backdrop')) confirmAbortAndExit();
+});
+
+// ESC key closes with confirmation too
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape' && !document.getElementById('qrModal').hidden){
+    e.preventDefault();
+    confirmAbortAndExit();
+  }
+});
+
+// "I’ve made the payment" goes straight to thank-you
+document.getElementById('qrPaid')?.addEventListener('click', ()=>{ 
+  const file = document.getElementById('proofFile')?.files?.[0] || null; 
+  window.location.href = "thank-you.html"; 
+});
 
   const postalEl = document.getElementById('fPostal');
   const postalHintEl = document.getElementById('postalHint');
