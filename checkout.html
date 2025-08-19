@@ -255,7 +255,7 @@ const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwti
 
 /* === Payment proof upload endpoint (Apps Script Web App URL) ===
    Replace with YOUR deployed URL from step “Backend (Apps Script)” below. */
-const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbwCPWeVmwf4dHS0KeXbjH8Q6gtFUfnHkozVTio7nO2S4tZ1ib6AwcYJelGX28koqqux/exec';
+const PROOF_UPLOAD_API = 'https://script.google.com/macros/s/AKfycbzDr-v14UPn1C_GpM7qz60dqWUtl_ZgzCedlvwyLIwqk20Q621kr8XmnGYFUL4LFj8B/exec';
 
 /* Simple JSONP fetch (works on static sites without CORS headaches) */
 function jsonpFetch(baseUrl, params) {
@@ -444,6 +444,21 @@ function resetProofUI(){
   setPaidEnabled(false);
 }
 
+// --- add this helper ---
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = () => {
+      // r.result is a data URL: "data:image/png;base64,AAAA..."
+      const s = String(r.result || '');
+      const comma = s.indexOf(',');
+      resolve(comma >= 0 ? s.slice(comma+1) : s); // return pure base64
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
 async function uploadPaymentProof(){
   const fileInput = document.getElementById('proofFile');
   const status    = document.getElementById('proofStatus');
@@ -466,66 +481,52 @@ async function uploadPaymentProof(){
   const unit     = document.getElementById('fUnit')?.value  || '';
   const shipMeth = document.getElementById('fMethod')?.value || '';
 
-  const form = new FormData();
-  form.append('file', file, file.name);
-  form.append('orderId', orderId);
-  form.append('amount', amount);
-  form.append('name', name);
-  form.append('email', email);
-  form.append('phone', phone);
-  form.append('postal', postal);
-  form.append('addr1', addr1);
-  form.append('unit', unit);
-  form.append('shipMethod', shipMeth);
-
   try{
     if (status) status.textContent = 'Uploading proof… please wait.';
     setPaidEnabled(false);
-    
-    for (const [k,v] of form.entries()) {
-  console.log('FormData', k, v instanceof File ? `(File ${v.name}, ${v.size} bytes)` : v);
-}
 
-   // Log what we're actually sending
-console.log('[proof] selected file:', file && file.name, file && file.size);
-for (const [k,v] of form.entries()) {
-  console.log('[proof] FormData', k, (v instanceof File) ? `(File ${v.name}, ${v.size} bytes)` : v);
-}
+    // Convert to base64 (avoid multipart issues)
+    const base64 = await fileToBase64(file);
 
-const res   = await fetch(PROOF_UPLOAD_API, { method:'POST', body: form });
-const text  = await res.text();
-console.log('[proof] raw response:', res.status, text);
+    const payload = {
+      kind: 'payment-proof',
+      orderId, amount, name, email, phone, postal, addr1, unit, shipMethod: shipMeth,
+      fileName: file.name,
+      mimeType: file.type || 'application/octet-stream',
+      contentB64: base64
+    };
 
-// Try to parse JSON; if it isn’t JSON, fail with the raw text
-let data;
-try { data = JSON.parse(text); }
-catch (e) { throw new Error(`BAD_JSON: ${text.slice(0,200)}`); }
+    const res   = await fetch(PROOF_UPLOAD_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-if (!res.ok || !data.ok) {
-  throw new Error(data.error || `UPLOAD_ERROR_HTTP_${res.status}`);
-}
+    const text  = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e){ throw new Error(`BAD_JSON: ${text.slice(0,200)}`); }
+    if (!res.ok || !data.ok) throw new Error(data.error || `UPLOAD_ERROR_HTTP_${res.status}`);
 
-// Success UI
-const title = document.getElementById('qrTitle');
-if (title) title.textContent = 'Thanks!';
-const info = document.querySelector('.qr-info');
-if (info){
-  info.innerHTML = `
-    <p><strong>Thanks! We’ve received your payment proof.</strong><br>
-    We’ll verify and email confirmation soon.</p>
-    <p>Order ID: <code>${orderId}</code></p>
-  `;
-}
-if (status) status.textContent = '';
-
-    // (We’ll handle redirect + clearing cart later)
+    // Success: swap modal content to a Thank-you message
+    const title = document.getElementById('qrTitle');
+    if (title) title.textContent = 'Thanks!';
+    const info = document.querySelector('.qr-info');
+    if (info){
+      info.innerHTML = `
+        <p><strong>Thanks! We’ve received your payment proof.</strong><br>
+        We’ll verify and email confirmation soon.</p>
+        <p>Order ID: <code>${orderId}</code></p>
+      `;
+    }
+    if (status) status.textContent = '';
   }catch(err){
     console.error('[Proof upload error]', err);
     if (status) status.textContent = 'Upload failed. Please try again or WhatsApp us your proof.';
     setPaidEnabled(true);
   }
 }
-  
+
+
 async function openQr(){
   // Clear any old timer
   if (countdown) { clearInterval(countdown); countdown = null; }
