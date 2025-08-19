@@ -386,13 +386,63 @@ function renderQr(text){
   });
 }
 
-/* Build a simple demo payload using MOBILE instead of UEN.
-   NOTE: This is NOT a spec-compliant SGQR/PayNow string—it's a readable demo.
-   Scanners will decode the text shown. For real PayNow, we’ll swap this to EMV later. */
-function buildPaymentPayload({ mobile, amount, orderId }){
-  // Keep it human-readable for now:
-  // Example: PAYNOW|TO_MOB:+6591234567|AMT:12.34|REF:BE-ABC123
-  return `PAYNOW|TO_MOB:${mobile}|AMT:${amount}|REF:${orderId}`;
+/* ==== EMV/PayNow payload builder (mobile proxy, fixed amount) ==== */
+function buildPaymentPayload({ mobile, amount, orderId, editable = false, merchantName = MERCHANT_DISPLAY }){
+  function tlv(id, value){
+    const v = String(value ?? '');
+    const len = String(v.length).padStart(2, '0');
+    return `${id}${len}${v}`;
+  }
+
+  // CRC-16/CCITT (poly 0x1021, init 0xFFFF), over ASCII of payload + "6304"
+  function crc16ccitt(data){
+    let crc = 0xFFFF;
+    for (let i = 0; i < data.length; i++){
+      crc ^= (data.charCodeAt(i) & 0xFF) << 8;
+      for (let j = 0; j < 8; j++){
+        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+        crc &= 0xFFFF;
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  const normalizedMobile = normalizeSGMobile(mobile); // "+65xxxxxxxx"
+  const name25 = String(merchantName || 'NA').slice(0, 25);
+
+  // Merchant Account Info (ID 26) — PayNow nested template
+  const paynowInner =
+    tlv('00', 'SG.PAYNOW') +         // Global Unique Identifier
+    tlv('01', '0') +                 // Proxy type: 0 = mobile
+    tlv('02', normalizedMobile) +    // Proxy value
+    tlv('03', editable ? '1' : '0'); // Amount editable flag
+
+  const mAccountInfo = tlv('26', paynowInner);
+
+  // Additional Data (ID 62): Bill Number (ID 01)
+  const additional = tlv('62', tlv('01', String(orderId).slice(0, 25)));
+
+  // Root (without CRC)
+  // 00 PFI=01, 01 POI=12 (dynamic), 52 MCC=0000, 53 Currency=702 (SGD), 54 Amount (fixed),
+  // 58 SG, 59 Name (<=25 chars), 60 City=Singapore
+  let payload =
+    tlv('00', '01') +
+    tlv('01', '12') +
+    mAccountInfo +
+    tlv('52', '0000') +
+    tlv('53', '702') +
+    tlv('54', amount) +        // include 54 since fixed amount
+    tlv('58', 'SG') +
+    tlv('59', name25) +
+    tlv('60', 'Singapore') +
+    additional;
+
+  // Append CRC (ID 63 length 04 + value)
+  const toCheck = payload + '6304';
+  const crc = crc16ccitt(toCheck);
+  payload += `6304${crc}`;
+
+  return payload;
 }
 
 // Optional: safely parse "$1,234.56" -> 1234.56
@@ -401,7 +451,8 @@ function parseCurrencyToNumber(s){
   const n = Number(String(s).replace(/[^0-9.]/g,''));
   return Number.isFinite(n) ? n : 0;
 }
-  function openQr(){
+
+function openQr(){
   const totalText = document.getElementById('sumTotal').textContent;
   const totalNum  = parseCurrencyToNumber(totalText);
   const orderId   = genOrderId();
@@ -412,13 +463,12 @@ function parseCurrencyToNumber(s){
   document.getElementById('qrAmount').textContent = totalText;
   document.getElementById('qrOrderId').textContent= orderId;
 
-  // Build the QR content text (what scanners will decode)
-  // Replace buildPaymentPayload(...) with your real SGQR/PayNow payload builder later.
+  // Build EMV/PayNow payload (non-editable amount)
   const qrText = buildPaymentPayload({
-  mobile: PAYNOW_MOBILE,
-  amount: totalNum.toFixed(2),
-  orderId
-});
+    mobile: PAYNOW_MOBILE,
+    amount: totalNum.toFixed(2),
+    orderId
+  });
 
   // Render the QR into #qrBox
   renderQr(qrText);
@@ -447,6 +497,7 @@ function tick(){
     clearInterval(countdown);
   }
 }
+
 /* ========= OneMap postal -> address (via proxy) ========= */
 const postalCache = Object.create(null);
 try { Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}')); } catch {}
@@ -526,65 +577,64 @@ function init(){
 
   let lastPostalReqId = 0;
 
-async function tryLookupPostal(){
-  if (!postalEl) return;
-  const val = postalEl.value.replace(/\D/g,'');
-  if (val.length !== 6) { 
-    hint(''); 
-    postalEl.dataset.state = ''; 
-    return; 
+  async function tryLookupPostal(){
+    if (!postalEl) return;
+    const val = postalEl.value.replace(/\D/g,'');
+    if (val.length !== 6) { 
+      hint(''); 
+      postalEl.dataset.state = ''; 
+      return; 
+    }
+
+    const myId = ++lastPostalReqId;
+    hint('Looking up…');
+
+    try {
+      const addr = await fetchSGAddressByPostal(val);
+      if (myId !== lastPostalReqId) return; // ignore stale response
+      fillAddressFields(addr);
+      hint('Address found ✓','ok');
+    } catch(err){
+      if (myId !== lastPostalReqId) return; // ignore stale error
+      const m = String(err?.message || '');
+      if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+      else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+      else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+      else                               hint('Lookup error. Please try again.','err');
+      console.warn('[Postal lookup failed]', err);
+    }
   }
 
-  const myId = ++lastPostalReqId;
-  hint('Looking up…');
+  /* Phone: digits only, max 8 */
+  const phoneEl = document.getElementById('fPhone');
+  phoneEl?.addEventListener('input', () => {
+    phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
+    syncPayCta();
+  });
 
-  try {
-    const addr = await fetchSGAddressByPostal(val);
-    if (myId !== lastPostalReqId) return; // ignore stale response
-    fillAddressFields(addr);
-    hint('Address found ✓','ok');
-  } catch(err){
-    if (myId !== lastPostalReqId) return; // ignore stale error
-    const m = String(err?.message || '');
-    if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
-    else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
-    else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
-    else                               hint('Lookup error. Please try again.','err');
-    console.warn('[Postal lookup failed]', err);
-  }
-}
-
-/* Phone: digits only, max 8 */
-const phoneEl = document.getElementById('fPhone');
-phoneEl?.addEventListener('input', () => {
-  phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
-  syncPayCta();
-});
-
-const unitEl = document.getElementById('fUnit');
-unitEl?.addEventListener('input', () => {
-  // allow digits + dash only, max length 8
-  unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
-  syncPayCta();
-});
+  const unitEl = document.getElementById('fUnit');
+  unitEl?.addEventListener('input', () => {
+    // allow digits + dash only, max length 8
+    unitEl.value = unitEl.value.replace(/[^0-9-]/g,'').slice(0,8);
+    syncPayCta();
+  });
   
-// Quick sanity check: did the QR library load?
-if (typeof QRCode === 'undefined') {
-  console.warn('qrcode.min.js did not load. Check the script path.');
-}
+  // Quick sanity check: did the QR library load?
+  if (typeof QRCode === 'undefined') {
+    console.warn('qrcode.min.js did not load. Check the script path.');
+  }
 
-/* Postal: immediate on 6th digit + debounced fallback */
-postalEl?.addEventListener('input', () => {
-  const digits = postalEl.value.replace(/\D/g,'');
-  if (digits.length === 6) tryLookupPostal(true);
-});
-postalEl?.addEventListener('input', debounce(() => {
-  const digits = postalEl.value.replace(/\D/g,'');
-  if (digits.length === 6) return; // already handled above
-  tryLookupPostal();
-}, 400));
-postalEl?.addEventListener('blur', () => tryLookupPostal());
-
+  /* Postal: immediate on 6th digit + debounced fallback */
+  postalEl?.addEventListener('input', () => {
+    const digits = postalEl.value.replace(/\D/g,'');
+    if (digits.length === 6) tryLookupPostal(true);
+  });
+  postalEl?.addEventListener('input', debounce(() => {
+    const digits = postalEl.value.replace(/\D/g,'');
+    if (digits.length === 6) return; // already handled above
+    tryLookupPostal();
+  }, 400));
+  postalEl?.addEventListener('blur', () => tryLookupPostal());
 } // <-- close init()
 
 document.addEventListener('DOMContentLoaded', init);
