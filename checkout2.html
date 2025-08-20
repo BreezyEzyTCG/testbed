@@ -104,16 +104,16 @@
 }
 
 /* The SVG badge as the whole link */
-#qrPaid.upload-badge{
+#qrPaid {
   display:inline-block;
-  width:220px;                /* adjust to your SVG’s natural size */
-  height:60px;                /* adjust to your SVG’s natural size */
-  background: url('assets/images/upload.svg?v=3') no-repeat center / contain;
-  border-radius:10px;         /* optional, just for nicer focus ring shape */
-  text-indent:-9999px;        /* hide text if any */
-  overflow:hidden;
-  outline: none;
+  width: 180px;    /* match your SVG’s real width */
+  height: 60px;    /* match your SVG’s real height */
+  background: url("assets/images/upload.svg") no-repeat center/contain;
+  border:0;
+  padding:0;
+  cursor:pointer;
 }
+
 
 /* Hover/focus states */
 #qrPaid.upload-badge:hover{ filter: brightness(1.05); }
@@ -250,8 +250,9 @@
   <button class="btn outline" id="qrCancel">Cancel</button>
 
   <!-- Clickable graphic. Use href later when you have a target -->
-  <a id="qrPaid" class="upload-badge" href="#" aria-disabled="true" aria-label="Upload payment proof"></a>
-</div>
+<a id="qrPaid" href="#" aria-label="Upload payment proof">
+  <img src="assets/images/upload.svg" alt="Upload" class="upload-icon">
+</a></div>
             </div>
           </div>
           <p class="hint">If the timer runs out, close this window and tap “Make Payment” again to regenerate an Order ID.</p>
