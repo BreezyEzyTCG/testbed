@@ -94,12 +94,17 @@
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
-  #qrPaid img, 
-  #qrPaid svg {
-  display: block;
-  margin: auto;
-  pointer-events: none; /* icon doesn't block click */
+  #qrPaid{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:9px 12px;        /* match your .btn size */
+  border-radius:10px;      /* match your .btn radius */
+  width:auto; height:auto; /* let content define size */
+  line-height:1;           /* avoid vertical cropping */
 }
+
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
