@@ -511,6 +511,8 @@ async function uploadPaymentProofJSON() {
   const fileInput= document.getElementById('proofFile');
   const f = fileInput?.files?.[0] || null;
 
+  const cancelBtn = document.getElementById('qrCancel');
+
   if (!f) { alert('Please choose a payment screenshot before continuing.'); return false; }
 
   const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
@@ -518,7 +520,9 @@ async function uploadPaymentProofJSON() {
   if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return false; }
 
   paidBtn.disabled = true;
+  cancelBtn.disabled = true;   // disable cancel too
   statusEl.textContent = 'Preparing your file…';
+
 
   const b64 = await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -596,6 +600,7 @@ async function uploadPaymentProofJSON() {
       statusEl.classList.add('err'); 
       statusEl.classList.remove('ok');
       paidBtn.disabled = false;
+      cancelBtn.disabled = false;   // re-enable cancel if failed
       isUploading = false;
       return false;
     }
