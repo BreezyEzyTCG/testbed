@@ -635,44 +635,39 @@ function init(){
     });
   }
 
- document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
+ // Helper for staged messages
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   e.preventDefault();
   const ok = await uploadPaymentProofJSON();
-  if (ok) {
-    const statusEl = document.getElementById('uploadStatus');
-    statusEl.classList.add('ok');
-    statusEl.classList.remove('err');
+  if (!ok) return;
 
-    // Step 1: show "Upload complete"
-    statusEl.textContent = 'Upload complete ✓';
+  // Stop the 10‑min QR timer so it won't kick user back to cart
+  if (countdown) { clearInterval(countdown); countdown = null; }
+  endTime = 0;
 
-    // Step 2: after 4s, show thank-you message
-    setTimeout(() => {
-      statusEl.textContent = 'Thank you for the wait, upload completed.';
-    }, 4000);
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.classList.add('ok');
+  statusEl.classList.remove('err');
 
-    // Step 3: after 8s, show "We will verify..."
-    setTimeout(() => {
-      statusEl.textContent = 'We will verify and send order confirmation soon.';
-    }, 8000);
+  // Show messages in sequence (total ~15s)
+  statusEl.textContent = 'Thank you for the wait, upload completed.';   // t = 0s
+  await sleep(5000);                                                     // wait 5s
 
-    // Step 4: after 12s, show redirect countdown
-    let countdown = 3;
-    const countdownInterval = setInterval(() => {
-      statusEl.textContent = `You’ll be redirected to the store in ${countdown}...`;
-      countdown--;
-      if (countdown < 0) {
-        clearInterval(countdownInterval);
-        window.location.href = 'index.html'; // redirect to store (adjust page if needed)
-      }
-    }, 1000);
+  statusEl.textContent = 'We will verify and send order confirmation soon.'; // t = 5s
+  await sleep(5000);                                                         // wait 5s
 
-    // Start countdown after 12s
-    setTimeout(() => {
-      countdown = 3;
-    }, 12000);
+  // t = 10s → 5-second countdown before redirect
+  for (let s = 5; s >= 1; s--) {
+    statusEl.textContent = `You'll be redirected to the store in ${s} second${s===1?'':'s'}...`;
+    await sleep(1000);
   }
+
+  // Redirect at ~15s
+  window.location.href = 'index.html'; // change to your actual target page
 });
+
 
 
 
