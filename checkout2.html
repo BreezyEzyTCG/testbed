@@ -89,7 +89,8 @@
     .sum-body{ padding:9px 12px; }
     .sum-header,.sum-total{ padding:9px 12px; }
   }
-  #qrClose { display: none; }
+  /* Show the Close button */
+  /* (Removed: #qrClose { display:none; }) */
   #qrTimer.timer-urgent { color: #dc2626; font-weight: 800; }
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
@@ -138,7 +139,7 @@
             <div>
               <label class="req">Unit No.</label>
               <input id="fUnit" type="text" required inputmode="text" maxlength="8"
-                     pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
+                     pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 8: digits or -)" autocomplete="off"/>
             </div>
             <div class="row">
               <div>
@@ -234,9 +235,7 @@
 <script>
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
-
-/* === PayNow backend endpoint (Apps Script Web App URL) === */
-const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
+const PAYNOW_API   = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 
 /* Simple JSONP fetch */
 function jsonpFetch(baseUrl, params) {
@@ -256,7 +255,7 @@ function jsonpFetch(baseUrl, params) {
   });
 }
 
-/* ========= Helper: JSONP proxy to Apps Script (bypasses CORS) ========= */
+/* JSONP proxy (bypass CORS) */
 function proxyFetch(endpoint, params) {
   return new Promise((resolve, reject) => {
     const cb = `onemap_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
@@ -348,7 +347,7 @@ async function openQr(){
   const totalText = document.getElementById('sumTotal').textContent;
   const totalNum  = parseCurrencyToNumber(totalText);
   const orderId   = genOrderId();
-  currentOrderId  = orderId;  // <-- set it here
+  currentOrderId  = orderId;
 
   try {
     const res = await jsonpFetch(PAYNOW_API, {
@@ -470,6 +469,66 @@ function fillAddressFields(addr){
 /* ========= Utilities ========= */
 function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
 
+/* ========= NEW: Summary renderer ========= */
+function renderSummary(){
+  const itemsEl    = document.getElementById('sumItems');
+  const subtotalEl = document.getElementById('sumSubtotal');
+  const shippingEl = document.getElementById('sumShipping');
+  const totalEl    = document.getElementById('sumTotal');
+
+  const cart = getCart();
+  let subtotal = 0;
+
+  if (itemsEl) itemsEl.innerHTML = '';
+
+  cart.forEach(item => {
+    const p = Number(item?.price || 0);
+    const q = Number(item?.qty || 1);
+    subtotal += p * q;
+
+    if (itemsEl){
+      const row = document.createElement('div');
+      row.className = 'sum-row';
+      row.innerHTML = `<span>${(item?.name||'Item')} × ${q}</span><span class="price">${fmt(p*q)}</span>`;
+      itemsEl.appendChild(row);
+    }
+  });
+
+  const ship = getSavedShippingFromCart() || { fee: 0, label: '—' };
+  const shippingFee = Number(ship.fee || 0);
+  const total = subtotal + shippingFee;
+
+  if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
+  if (shippingEl) shippingEl.textContent = fmt(shippingFee);
+  if (totalEl)    totalEl.textContent    = fmt(total);
+}
+
+/* ========= NEW: CTA enabler/validator ========= */
+function syncPayCta(){
+  const btn = document.getElementById('btnPay');
+  if (!btn) return;
+
+  const name   = document.getElementById('fName')?.value.trim();
+  const email  = document.getElementById('fEmail')?.value.trim();
+  const phone  = document.getElementById('fPhone')?.value.replace(/\D/g,'');
+  const postal = document.getElementById('fPostal')?.value.replace(/\D/g,'');
+  const addr1  = document.getElementById('fAddr1')?.value.trim();
+  const unit   = document.getElementById('fUnit')?.value.trim();
+  const shipId = document.getElementById('fMethod')?.value.trim();
+
+  const ok =
+    name &&
+    email && /\S+@\S+\.\S+/.test(email) &&
+    phone && phone.length === 8 &&
+    postal && postal.length === 6 &&
+    addr1 &&
+    unit &&
+    shipId;
+
+  btn.classList.toggle('show', !!ok);
+  btn.disabled = !ok;
+}
+
 /* ========= Init ========= */
 function init(){
   applySavedShippingToForm();
@@ -514,11 +573,12 @@ function init(){
 
     if (!f) { alert('Please choose a payment screenshot before continuing.'); return; }
 
-    const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
-    if (!okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return; }
+    // allow unknown MIME (HEIC on some browsers)
+    const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif','application/octet-stream'];
+    if (f.type && !okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return; }
     if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return; }
 
-    paidBtn.disabled = true; // prevent double clicks
+    if (paidBtn) paidBtn.disabled = true; // prevent double clicks
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -534,7 +594,7 @@ function init(){
 
       document.getElementById('appsScriptBridge').submit();
     };
-    reader.onerror = () => { alert('Could not read the file.'); paidBtn.disabled = false; };
+    reader.onerror = () => { alert('Could not read the file.'); if (paidBtn) paidBtn.disabled = false; };
     reader.readAsDataURL(f);
   });
 
@@ -597,7 +657,7 @@ function init(){
     tryLookupPostal();
   }, 400));
   postalEl?.addEventListener('blur', () => tryLookupPostal());
-} // <-- close init()
+}
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
