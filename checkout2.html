@@ -225,6 +225,8 @@
   </div>
 
 <script>
+let isUploading = false;
+
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 
@@ -232,7 +234,7 @@ const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9K
 const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 
 /* Upload (same web app your demo uses) */
-const UPLOAD_API = 'https://script.google.com/macros/s/AKfycby2l0EeT9utJo9lZIjfosQmh1q-rSicUZO4HkPeG5gnOyhFha8Arr321vMYXP31n1wj/exec';
+const UPLOAD_API = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
 
 /* Simple JSONP fetch for PayNow/EMVQR */
 function jsonpFetch(baseUrl, params) {
@@ -386,6 +388,10 @@ function closeQr(){
 }
 
 function confirmAbortAndExit(){
+  if (isUploading) {
+    alert('Upload in progress—please wait a moment so we don’t lose your proof.');
+    return;
+  }
   const ok = window.confirm(
     'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to your cart.'
   );
@@ -503,6 +509,7 @@ async function uploadPaymentProofJSON() {
     mimetype: f.type || 'application/octet-stream',
     note: `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`
   };
+  isUploading = true;
 
   statusEl.textContent = 'Uploading…';
 
