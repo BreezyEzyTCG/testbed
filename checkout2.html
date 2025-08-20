@@ -94,27 +94,35 @@
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
-.btn-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:44px; height:44px;      /* clickable area */
-  background:#2563eb;           /* blue button */
-  border:1px solid transparent;
-  border-radius:10px;
-  cursor:pointer;
-  transition:transform .1s ease, opacity .15s ease, background .15s ease;
+/* Make .btn-icon behave like a bare icon link */
+.btn-icon.btn-plain{
+  width:auto;                 /* no fixed 44x44 */
+  height:auto;
+  padding:0;                  /* remove button padding */
+  background:transparent;     /* no background */
+  border:0;                   /* kill border */
+  border-radius:0;            /* no rounding frame */
+  box-shadow:none;
+  gap:0;
+  line-height:0;              /* remove inline spacing around icon */
+  appearance:none;            /* remove default button chrome */
+  -webkit-appearance:none;
+  transition:none;            /* no hover lift */
 }
-.btn-icon:hover{ transform:translateY(-1px); background:#1e40af; }
-.btn-icon:active{ transform:translateY(0); }
-.btn-icon:focus-visible{ outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.25); }
 
-.btn-icon[disabled]{ opacity:.55; cursor:not-allowed; }
+/* Make the icon the size you want (match your .cart-link) */
+.btn-icon.btn-plain img,
+.btn-icon.btn-plain svg {
+  height: 35px;       /* control only height */
+  width: auto;        /* let width adjust naturally */
+  display: block;
+  filter: none;       /* no color inversion */
+}
 
-.btn-icon img{
-  width:20px; height:20px;      /* icon size inside the button */
-  display:block;
-  filter: invert(1);            /* makes SVG white if it’s dark; remove if your SVG is already white */
+/* Optional: keep a normal focus outline for accessibility */
+.btn-icon.btn-plain:focus-visible{
+  outline: 2px solid #2563eb;   /* or 'auto' if you prefer */
+  outline-offset: 2px;
 }
 
 
@@ -238,8 +246,8 @@
 
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
-                <button id="qrPaid" class="btn-icon" type="button" aria-label="Upload payment screenshot" title="Upload">
-  <img src="assets/images/upload.svg" alt="" />
+                <button class="btn-icon btn-plain" aria-label="Cart">
+  <img src="assets/icons/cart.svg" alt="">
 </button>
               </div>
             </div>
