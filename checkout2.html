@@ -94,6 +94,12 @@
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
+  #qrPaid img, 
+  #qrPaid svg {
+  display: block;
+  margin: auto;
+  pointer-events: none; /* icon doesn't block click */
+}
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -214,7 +220,9 @@
 
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
-                <button class="btn danger" id="qrPaid">Uplo</button>
+                <button class="btn danger" id="qrPaid" aria-label="Upload payment proof">
+  <img src="assets/images/upload.svg" alt="Upload" style="width:20px; height:20px;" />
+</button>
               </div>
             </div>
           </div>
