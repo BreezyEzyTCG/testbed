@@ -89,9 +89,11 @@
     .sum-body{ padding:9px 12px; }
     .sum-header,.sum-total{ padding:9px 12px; }
   }
-  /* Show the Close button */
-  /* (Removed: #qrClose { display:none; }) */
+  #qrClose { display: none; }
   #qrTimer.timer-urgent { color: #dc2626; font-weight: 800; }
+  #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
+  #uploadStatus.ok { color:#065f46; }
+  #uploadStatus.err{ color:#991b1b; }
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -139,7 +141,7 @@
             <div>
               <label class="req">Unit No.</label>
               <input id="fUnit" type="text" required inputmode="text" maxlength="8"
-                     pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 8: digits or -)" autocomplete="off"/>
+                     pattern="^[0-9\-]{1,8}$" placeholder="Unit No. (max 7 digits + dash)" autocomplete="off"/>
             </div>
             <div class="row">
               <div>
@@ -203,10 +205,12 @@
               <div class="proof" style="margin-top:12px;">
                 <label>Upload payment screenshot <strong>(required)</strong></label>
                 <input id="proofFile" type="file" accept="image/*" required />
+                <div id="uploadStatus" class="hint"></div>
                 <p class="hint">You may also WhatsApp/DM us your proof if you prefer.</p>
               </div>
 
-              <!-- CHANGE: Removed iframe + bridge form (no longer used with JSON fetch) -->
+              <!-- Removed iframe bridge & old form to avoid x-www-form-urlencoded -->
+              <!-- (We now upload via fetch JSON like the working demo) -->
 
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
@@ -223,12 +227,14 @@
 <script>
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
-const PAYNOW_API   = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 
-/* CHANGE: Use the SAME working upload endpoint as test page (JSON) */
-const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycby2l0EeT9utJo9lZIjfosQmh1q-rSicUZO4HkPeG5gnOyhFha8Arr321vMYXP31n1wj/exec';
+/* PayNow (for EMVQR payload via JSONP) */
+const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 
-/* Simple JSONP fetch */
+/* Upload (same web app your demo uses) */
+const UPLOAD_API = 'https://script.google.com/macros/s/AKfycby2l0EeT9utJo9lZIjfosQmh1q-rSicUZO4HkPeG5gnOyhFha8Arr321vMYXP31n1wj/exec';
+
+/* Simple JSONP fetch for PayNow/EMVQR */
 function jsonpFetch(baseUrl, params) {
   return new Promise((resolve, reject) => {
     const cb = `pay_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
@@ -246,7 +252,7 @@ function jsonpFetch(baseUrl, params) {
   });
 }
 
-/* JSONP proxy (bypass CORS) */
+/* JSONP proxy to OneMap (bypasses CORS) */
 function proxyFetch(endpoint, params) {
   return new Promise((resolve, reject) => {
     const cb = `onemap_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
@@ -378,6 +384,7 @@ function closeQr(){
     t.textContent = mmss(TIMER_MS);
   }
 }
+
 function confirmAbortAndExit(){
   const ok = window.confirm(
     'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to your cart.'
@@ -412,7 +419,7 @@ function tick(){
   }
 }
 
-/* ========= OneMap postal -> address (via proxy) ========= */
+/* ========= OneMap postal -> address ========= */
 const postalCache = Object.create(null);
 try { Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}')); } catch {}
 function savePostalCache(){ try { sessionStorage.setItem('postalCache', JSON.stringify(postalCache)); } catch {} }
@@ -458,65 +465,125 @@ function fillAddressFields(addr){
 
 /* ========= Utilities ========= */
 function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
+function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
 
-/* ========= NEW: Summary renderer ========= */
-function renderSummary(){
-  const itemsEl    = document.getElementById('sumItems');
-  const subtotalEl = document.getElementById('sumSubtotal');
-  const shippingEl = document.getElementById('sumShipping');
-  const totalEl    = document.getElementById('sumTotal');
+/* ========= Upload (JSON, same as demo) ========= */
+async function uploadPaymentProofJSON() {
+  const paidBtn = document.getElementById('qrPaid');
+  const statusEl = document.getElementById('uploadStatus');
+  const fileInput = document.getElementById('proofFile');
+  const f = fileInput?.files?.[0] || null;
 
-  const cart = getCart();
-  let subtotal = 0;
+  if (!f) { alert('Please choose a payment screenshot before continuing.'); return false; }
 
-  if (itemsEl) itemsEl.innerHTML = '';
+  const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
+  if (!okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return false; }
+  if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return false; }
 
-  cart.forEach(item => {
-    const p = Number(item?.price || 0);
-    const q = Number(item?.qty || 1);
-    subtotal += p * q;
+  paidBtn.disabled = true;
+  statusEl.textContent = 'Preparing your file…';
 
-    if (itemsEl){
-      const row = document.createElement('div');
-      row.className = 'sum-row';
-      row.innerHTML = `<span>${(item?.name||'Item')} × ${q}</span><span class="price">${fmt(p*q)}</span>`;
-      itemsEl.appendChild(row);
-    }
+  const b64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const dataUrl = reader.result;
+        const comma = dataUrl.indexOf(',');
+        resolve(dataUrl.slice(comma + 1));
+      } catch (e) { reject(e); }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(f);
   });
 
-  const ship = getSavedShippingFromCart() || { fee: 0, label: '—' };
-  const shippingFee = Number(ship.fee || 0);
-  const total = subtotal + shippingFee;
+  const amt = document.getElementById('qrAmount')?.textContent || '';
+  const payload = {
+    file_b64: b64,
+    filename: f.name,
+    mimetype: f.type || 'application/octet-stream',
+    note: `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`
+  };
 
-  if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
-  if (shippingEl) shippingEl.textContent = fmt(shippingFee);
-  if (totalEl)    totalEl.textContent    = fmt(total);
+  statusEl.textContent = 'Uploading…';
+
+  try {
+    const res = await fetch(UPLOAD_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const data = await res.json();
+      if (data && (data.ok || data.success)) {
+        statusEl.textContent = 'Upload complete ✓'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
+        return true;
+      } else {
+        throw new Error(data?.error || 'Upload failed at server');
+      }
+    }
+
+    if (res.ok) {
+      statusEl.textContent = 'Upload complete ✓'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
+      return true;
+    }
+
+    throw new Error('Server returned ' + res.status);
+  } catch (errCors) {
+    try {
+      await fetch(UPLOAD_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        mode: 'no-cors'
+      });
+      statusEl.textContent = 'Upload sent ✓ (waiting on server)'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
+      return true; // optimistic
+    } catch (errNoCors) {
+      console.error(errNoCors);
+      statusEl.textContent = 'Upload failed. Please try again.'; statusEl.classList.add('err'); statusEl.classList.remove('ok');
+      paidBtn.disabled = false;
+      return false;
+    }
+  }
 }
 
-/* ========= NEW: CTA enabler/validator ========= */
+/* ========= Summary + CTA ========= */
+function renderSummary(){
+  const itemsEl = document.getElementById('sumItems');
+  const subtotalEl = document.getElementById('sumSubtotal');
+  const shippingEl = document.getElementById('sumShipping');
+  const totalEl = document.getElementById('sumTotal');
+
+  const cart = getCart();
+  const rows = cart.map(i=>`<div class="sum-row"><span>${i.name || 'Item'}</span><span class="price">${fmt(i.price || 0)}</span></div>`).join('');
+  if (itemsEl) itemsEl.innerHTML = rows || '<div class="hint">No items.</div>';
+
+  const subtotal = cart.reduce((s,i)=>s+(i.price||0),0);
+  const saved  = getSavedShippingFromCart();
+  const ship   = saved?.fee || 0;
+  if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
+  if (shippingEl) shippingEl.textContent = fmt(ship);
+  if (totalEl) totalEl.textContent = fmt(subtotal+ship);
+}
+
+function isValidShipForm(){
+  const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
+  for (const id of reqIds){
+    const el = document.getElementById(id);
+    if (!el || !el.value || (el.validity && !el.validity.valid)) return false;
+  }
+  const agree = document.getElementById('disc1');
+  return !!(agree && agree.checked);
+}
+
 function syncPayCta(){
-  const btn = document.getElementById('btnPay');
-  if (!btn) return;
-
-  const name   = document.getElementById('fName')?.value.trim();
-  const email  = document.getElementById('fEmail')?.value.trim();
-  const phone  = document.getElementById('fPhone')?.value.replace(/\D/g,'');
-  const postal = document.getElementById('fPostal')?.value.replace(/\D/g,'');
-  const addr1  = document.getElementById('fAddr1')?.value.trim();
-  const unit   = document.getElementById('fUnit')?.value.trim();
-  const shipId = document.getElementById('fMethod')?.value.trim();
-
-  const ok =
-    name &&
-    email && /\S+@\S+\.\S+/.test(email) &&
-    phone && phone.length === 8 &&
-    postal && postal.length === 6 &&
-    addr1 &&
-    unit &&
-    shipId;
-
-  btn.classList.toggle('show', !!ok);
-  btn.disabled = !ok;
+  const cta = document.getElementById('btnPay');
+  if (cta){
+    if (isValidShipForm()) cta.removeAttribute('disabled'); else cta.setAttribute('disabled','');
+    cta.classList.add('show');
+  }
 }
 
 /* ========= Init ========= */
@@ -552,80 +619,20 @@ function init(){
     paidBtn.disabled = true;
     proof.addEventListener('change', () => {
       paidBtn.disabled = !proof.files.length;
+      const statusEl = document.getElementById('uploadStatus');
+      statusEl.textContent = proof.files.length ? 'Ready to upload.' : '';
+      statusEl.classList.remove('ok','err');
     });
   }
 
-  /* CHANGE: Upload handler now sends JSON to UPLOAD_API (mirrors your working test page) */
+  // Upload + redirect on success
   document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
     e.preventDefault();
-    const fileInput = document.getElementById('proofFile');
-    const f = fileInput?.files?.[0] || null;
-
-    if (!f) { alert('Please choose a payment screenshot before continuing.'); return; }
-
-    // allow unknown MIME (HEIC sometimes comes empty or unusual)
-    const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif','application/octet-stream'];
-    if (f.type && !okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return; }
-    if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return; }
-
-    if (paidBtn) paidBtn.disabled = true; // prevent double clicks
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        // Build payload
-        const dataUrl = reader.result; // "data:image/png;base64,AAAA..."
-        const comma   = dataUrl.indexOf(',');
-        const file_b64 = dataUrl.slice(comma + 1);
-        const filename = f.name;
-        const mimetype = f.type || 'application/octet-stream';
-        const amtText  = document.getElementById('qrAmount')?.textContent || '';
-        const note     = `Order: ${currentOrderId || 'N/A'} | Amount: ${amtText}`;
-
-        const payload = { file_b64, filename, mimetype, note };
-
-        // Try CORS JSON first
-        const res = await fetch(UPLOAD_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-          const data = await res.json();
-          if (data && (data.ok || data.success)) {
-            alert('Upload complete ✓');
-            closeQr(); // optional
-            return;
-          } else {
-            throw new Error(data?.error || 'Upload failed at server');
-          }
-        }
-
-        if (res.ok) {
-          alert('Upload complete ✓');
-          closeQr(); // optional
-          return;
-        }
-
-        // Fallback: fire-and-forget if CORS blocked
-        await fetch(UPLOAD_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          mode: 'no-cors'
-        });
-        alert('Upload sent ✓ (waiting on server)');
-        closeQr(); // optional
-      } catch (err) {
-        console.error(err);
-        alert('Upload failed. Please try again.');
-        if (paidBtn) paidBtn.disabled = false;
-      }
-    };
-    reader.onerror = () => { alert('Could not read the file.'); if (paidBtn) paidBtn.disabled = false; };
-    reader.readAsDataURL(f);
+    const ok = await uploadPaymentProofJSON();
+    if (ok) {
+      // optional: clear pending order cache here if you use it later
+      window.location.href = "thank-you.html";
+    }
   });
 
   const postalEl = document.getElementById('fPostal');
