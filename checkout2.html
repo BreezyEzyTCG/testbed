@@ -206,19 +206,7 @@
                 <p class="hint">You may also WhatsApp/DM us your proof if you prefer.</p>
               </div>
 
-              <!-- Hidden target so the page doesn't navigate on submit -->
-              <iframe name="uploadBridgeTarget" style="display:none"></iframe>
-
-              <!-- Posts directly to your Apps Script web app -->
-              <form id="appsScriptBridge"
-                    action="https://script.google.com/macros/s/AKfycby2l0EeT9utJo9lZIjfosQmh1q-rSicUZO4HkPeG5gnOyhFha8Arr321vMYXP31n1wj/exec"
-                    method="POST"
-                    target="uploadBridgeTarget">
-                <input type="hidden" name="file_b64"  id="bridge_file_b64">
-                <input type="hidden" name="filename"  id="bridge_filename">
-                <input type="hidden" name="mimetype"  id="bridge_mimetype">
-                <input type="hidden" name="note"      id="bridge_note">
-              </form>
+              <!-- CHANGE: Removed iframe + bridge form (no longer used with JSON fetch) -->
 
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button class="btn outline" id="qrCancel">Cancel</button>
@@ -236,6 +224,9 @@
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 const PAYNOW_API   = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
+
+/* CHANGE: Use the SAME working upload endpoint as test page (JSON) */
+const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
 
 /* Simple JSONP fetch */
 function jsonpFetch(baseUrl, params) {
@@ -565,7 +556,7 @@ function init(){
     });
   }
 
-  // Upload handler
+  /* CHANGE: Upload handler now sends JSON to UPLOAD_API (mirrors your working test page) */
   document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
     e.preventDefault();
     const fileInput = document.getElementById('proofFile');
@@ -573,7 +564,7 @@ function init(){
 
     if (!f) { alert('Please choose a payment screenshot before continuing.'); return; }
 
-    // allow unknown MIME (HEIC on some browsers)
+    // allow unknown MIME (HEIC sometimes comes empty or unusual)
     const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif','application/octet-stream'];
     if (f.type && !okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return; }
     if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return; }
@@ -581,18 +572,58 @@ function init(){
     if (paidBtn) paidBtn.disabled = true; // prevent double clicks
 
     const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result; // "data:image/png;base64,AAAA..."
-      const comma = dataUrl.indexOf(',');
-      document.getElementById('bridge_file_b64').value = dataUrl.slice(comma + 1);
-      document.getElementById('bridge_filename').value = f.name;
-      document.getElementById('bridge_mimetype').value = f.type || 'application/octet-stream';
+    reader.onload = async () => {
+      try {
+        // Build payload
+        const dataUrl = reader.result; // "data:image/png;base64,AAAA..."
+        const comma   = dataUrl.indexOf(',');
+        const file_b64 = dataUrl.slice(comma + 1);
+        const filename = f.name;
+        const mimetype = f.type || 'application/octet-stream';
+        const amtText  = document.getElementById('qrAmount')?.textContent || '';
+        const note     = `Order: ${currentOrderId || 'N/A'} | Amount: ${amtText}`;
 
-      const amt = document.getElementById('qrAmount')?.textContent || '';
-      document.getElementById('bridge_note').value =
-        `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`;
+        const payload = { file_b64, filename, mimetype, note };
 
-      document.getElementById('appsScriptBridge').submit();
+        // Try CORS JSON first
+        const res = await fetch(UPLOAD_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await res.json();
+          if (data && (data.ok || data.success)) {
+            alert('Upload complete ✓');
+            closeQr(); // optional
+            return;
+          } else {
+            throw new Error(data?.error || 'Upload failed at server');
+          }
+        }
+
+        if (res.ok) {
+          alert('Upload complete ✓');
+          closeQr(); // optional
+          return;
+        }
+
+        // Fallback: fire-and-forget if CORS blocked
+        await fetch(UPLOAD_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          mode: 'no-cors'
+        });
+        alert('Upload sent ✓ (waiting on server)');
+        closeQr(); // optional
+      } catch (err) {
+        console.error(err);
+        alert('Upload failed. Please try again.');
+        if (paidBtn) paidBtn.disabled = false;
+      }
     };
     reader.onerror = () => { alert('Could not read the file.'); if (paidBtn) paidBtn.disabled = false; };
     reader.readAsDataURL(f);
