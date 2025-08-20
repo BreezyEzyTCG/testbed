@@ -256,6 +256,7 @@
 
 <script>
 let isUploading = false;
+let isOpeningQr = false;
 
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
@@ -656,7 +657,20 @@ function init(){
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
   });
 
-  document.getElementById('btnPay')?.addEventListener('click', openQr);
+  const payBtn = document.getElementById('btnPay');
+  payBtn?.addEventListener('click', async () => {
+  if (isOpeningQr) return;   // stop double clicks
+  isOpeningQr = true;
+  payBtn.disabled = true;    // visually block extra clicks
+
+  try {
+    await openQr();          // run your existing QR flow
+  } finally {
+    isOpeningQr = false;
+    payBtn.disabled = false; // re-enable after modal shows
+  }
+});
+
   document.getElementById('qrClose')?.addEventListener('click', confirmAbortAndExit);
   document.getElementById('qrCancel')?.addEventListener('click', confirmAbortAndExit);
 
