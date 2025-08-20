@@ -524,7 +524,7 @@ async function uploadPaymentProofJSON() {
     if (ct.includes('application/json')) {
       const data = await res.json();
       if (data && (data.ok || data.success)) {
-        statusEl.textContent = 'Upload complete ✓'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
+        statusEl.textContent = 'Thank you for the wait, your upload is completed ✓'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
         return true;
       } else {
         throw new Error(data?.error || 'Upload failed at server');
@@ -532,7 +532,7 @@ async function uploadPaymentProofJSON() {
     }
 
     if (res.ok) {
-      statusEl.textContent = 'Upload complete ✓'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
+      statusEl.textContent = 'Thank you for the wait, your upload is completed ✓'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
       return true;
     }
 
@@ -545,13 +545,16 @@ async function uploadPaymentProofJSON() {
         body: JSON.stringify(payload),
         mode: 'no-cors'
       });
-      statusEl.textContent = 'Upload sent ✓ (waiting on server)'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
+      statusEl.textContent = 'Uploading... waiting for server to receive'; statusEl.classList.add('ok'); statusEl.classList.remove('err');
       return true; // optimistic
     } catch (errNoCors) {
-      console.error(errNoCors);
-      statusEl.textContent = 'Upload failed. Please try again.'; statusEl.classList.add('err'); statusEl.classList.remove('ok');
-      paidBtn.disabled = false;
-      return false;
+  console.error(errNoCors);
+  statusEl.textContent = 'Upload failed. Please try again.'; 
+  statusEl.classList.add('err'); 
+  statusEl.classList.remove('ok');
+  paidBtn.disabled = false;
+  isUploading = false;   // ← add this here
+  return false;
     }
   }
 }
@@ -632,15 +635,35 @@ function init(){
     });
   }
 
-  // Upload + redirect on success
-  document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const ok = await uploadPaymentProofJSON();
-    if (ok) {
-      // optional: clear pending order cache here if you use it later
-      window.location.href = "thank-you.html";
-    }
-  });
+ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const ok = await uploadPaymentProofJSON();
+  if (ok) {
+    // Stop the 10-min payment timer so it doesn't kick users to cart mid-message
+    if (countdown) { clearInterval(countdown); countdown = null; }
+    endTime = 0;
+
+    const statusEl = document.getElementById('uploadStatus');
+    let countdownSecs = 3;
+
+    statusEl.textContent = "Thank you for the wait, upload completed ✓\nWe will verify and send order confirmation soon.\nYou'll be redirected to the store in 3 seconds...";
+    statusEl.classList.add('ok');
+    statusEl.classList.remove('err');
+
+    const timer = setInterval(() => {
+      countdownSecs--;
+      if (countdownSecs > 0) {
+        statusEl.textContent = `Thank you for the wait, upload completed ✓\nWe will verify and send order confirmation soon.\nYou'll be redirected to the store in ${countdownSecs} seconds...`;
+      } else {
+        clearInterval(timer);
+        isUploading = false;                  // allow closing again
+        window.location.href = "testbed.html"; // TODO: set to your actual homepage
+      }
+    }, 1000);
+  }
+});
+
+
 
   const postalEl = document.getElementById('fPostal');
   const postalHintEl = document.getElementById('postalHint');
