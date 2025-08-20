@@ -242,7 +242,7 @@
                 <div><strong>Order ID:</strong> <span id="qrOrderId">—</span></div>
                 <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
               </div>
-              <div class="hint">The <strong>Order ID</strong> will appear in your payment ref. <strong>Please do not edit.</strong>.</div>
+              <div class="hint"><strong>Your Order ID will be inputted automatically.<strong>Do not edit.</strong></div>
               <div class="proof" style="margin-top:12px;">
                 <label>Upload payment screenshot <strong>(required)</strong></label>
                 <input id="proofFile" type="file" accept="image/*" required />
@@ -264,7 +264,7 @@
               </div>
             </div>
           </div>
-          <p class="hint">Your upload is transmitted directly to us and used only to confirm your order.</p>
+          <p class="hint">Your details are transmitted directly to us and used only to confirm your order.</p>
         </div>
       </div>
     </div>
@@ -676,7 +676,7 @@ function init(){
   document.getElementById('btnPay')?.addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   btn.disabled = true;
-  btn.textContent = "Processing Payment";
+  btn.textContent = "Loading payment screen";
   btn.classList.add("waiting");
 
   await openQr();
