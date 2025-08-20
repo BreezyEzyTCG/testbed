@@ -94,12 +94,6 @@
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
-  .btn-icon {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
 .btn-icon{
   display:inline-flex;
   align-items:center;
@@ -506,10 +500,11 @@ function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = s
 function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
 
 /* ========= Upload (JSON, same as demo) ========= */
+/* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
-  const paidBtn = document.getElementById('qrPaid');
+  const paidBtn  = document.getElementById('qrPaid');
   const statusEl = document.getElementById('uploadStatus');
-  const fileInput = document.getElementById('proofFile');
+  const fileInput= document.getElementById('proofFile');
   const f = fileInput?.files?.[0] || null;
 
   if (!f) { alert('Please choose a payment screenshot before continuing.'); return false; }
@@ -525,7 +520,7 @@ async function uploadPaymentProofJSON() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const dataUrl = reader.result;
+        const dataUrl = reader.result;  // "data:image/png;base64,AAAA..."
         const comma = dataUrl.indexOf(',');
         resolve(dataUrl.slice(comma + 1));
       } catch (e) { reject(e); }
@@ -541,8 +536,8 @@ async function uploadPaymentProofJSON() {
     mimetype: f.type || 'application/octet-stream',
     note: `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`
   };
-  isUploading = true;
 
+  isUploading = true;
   statusEl.textContent = 'Uploading…';
 
   try {
@@ -557,9 +552,10 @@ async function uploadPaymentProofJSON() {
       const data = await res.json();
       if (data && (data.ok || data.success)) {
         statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-statusEl.classList.add('ok'); statusEl.classList.remove('err');
-isUploading = false;                      // ← add this
-return true;
+        statusEl.classList.add('ok'); 
+        statusEl.classList.remove('err');
+        isUploading = false;
+        return true;
       } else {
         throw new Error(data?.error || 'Upload failed at server');
       }
@@ -567,12 +563,17 @@ return true;
 
     if (res.ok) {
       statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-statusEl.classList.add('ok'); statusEl.classList.remove('err');
-isUploading = false;                      // ← add this
-return true;
+      statusEl.classList.add('ok'); 
+      statusEl.classList.remove('err');
+      isUploading = false;
+      return true;
+    }
 
+    // Only reached if NOT ok
     throw new Error('Server returned ' + res.status);
+
   } catch (errCors) {
+    // Fallback for servers without CORS: fire-and-forget
     try {
       await fetch(UPLOAD_API, {
         method: 'POST',
@@ -581,21 +582,22 @@ return true;
         mode: 'no-cors'
       });
       statusEl.textContent = 'Thank you for the wait, your upload is completed ✓ (server will finish processing shortly)';
-statusEl.classList.add('ok'); statusEl.classList.remove('err');
-isUploading = false;                      // ← add this
-return true; // optimistic
-
+      statusEl.classList.add('ok'); 
+      statusEl.classList.remove('err');
+      isUploading = false;
+      return true; // optimistic
     } catch (errNoCors) {
-  console.error(errNoCors);
-  statusEl.textContent = 'Upload failed. Please try again.'; 
-  statusEl.classList.add('err'); 
-  statusEl.classList.remove('ok');
-  paidBtn.disabled = false;
-  isUploading = false;   // ← add this here
-  return false;
+      console.error(errNoCors);
+      statusEl.textContent = 'Upload failed. Please try again.'; 
+      statusEl.classList.add('err'); 
+      statusEl.classList.remove('ok');
+      paidBtn.disabled = false;
+      isUploading = false;
+      return false;
     }
   }
 }
+
 
 /* ========= Summary + CTA ========= */
 function renderSummary(){
