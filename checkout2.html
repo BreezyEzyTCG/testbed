@@ -229,7 +229,7 @@
     <div class="qr-backdrop" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
       <div class="qr-dialog">
         <div class="qr-head">
-          <h3 id="qrTitle">PayNow Payment</h3>
+          <h3 id="qrTitle">PayNow/PayLah QR Payment</h3>
           <button class="btn outline" id="qrClose">Close</button>
         </div>
         <div class="qr-body">
@@ -242,12 +242,12 @@
                 <div><strong>Order ID:</strong> <span id="qrOrderId">—</span></div>
                 <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
               </div>
-              <div class="hint">Please include the <strong>Order ID</strong> in your payment reference/remarks.</div>
+              <div class="hint">The <strong>Order ID</strong> will appear in your payment ref. <strong>Please do not edit.</strong>.</div>
               <div class="proof" style="margin-top:12px;">
                 <label>Upload payment screenshot <strong>(required)</strong></label>
                 <input id="proofFile" type="file" accept="image/*" required />
                 <div id="uploadStatus" class="hint" aria-live="polite"></div>
-                <p class="hint">Do not close the window until upload is completed, you will be redirected once done.</p>
+                <p class="hint">Stay on this page; we'll teleport you back to the store once upload finishes.</p>
               </div>
 
               <!-- Removed iframe bridge & old form to avoid x-www-form-urlencoded -->
@@ -261,12 +261,10 @@
 <button id="qrPaid" class="btn-icon btn-plain" type="button" aria-label="Upload payment proof">
   <img src="assets/images/upload.png" alt="Upload" />
 </button>
-
-
               </div>
             </div>
           </div>
-          <p class="hint">If the timer runs out, close this window and tap “Make Payment” again to regenerate an Order ID.</p>
+          <p class="hint">Your upload is transmitted directly to us and used only to confirm your order.</p>
         </div>
       </div>
     </div>
@@ -565,7 +563,7 @@ async function uploadPaymentProofJSON() {
   };
 
   isUploading = true;
-  statusEl.textContent = 'Uploading…';
+  statusEl.textContent = 'Uploading...';
 
   try {
     const res = await fetch(UPLOAD_API, {
@@ -584,7 +582,7 @@ async function uploadPaymentProofJSON() {
         isUploading = false;
         return true;
       } else {
-        throw new Error(data?.error || 'Upload failed at server');
+        throw new Error(data?.error || 'Upload failed to reach server');
       }
     }
 
@@ -608,7 +606,7 @@ async function uploadPaymentProofJSON() {
         body: JSON.stringify(payload),
         mode: 'no-cors'
       });
-      statusEl.textContent = 'Thank you for the wait, your upload is completed ✓ (server will finish processing shortly)';
+      statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
       statusEl.classList.add('ok'); 
       statusEl.classList.remove('err');
       isUploading = false;
@@ -734,11 +732,11 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   statusEl.classList.remove('err');
 
   // Show messages in sequence (total ~15s)
-  statusEl.textContent = 'Thank you for the wait — upload completed ✓.';  // t = 0s
-await sleep(4000);                                                       // +4s (t=4s)
+  statusEl.textContent = 'Thank you for the wait — upload completed ✓';  // t = 0s
+await sleep(2500);                                                       // +4s (t=4s)
 
 statusEl.textContent = 'We will verify and send order confirmation soon.'; // t=4s
-await sleep(6000);                                                        // +6s (t=10s)
+await sleep(3000);                                                        // +6s (t=10s)
 
 // 5-second countdown (t=10s → t=15s)
 for (let s = 5; s >= 1; s--) {
