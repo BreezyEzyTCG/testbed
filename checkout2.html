@@ -94,40 +94,6 @@
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
-  /* Row layout: Cancel | Upload badge */
-.qr-actions{
-  display:grid;
-  grid-template-columns: 1fr auto;
-  gap:8px;
-  margin-top:12px;
-  align-items:center;
-}
-
-/* The SVG badge as the whole link */
-#qrPaid {
-  display:inline-block;
-  width: 180px;    /* match your SVG’s real width */
-  height: 60px;    /* match your SVG’s real height */
-  background: url("assets/images/upload.svg") no-repeat center/contain;
-  border:0;
-  padding:0;
-  cursor:pointer;
-}
-
-
-/* Hover/focus states */
-#qrPaid.upload-badge:hover{ filter: brightness(1.05); }
-#qrPaid.upload-badge:focus-visible{
-  box-shadow: 0 0 0 3px rgba(99,102,241,.25);
-}
-
-/* Disabled look + block clicks */
-#qrPaid[aria-disabled="true"]{
-  opacity: .5;
-  pointer-events: none;
-  filter: grayscale(1);
-}
-
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -246,13 +212,10 @@
               <!-- Removed iframe bridge & old form to avoid x-www-form-urlencoded -->
               <!-- (We now upload via fetch JSON like the working demo) -->
 
-              <div class="qr-actions">
-  <button class="btn outline" id="qrCancel">Cancel</button>
-
-  <!-- Clickable graphic. Use href later when you have a target -->
-<a id="qrPaid" href="#" aria-label="Upload payment proof">
-  <img src="assets/images/upload.svg" alt="Upload" class="upload-icon">
-</a></div>
+              <div style="display:flex; gap:8px; margin-top:12px;">
+                <button class="btn outline" id="qrCancel">Cancel</button>
+                <button class="btn danger" id="qrPaid">Uplo</button>
+              </div>
             </div>
           </div>
           <p class="hint">If the timer runs out, close this window and tap “Make Payment” again to regenerate an Order ID.</p>
@@ -512,6 +475,7 @@ function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
 
 /* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
+  const paidBtn = document.getElementById('qrPaid');
   const statusEl = document.getElementById('uploadStatus');
   const fileInput = document.getElementById('proofFile');
   const f = fileInput?.files?.[0] || null;
@@ -522,8 +486,7 @@ async function uploadPaymentProofJSON() {
   if (!okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return false; }
   if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return false; }
 
- const paidLink = document.getElementById('qrPaid');
- paidLink?.setAttribute('aria-disabled','true');
+  paidBtn.disabled = true;
   statusEl.textContent = 'Preparing your file…';
 
   const b64 = await new Promise((resolve, reject) => {
@@ -589,7 +552,7 @@ async function uploadPaymentProofJSON() {
   statusEl.textContent = 'Upload failed. Please try again.'; 
   statusEl.classList.add('err'); 
   statusEl.classList.remove('ok');
-  paidLink?.setAttribute('aria-disabled','false');
+  paidBtn.disabled = false;
   isUploading = false;   // ← add this here
   return false;
     }
@@ -660,27 +623,27 @@ function init(){
   });
 
   // Disable the "paid" button until a file is chosen
-  const paidLink = document.getElementById('qrPaid');
-const proof    = document.getElementById('proofFile');
-if (paidLink && proof){
-  paidLink.setAttribute('aria-disabled','true');
-  proof.addEventListener('change', () => {
-    const enabled = !!proof.files.length;
-    paidLink.setAttribute('aria-disabled', enabled ? 'false' : 'true');
-    const statusEl = document.getElementById('uploadStatus');
-    statusEl.textContent = enabled ? 'Ready to upload.' : '';
-    statusEl.classList.remove('ok','err');
-  });
-}
+  const paidBtn = document.getElementById('qrPaid');
+  const proof   = document.getElementById('proofFile');
+  if (paidBtn && proof){
+    paidBtn.disabled = true;
+    proof.addEventListener('change', () => {
+      paidBtn.disabled = !proof.files.length;
+      const statusEl = document.getElementById('uploadStatus');
+      statusEl.textContent = proof.files.length ? 'Ready to upload.' : '';
+      statusEl.classList.remove('ok','err');
+    });
+  }
 
-paidLink?.addEventListener('click', async (e) => {
+ // Helper for staged messages
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   e.preventDefault();
-  if (paidLink.getAttribute('aria-disabled') === 'true') return;  // guard
-
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
-  // Stop the QR timer and proceed with your staged messages + redirect
+  // Stop the 10‑min QR timer so it won't kick user back to cart
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
@@ -688,16 +651,21 @@ paidLink?.addEventListener('click', async (e) => {
   statusEl.classList.add('ok');
   statusEl.classList.remove('err');
 
-  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-  statusEl.textContent = 'Thank you for the wait, upload completed✓.';
-  await sleep(3000);
-  statusEl.textContent = 'We will verify and send order confirmation soon.';
-  await sleep(4500);
+  // Show messages in sequence (total ~15s)
+  statusEl.textContent = 'Thank you for the wait, upload completed✓.';   // t = 0s
+  await sleep(3000);                                                     // wait 5s
+
+  statusEl.textContent = 'We will verify and send order confirmation soon.'; // t = 5s
+  await sleep(4500);                                                         // wait 5s
+
+  // t = 10s → 5-second countdown before redirect
   for (let s = 5; s >= 1; s--) {
     statusEl.textContent = `You'll be redirected to the store in ${s} second${s===1?'':'s'}...`;
     await sleep(1000);
   }
-  window.location.href = 'index.html';
+
+  // Redirect to
+  window.location.href = 'index.html'; // change to your actual target page
 });
 
 
