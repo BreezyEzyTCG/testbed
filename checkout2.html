@@ -639,27 +639,38 @@ function init(){
   e.preventDefault();
   const ok = await uploadPaymentProofJSON();
   if (ok) {
-    // Stop the 10-min payment timer so it doesn't kick users to cart mid-message
-    if (countdown) { clearInterval(countdown); countdown = null; }
-    endTime = 0;
-
     const statusEl = document.getElementById('uploadStatus');
-    let countdownSecs = 3;
-
-    statusEl.textContent = "Thank you for the wait, upload completed ✓\nWe will verify and send order confirmation soon.\nYou'll be redirected to the store in 3 seconds...";
     statusEl.classList.add('ok');
     statusEl.classList.remove('err');
 
-    const timer = setInterval(() => {
-      countdownSecs--;
-      if (countdownSecs > 0) {
-        statusEl.textContent = `Thank you for the wait, upload completed ✓\nWe will verify and send order confirmation soon.\nYou'll be redirected to the store in ${countdownSecs} seconds...`;
-      } else {
-        clearInterval(timer);
-        isUploading = false;                  // allow closing again
-        window.location.href = "testbed.html"; // TODO: set to your actual homepage
+    // Step 1: show "Upload complete"
+    statusEl.textContent = 'Upload complete ✓';
+
+    // Step 2: after 4s, show thank-you message
+    setTimeout(() => {
+      statusEl.textContent = 'Thank you for the wait, upload completed.';
+    }, 4000);
+
+    // Step 3: after 8s, show "We will verify..."
+    setTimeout(() => {
+      statusEl.textContent = 'We will verify and send order confirmation soon.';
+    }, 8000);
+
+    // Step 4: after 12s, show redirect countdown
+    let countdown = 3;
+    const countdownInterval = setInterval(() => {
+      statusEl.textContent = `You’ll be redirected to the store in ${countdown}...`;
+      countdown--;
+      if (countdown < 0) {
+        clearInterval(countdownInterval);
+        window.location.href = 'index.html'; // redirect to store (adjust page if needed)
       }
     }, 1000);
+
+    // Start countdown after 12s
+    setTimeout(() => {
+      countdown = 3;
+    }, 12000);
   }
 });
 
