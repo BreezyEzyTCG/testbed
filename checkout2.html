@@ -94,23 +94,40 @@
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
-  #qrPaid {
-  background: none;         /* no red background */
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
+  /* Row layout: Cancel | Upload badge */
+.qr-actions{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:8px;
+  margin-top:12px;
+  align-items:center;
 }
 
-#qrPaid:hover {
-  background: rgba(0,0,0,0.05); /* light hover */
+/* The SVG badge as the whole link */
+#qrPaid.upload-badge{
+  display:inline-block;
+  width:220px;                /* adjust to your SVG’s natural size */
+  height:60px;                /* adjust to your SVG’s natural size */
+  background: url('assets/images/upload.svg?v=3') no-repeat center / contain;
+  border-radius:10px;         /* optional, just for nicer focus ring shape */
+  text-indent:-9999px;        /* hide text if any */
+  overflow:hidden;
+  outline: none;
 }
 
-#qrPaid .icon-upload {
-  width: 24px;   /* control size here */
-  height: 24px;
-  display: block;
+/* Hover/focus states */
+#qrPaid.upload-badge:hover{ filter: brightness(1.05); }
+#qrPaid.upload-badge:focus-visible{
+  box-shadow: 0 0 0 3px rgba(99,102,241,.25);
 }
+
+/* Disabled look + block clicks */
+#qrPaid[aria-disabled="true"]{
+  opacity: .5;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -229,9 +246,12 @@
               <!-- Removed iframe bridge & old form to avoid x-www-form-urlencoded -->
               <!-- (We now upload via fetch JSON like the working demo) -->
 
-              <div style="display:flex; gap:8px; margin-top:12px;">
-                <button class="btn outline" id="qrCancel">Cancel</button>
-              </div>
+              <div class="qr-actions">
+  <button class="btn outline" id="qrCancel">Cancel</button>
+
+  <!-- Clickable graphic. Use href later when you have a target -->
+  <a id="qrPaid" class="upload-badge" href="#" aria-disabled="true" aria-label="Upload payment proof"></a>
+</div>
             </div>
           </div>
           <p class="hint">If the timer runs out, close this window and tap “Make Payment” again to regenerate an Order ID.</p>
@@ -491,7 +511,6 @@ function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
 
 /* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
-  const paidBtn = document.getElementById('qrPaid');
   const statusEl = document.getElementById('uploadStatus');
   const fileInput = document.getElementById('proofFile');
   const f = fileInput?.files?.[0] || null;
@@ -502,7 +521,8 @@ async function uploadPaymentProofJSON() {
   if (!okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return false; }
   if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return false; }
 
-  paidBtn.disabled = true;
+ const paidLink = document.getElementById('qrPaid');
+ paidLink?.setAttribute('aria-disabled','true');
   statusEl.textContent = 'Preparing your file…';
 
   const b64 = await new Promise((resolve, reject) => {
@@ -568,7 +588,7 @@ async function uploadPaymentProofJSON() {
   statusEl.textContent = 'Upload failed. Please try again.'; 
   statusEl.classList.add('err'); 
   statusEl.classList.remove('ok');
-  paidBtn.disabled = false;
+  paidLink?.setAttribute('aria-disabled','false');
   isUploading = false;   // ← add this here
   return false;
     }
@@ -639,27 +659,27 @@ function init(){
   });
 
   // Disable the "paid" button until a file is chosen
-  const paidBtn = document.getElementById('qrPaid');
-  const proof   = document.getElementById('proofFile');
-  if (paidBtn && proof){
-    paidBtn.disabled = true;
-    proof.addEventListener('change', () => {
-      paidBtn.disabled = !proof.files.length;
-      const statusEl = document.getElementById('uploadStatus');
-      statusEl.textContent = proof.files.length ? 'Ready to upload.' : '';
-      statusEl.classList.remove('ok','err');
-    });
-  }
+  const paidLink = document.getElementById('qrPaid');
+const proof    = document.getElementById('proofFile');
+if (paidLink && proof){
+  paidLink.setAttribute('aria-disabled','true');
+  proof.addEventListener('change', () => {
+    const enabled = !!proof.files.length;
+    paidLink.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    const statusEl = document.getElementById('uploadStatus');
+    statusEl.textContent = enabled ? 'Ready to upload.' : '';
+    statusEl.classList.remove('ok','err');
+  });
+}
 
- // Helper for staged messages
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
+paidLink?.addEventListener('click', async (e) => {
   e.preventDefault();
+  if (paidLink.getAttribute('aria-disabled') === 'true') return;  // guard
+
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
-  // Stop the 10‑min QR timer so it won't kick user back to cart
+  // Stop the QR timer and proceed with your staged messages + redirect
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
@@ -667,21 +687,16 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   statusEl.classList.add('ok');
   statusEl.classList.remove('err');
 
-  // Show messages in sequence (total ~15s)
-  statusEl.textContent = 'Thank you for the wait, upload completed✓.';   // t = 0s
-  await sleep(3000);                                                     // wait 5s
-
-  statusEl.textContent = 'We will verify and send order confirmation soon.'; // t = 5s
-  await sleep(4500);                                                         // wait 5s
-
-  // t = 10s → 5-second countdown before redirect
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  statusEl.textContent = 'Thank you for the wait, upload completed✓.';
+  await sleep(3000);
+  statusEl.textContent = 'We will verify and send order confirmation soon.';
+  await sleep(4500);
   for (let s = 5; s >= 1; s--) {
     statusEl.textContent = `You'll be redirected to the store in ${s} second${s===1?'':'s'}...`;
     await sleep(1000);
   }
-
-  // Redirect to
-  window.location.href = 'index.html'; // change to your actual target page
+  window.location.href = 'index.html';
 });
 
 
