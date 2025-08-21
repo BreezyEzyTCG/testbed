@@ -137,6 +137,19 @@
   line-height: 1.4;
   white-space: pre-line; /* keeps line breaks */
 }
+
+/* Make Address Line 1 look locked */
+#fAddr1[readonly]{
+  background:#f3f4f6;         /* light grey */
+  color:#6b7280;              /* muted text */
+  border-color:#cbd5e1;
+}
+
+/* Keep it visibly non-active when focused (still selectable for copy) */
+#fAddr1[readonly]:focus{
+  box-shadow:none;
+  border-color:#cbd5e1;
+}
   
 /* Minimal base so the icon is centered and has no default button chrome */
 .btn-icon{
@@ -219,14 +232,15 @@
             </div>
 
             <div>
-              <label class="req">Address Line 1</label>
-              <input id="fAddr1" required placeholder="Block & Street Name"/>
-            </div>
+            <label class="req">Address Line 1</label>
+            <input id="fAddr1" required placeholder="Block & Street Name" readonly title="Autofilled from Postal Code"/>
+            <div class="hint">Autofilled from Postal Code (uneditable)</div>
+          </div>
             <div>
-  <label>Address Line 2 (optional)</label>
-  <input id="fAddr2" placeholder="Building name etc. (optional)"/>
-</div>
-            <div>
+            <label>Address Line 2 (optional)</label>
+            <input id="fAddr2" placeholder="Building name etc. (optional)"/>
+          </div>
+              <div>
               <label class="req">Unit No.</label>
               <input id="fUnit" type="text" required inputmode="text" maxlength="8"
                 pattern="^[0-9A-Za-z\-]{1,8}$"
@@ -852,7 +866,7 @@ function init(){
   el.addEventListener('blur', onBlur);
   // NOTE: do NOT mark on load — keeps everything neutral initially
 });
-
+document.getElementById('fAddr1')?.setAttribute('readonly','');
 
 document.getElementById('btnPay')?.addEventListener('click', async (e) => {
   const btn = e.currentTarget;
