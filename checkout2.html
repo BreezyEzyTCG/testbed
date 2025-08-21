@@ -657,30 +657,19 @@ function renderErrors(){
 }
 
 async function submitOrder(payload){
+  // Always use no-cors + no custom headers to avoid preflight
   try {
-    const res = await fetch(ORDER_API + '?endpoint=order', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
+    await fetch(ORDER_API + '?endpoint=order', {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload)   // text/plain by default; GAS reads e.postData.contents
     });
-    // Non-blocking; OK if CORS prevents reading response
-    if ((res.headers.get('content-type') || '').includes('application/json')) {
-      const data = await res.json();
-      if (!data.ok) console.warn('[Order] API error:', data.error);
-    }
+    // We can't read a response in no-cors (opaque), but Apps Script will process it.
   } catch (err) {
-    // Fallback fire-and-forget
-    try {
-      await fetch(ORDER_API + '?endpoint=order', {
-        method:'POST', mode:'no-cors',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      });
-    } catch(e2) {
-      console.warn('[Order] submit failed:', e2);
-    }
+    console.warn('[Order] submit failed:', err);
   }
 }
+
  
 /* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
