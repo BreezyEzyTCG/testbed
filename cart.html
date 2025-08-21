@@ -527,7 +527,6 @@
     }
     .oos-head h3{ margin: 0; font-size: 1.05rem; letter-spacing: .2px; }
     .oos-body{ padding: 14px 16px; color:#505050; max-height: 60vh; overflow: auto; }
-    .oos-body h4{ margin: 0 0 10px; font-size: .95rem; }
     .oos-list{ margin: 8px 0 14px; padding-left: 18px; }
     .oos-list li{ margin: 4px 0; font-size: 0.95rem; }
     .oos-item .name{ font-weight: 600; }
@@ -1144,6 +1143,14 @@ next.push({
 
   function fmtMoney(n){ return `$${(Number(n)||0).toFixed(2)}`; }
 
+  /* === Spinner helpers (NEW) === */
+  function showSpinner(){
+    document.getElementById('loading-spinner')?.classList.remove('hidden');
+  }
+  function hideSpinner(){
+    document.getElementById('loading-spinner')?.classList.add('hidden');
+  }
+
   /* ===== Qty ops: use the item's stored key, not recomputed ===== */
   function incQty(key){
     const cart = getCart();
@@ -1198,16 +1205,18 @@ next.push({
     if (sumTotal)    sumTotal.textContent    = fmtMoney(total);
   }
 
+  /* === renderCart with spinner + button state (CHANGED) === */
   async function renderCart() {
+    showSpinner(); /* NEW */
     if (!allProducts.length) {
       await fetchInventoryFromSheet();
     }
     let cart = getCart();
 
     const { cart: fixed, changed, removed, clamped, priced } = reconcileCartWithInventory(cart);
-if (changed){
-  openOOSModal(removed, clamped, priced);
-}
+    if (changed){
+      openOOSModal(removed, clamped, priced);
+    }
     cart = fixed;
 
     const cartContainer = document.getElementById("cart-items");
@@ -1227,6 +1236,8 @@ if (changed){
       }
       window.currentCartSubtotal = 0;
       updateSummaryTotals(0);
+      updateCheckoutDisabled();   /* NEW */
+      hideSpinner();              /* NEW */
       return;
     }
 
@@ -1319,6 +1330,8 @@ if (changed){
 
     window.currentCartSubtotal = subtotal;
     updateSummaryTotals(subtotal);
+    updateCheckoutDisabled(); /* NEW */
+    hideSpinner();            /* NEW */
   }
 
   function clearCart() {
@@ -1340,10 +1353,17 @@ if (changed){
     window.location.href = "checkout2.html";
   }
 
+  /* === Enable only when cart has items AND disclaimers checked (CHANGED) === */
   function updateCheckoutDisabled(){
     const btn = document.getElementById('checkoutBtn');
     if(!btn) return;
-    btn.setAttribute('aria-disabled', disclaimersAccepted() ? 'false' : 'true');
+
+    const cart = getCart();
+    const hasItems = cart.length > 0;
+    const disclaimersOk = disclaimersAccepted();
+
+    const enabled = hasItems && disclaimersOk;
+    btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
   }
 
   // === Restore selections & bind change handlers when DOM is ready ===
@@ -1537,6 +1557,37 @@ if (changed){
 
   <!-- 🔔 Toast container -->
   <div id="toast"></div>
+
+<!-- Loading Spinner -->
+<div id="loading-spinner" class="hidden">
+  <div class="spinner"></div>
+</div>
+
+<style>
+#loading-spinner {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+#loading-spinner.hidden { display: none; }
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #5725AE;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+</style>
+
       
 </body>
 </html>
