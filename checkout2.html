@@ -273,6 +273,7 @@
 <script>
 let isUploading = false;
 let isOpeningQr = false;
+let isModalOpen = false;
 
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
@@ -415,6 +416,11 @@ async function openQr(){
     tick();
     countdown = setInterval(tick, 1000);
     document.getElementById('qrModal').hidden = false;
+    isModalOpen = true;
+
+    // Prevent back navigation while modal is open
+    try { history.pushState({qr:true}, '', location.href); } catch {}
+
 
   } catch (err) {
     console.error('[PayNow] fetch failed:', err);
@@ -424,6 +430,7 @@ async function openQr(){
 
 function closeQr(){
   document.getElementById('qrModal').hidden = true;
+  isModalOpen = false;
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
@@ -440,12 +447,12 @@ function confirmAbortAndExit(){
     return;
   }
   const ok = window.confirm(
-    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to your cart.'
+    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to the store.'
   );
   if (!ok) return;
 
   closeQr();
-  window.location.href = 'cart.html';
+  window.location.href = 'index.html';
 }
 
 function mmss(ms){
@@ -468,7 +475,7 @@ function tick(){
     clearInterval(countdown);
     countdown = null;
     closeQr();
-    window.location.href = "cart.html";
+    window.location.href = "index.html";
   }
 }
 
@@ -673,18 +680,24 @@ function init(){
     el.addEventListener('change', ()=>{ renderSummary(); syncPayCta(); });
   });
 
-  document.getElementById('btnPay')?.addEventListener('click', async (e) => {
+document.getElementById('btnPay')?.addEventListener('click', async (e) => {
   const btn = e.currentTarget;
+  if (isModalOpen) return; // already open, ignore
+
   btn.disabled = true;
   btn.textContent = "Loading payment screen";
   btn.classList.add("waiting");
 
-  await openQr();
-
-  // Re-enable after QR modal shows (optional)
-  btn.disabled = false;
-  btn.textContent = "Make Payment";
-  btn.classList.remove("waiting");
+  try {
+    await openQr();
+  } finally {
+    // keep disabled while modal is open; re-enable when modal closes
+    if (!isModalOpen) {
+      btn.disabled = false;
+      btn.textContent = "Make Payment";
+      btn.classList.remove("waiting");
+    }
+  }
 });
 
 
@@ -810,7 +823,41 @@ for (let s = 5; s >= 1; s--) {
   }, 400));
   postalEl?.addEventListener('blur', () => tryLookupPostal());
 }
+// Show native "Leave site?" prompt when modal is open or upload is running
+window.addEventListener('beforeunload', (e) => {
+  if (isModalOpen || isUploading) {
+    e.preventDefault();
+    e.returnValue = '';  // required for Chrome/Edge to show the prompt
+  }
+});
+// If user hits Back while modal is open, re-push state and route them to our existing confirm flow
+window.addEventListener('popstate', () => {
+  if (isModalOpen) {
+    try { history.pushState({qr:true}, '', location.href); } catch {}
+    // Reuse your existing confirm flow
+    if (!document.getElementById('qrModal').hidden) {
+      // same behavior as clicking Cancel/Close
+      confirmAbortAndExit();
+    }
+  }
+});
+// Block F5 / Ctrl+R / Cmd+R
+document.addEventListener('keydown', (e) => {
+  const isRefreshKey = (e.key === 'F5') || ((e.key?.toLowerCase?.() === 'r') && (e.ctrlKey || e.metaKey));
+  if (!isRefreshKey) return;
 
+  if (isModalOpen || isUploading) {
+    // Don’t let them refresh; warn instead
+    e.preventDefault();
+    alert('Payment in progress — please do not refresh or close this page.');
+    return;
+  }
+
+  // Modal is NOT open: ask and return them to home if they confirm
+  e.preventDefault();
+  const ok = window.confirm('Return to the store? Unsaved checkout info will be lost.');
+  if (ok) window.location.href = 'index.html';
+});
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
