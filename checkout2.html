@@ -717,22 +717,45 @@ async function uploadPaymentProofJSON() {
 
 /* ========= Summary + CTA ========= */
 function renderSummary(){
-  const itemsEl = document.getElementById('sumItems');
+  const itemsEl    = document.getElementById('sumItems');
   const subtotalEl = document.getElementById('sumSubtotal');
   const shippingEl = document.getElementById('sumShipping');
-  const totalEl = document.getElementById('sumTotal');
+  const totalEl    = document.getElementById('sumTotal');
 
   const cart = getCart();
-  const rows = cart.map(i=>`<div class="sum-row"><span>${i.name || 'Item'}</span><span class="price">${fmt(i.price || 0)}</span></div>`).join('');
+
+  // Build line items with quantity
+  const rows = cart.map(i => {
+    const qty  = Number(i.qty ?? i.quantity ?? 1);
+    const unit = Number(i.price ?? 0);
+    const q    = Number.isFinite(qty) && qty > 0 ? qty : 1;
+    const line = unit * q;
+    const name = i.name || 'Item';
+    return `<div class="sum-row">
+              <span>${name}${q > 1 ? ` × ${q}` : ''}</span>
+              <span class="price">${fmt(line)}</span>
+            </div>`;
+  }).join('');
+
   if (itemsEl) itemsEl.innerHTML = rows || '<div class="hint">No items.</div>';
 
-  const subtotal = cart.reduce((s,i)=>s+(i.price||0),0);
+  // Subtotal = sum of (price * qty)
+  const subtotal = cart.reduce((s, i) => {
+    const qty  = Number(i.qty ?? i.quantity ?? 1);
+    const unit = Number(i.price ?? 0);
+    const q    = Number.isFinite(qty) && qty > 0 ? qty : 1;
+    return s + (unit * q);
+  }, 0);
+
+  // Shipping pulled from cart selection saved in localStorage
   const saved  = getSavedShippingFromCart();
-  const ship   = saved?.fee || 0;
+  const ship   = Number(saved?.fee ?? 0);
+
   if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
   if (shippingEl) shippingEl.textContent = fmt(ship);
-  if (totalEl) totalEl.textContent = fmt(subtotal+ship);
+  if (totalEl)    totalEl.textContent    = fmt(subtotal + ship);
 }
+
 
 function isValidShipForm(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
