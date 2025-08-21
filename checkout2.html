@@ -93,6 +93,20 @@
     .sum-body{ padding:9px 12px; }
     .sum-header,.sum-total{ padding:9px 12px; }
   }
+  .sum-notes{
+  background:#fff;
+  padding:10px 14px;
+  border-top:1px solid var(--border);
+}
+.sum-notes label{
+  display:block;
+  margin-bottom:6px;
+  font-weight:600;
+  font-size:var(--size-label);
+  color:var(--muted);
+}
+#orderNotes{ min-height:90px; resize:vertical; }
+
   #qrClose { display: none; }
   #qrTimer.timer-urgent { color: #dc2626; font-weight: 800; }
   #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
@@ -194,6 +208,10 @@
               <input id="fAddr1" required placeholder="Block & Street Name"/>
             </div>
             <div>
+  <label>Address Line 2 (optional)</label>
+  <input id="fAddr2" placeholder="Building name etc. (optional)"/>
+</div>
+            <div>
               <label class="req">Unit No.</label>
               <input id="fUnit" type="text" required inputmode="text" maxlength="8"
                 pattern="^[0-9A-Za-z\-]{1,8}$"
@@ -234,9 +252,15 @@
           <div class="sum-row"><span><strong>Shipping</strong></span><strong id="sumShipping">$0.00</strong></div>
         </div>
         <div class="sum-total">
-          <span>Total</span><span id="sumTotal">$0.00</span>
-        </div>
-      </aside>
+  <span>Total</span><span id="sumTotal">$0.00</span>
+</div>
+
+<!-- Remarks / Order Notes -->
+<div class="sum-notes">
+  <label for="orderNotes">Remarks (optional)</label>
+  <textarea id="orderNotes" rows="4" maxlength="500" placeholder="Any delivery notes or special requests…"></textarea>
+</div>
+</aside>
     </div>
   </div>
 
