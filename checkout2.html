@@ -54,9 +54,8 @@
   input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
   input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
   .invalid{border-color:#ef4444 !important;box-shadow:0 0 0 3px rgba(239,68,68,.15) !important;}
-.valid{border-color:#16a34a !important;box-shadow:0 0 0 3px rgba(22,163,74,.15) !important;}
-/* error list under the button */
-.errlist{color:#b91c1c; margin-top:8px;line-height:1.4;white-space:pre-line;}
+  .valid{border-color:#16a34a !important;box-shadow:0 0 0 3px rgba(22,163,74,.15) !important;}
+  .errlist{color:#b91c1c; margin-top:8px;line-height:1.4;white-space:pre-line;}
   #fMethodLabel[readonly]{ background:#fff; color:inherit; opacity:1; cursor:default; }
   .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
   .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
@@ -69,22 +68,21 @@
   .sum-body{ background:#fff; padding:10px 14px; }
   .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
   .sum-row .price{ font-weight:400; }
-  /* line-item name + attributes (left column) */
-.sum-item{display:flex; flex-direction:column; min-width:0;}
-.sum-item .name{font-weight:600;}
-.sum-item .attrs{
-  font-weight:400;
-  font-size:12px;
-  line-height:1.25;
-  color:#64748b;          /* muted */
-  margin-top:2px;
-  white-space:normal;     /* allow wrapping */
-  word-break:break-word;
-  max-width: 420px;       /* keep it tidy on desktop */
-}
+  .sum-item{display:flex; flex-direction:column; min-width:0;}
+  .sum-item .name{font-weight:600;}
+  .sum-item .attrs{
+    font-weight:400;
+    font-size:12px;
+    line-height:1.25;
+    color:#64748b;
+    margin-top:2px;
+    white-space:normal;
+    word-break:break-word;
+    max-width:420px;
+  }
   @media (max-width:600px){
-  .sum-item .attrs{ max-width: 260px; }
-}
+    .sum-item .attrs{ max-width:260px; }
+  }
   .sum-total{ background:var(--surface-2); color:var(--text); padding:10px 14px; font-weight:800; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:var(--size-total); }
   .option-group{ display:grid; gap:8px; }
   .opt-item{ display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:start; padding:9px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
@@ -110,18 +108,18 @@
     .sum-header,.sum-total{ padding:9px 12px; }
   }
   .sum-notes{
-  background:#fff;
-  padding:10px 14px;
-  border-top:1px solid var(--border);
-}
-.sum-notes label{
-  display:block;
-  margin-bottom:6px;
-  font-weight:600;
-  font-size:var(--size-label);
-  color:var(--muted);
-}
-#orderNotes{ min-height:90px; resize:vertical; }
+    background:#fff;
+    padding:10px 14px;
+    border-top:1px solid var(--border);
+  }
+  .sum-notes label{
+    display:block;
+    margin-bottom:6px;
+    font-weight:600;
+    font-size:var(--size-label);
+    color:var(--muted);
+  }
+  #orderNotes{ min-height:90px; resize:vertical; }
 
   #qrClose { display: none; }
   #qrTimer.timer-urgent { color: #dc2626; font-weight: 800; }
@@ -129,67 +127,40 @@
   #uploadStatus.ok { color:#065f46; }
   #uploadStatus.err{ color:#991b1b; }
 
-  /* error messages under the Pay button */
-#formErrors {
-  color: #b91c1c;   /* red */
-  margin-top: 6px;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  white-space: pre-line; /* keeps line breaks */
-}
+  #formErrors {
+    color:#b91c1c;
+    margin-top:6px;
+    font-size:0.9rem;
+    line-height:1.4;
+    white-space:pre-line;
+  }
 
-/* Make Address Line 1 look locked */
-#fAddr1[readonly]{
-  background:#f3f4f6;         /* light grey */
-  color:#6b7280;              /* muted text */
-  border-color:#cbd5e1;
-}
-
-/* Keep it visibly non-active when focused (still selectable for copy) */
-#fAddr1[readonly]:focus{
-  box-shadow:none;
-  border-color:#cbd5e1;
-}
+  #fAddr1[readonly]{ background:#f3f4f6; color:#6b7280; border-color:#cbd5e1; }
+  #fAddr1[readonly]:focus{ box-shadow:none; border-color:#cbd5e1; }
   
-/* Minimal base so the icon is centered and has no default button chrome */
-.btn-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  border:0;
-  background:transparent;
-}
+  .btn-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:0;
+    background:transparent;
+  }
+  .btn-icon.btn-plain{
+    width:auto; height:auto; padding:0; background:transparent; border:0; border-radius:0;
+    box-shadow:none; gap:0; line-height:0; appearance:none; -webkit-appearance:none; transition:none; cursor:pointer;
+  }
+  .btn-icon.btn-plain img,
+  .btn-icon.btn-plain svg{
+    height:30px; width:auto; display:block; filter:none;
+  }
+  .btn-icon[disabled]{ opacity:.55; cursor:not-allowed;}
 
-/* You already have these — keep them */
-.btn-icon.btn-plain{
-  width:auto; height:auto; padding:0; background:transparent; border:0; border-radius:0;
-  box-shadow:none; gap:0; line-height:0; appearance:none; -webkit-appearance:none; transition:none; cursor: pointer;
-}
-.btn-icon.btn-plain img,
-.btn-icon.btn-plain svg{
-  height:30px; width:auto; display:block; filter:none;
-}
-.btn-icon[disabled]{ opacity:.55; cursor:not-allowed;}
-
-  .pay-cta[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.pay-cta.waiting::after {
-  content: "…";
-  animation: dots 1.2s steps(3, end) infinite;
-  margin-left: 4px;
-}
-
-@keyframes dots {
-  0% { content: " "; }
-  33% { content: "."; }
-  66% { content: ".."; }
-  100% { content: "..."; }
-}
-
+  .pay-cta[disabled]{ opacity:0.6; cursor:not-allowed; }
+  .pay-cta.waiting::after{
+    content:"…"; animation:dots 1.2s steps(3,end) infinite; margin-left:4px;
+  }
+  @keyframes dots{0%{content:" "}33%{content:"."}66%{content:".."}100%{content:"..."}}
 </style>
 <script src="assets/js/qrcode.min.js" defer></script>
 </head>
@@ -232,15 +203,15 @@
             </div>
 
             <div>
-            <label class="req">Address Line 1</label>
-            <input id="fAddr1" required placeholder="Block & Street Name" readonly title="Autofilled from Postal Code"/>
-            <div class="hint">Autofilled from Postal Code (uneditable)</div>
-          </div>
+              <label class="req">Address Line 1</label>
+              <input id="fAddr1" required placeholder="Block & Street Name" readonly title="Autofilled from Postal Code"/>
+              <div class="hint">Autofilled from Postal Code (uneditable)</div>
+            </div>
             <div>
-            <label>Address Line 2 (optional)</label>
-            <input id="fAddr2" placeholder="Building name etc. (optional)"/>
-          </div>
-              <div>
+              <label>Address Line 2 (optional)</label>
+              <input id="fAddr2" placeholder="Building name etc. (optional)"/>
+            </div>
+            <div>
               <label class="req">Unit No.</label>
               <input id="fUnit" type="text" required inputmode="text" maxlength="8"
                 pattern="^[0-9A-Za-z\-]{1,8}$"
@@ -281,15 +252,14 @@
           <div class="sum-row"><span><strong>Shipping</strong></span><strong id="sumShipping">$0.00</strong></div>
         </div>
         <div class="sum-total">
-  <span>Total</span><span id="sumTotal">$0.00</span>
-</div>
+          <span>Total</span><span id="sumTotal">$0.00</span>
+        </div>
 
-<!-- Remarks / Order Notes -->
-<div class="sum-notes">
-  <label for="orderNotes">Remarks (optional)</label>
-  <textarea id="orderNotes" rows="4" maxlength="500" placeholder="Any delivery notes or special requests?"></textarea>
-</div>
-</aside>
+        <div class="sum-notes">
+          <label for="orderNotes">Remarks (optional)</label>
+          <textarea id="orderNotes" rows="4" maxlength="500" placeholder="Any delivery notes or special requests?"></textarea>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -319,17 +289,14 @@
                 <p class="hint">Stay on this page; we'll teleport you back to the store once upload finishes.</p>
               </div>
 
-              <!-- Removed iframe bridge & old form to avoid x-www-form-urlencoded -->
-              <!-- (We now upload via fetch JSON like the working demo) -->
-
               <div style="display:flex; gap:8px; margin-top:12px;">
                 <button id="qrCancel" class="btn-icon btn-plain" type="button" aria-label="Cancel">
-  <img src="assets/images/cancel.png" alt="Cancel" />
-</button>
+                  <img src="assets/images/cancel.png" alt="Cancel" />
+                </button>
 
-<button id="qrPaid" class="btn-icon btn-plain" type="button" aria-label="Upload payment proof">
-  <img src="assets/images/upload.png" alt="Upload" />
-</button>
+                <button id="qrPaid" class="btn-icon btn-plain" type="button" aria-label="Upload payment proof">
+                  <img src="assets/images/upload.png" alt="Upload" />
+                </button>
               </div>
             </div>
           </div>
@@ -339,24 +306,38 @@
     </div>
   </div>
   
-<!-- 🔊 Hidden audio element -->
-  <audio id="uploadSfx" src="assets/audio/Uploading.mp3" preload="auto"></audio>
+  <!-- 🔊 Audio element (with source for better compatibility) -->
+  <audio id="uploadSfx" preload="auto">
+    <source src="assets/audio/Uploading.mp3" type="audio/mpeg">
+  </audio>
   
 <script>
 let isUploading = false;
 let isOpeningQr = false;
 let isModalOpen = false;
-let suppressUnloadOnce = false;   // one-time bypass
-let isRedirecting = false;        // we're intentionally navigating away
+let suppressUnloadOnce = false;
+let isRedirecting = false;
 
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
+const PAYNOW_API  = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
+const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
 
-/* PayNow (for EMVQR payload via JSONP) */
-const PAYNOW_API = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
-
-/* Upload (same web app your demo uses) */
-const UPLOAD_API = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
+/* === SFX helper (reset + play, keeps it in user-gesture chain) === */
+function playUploadSfx(){
+  const a = document.getElementById('uploadSfx');
+  if (!a) return;
+  try{
+    a.pause();
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(err => console.warn('[SFX] play blocked or failed:', err));
+    }
+  }catch(err){
+    console.warn('[SFX] error:', err);
+  }
+}
 
 /* Simple JSONP fetch for PayNow/EMVQR */
 function jsonpFetch(baseUrl, params) {
@@ -492,10 +473,7 @@ async function openQr(){
     document.getElementById('qrModal').hidden = false;
     isModalOpen = true;
 
-    // Prevent back navigation while modal is open
     try { history.pushState({qr:true}, '', location.href); } catch {}
-
-
   } catch (err) {
     console.error('[PayNow] fetch failed:', err);
     alert('Sorry, we could not generate the payment QR right now. Please try again.');
@@ -600,13 +578,7 @@ function fillAddressFields(addr){
 /* ========= Utilities ========= */
 function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
 function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
-
-  // mark field as 'touched' the first time user interacts
-function setTouched(el){
-  if (!el.dataset.touched) el.dataset.touched = '1';
-}
-
-// show red only when touched + invalid; green when valid and non-empty
+function setTouched(el){ if (!el.dataset.touched) el.dataset.touched = '1'; }
 function markValidity(el){
   const hasVal = !!el.value;
   const bad = el.validity && !el.validity.valid;
@@ -614,34 +586,27 @@ function markValidity(el){
   el.classList.toggle('invalid', !!showRed);
   el.classList.toggle('valid', hasVal && !bad);
 }
-
-// Build a single error list (for touched fields only)
 function renderErrors(){
   const box = document.getElementById('formErrors');
   if (!box) return;
 
   const msgs = [];
-  // order matters: put most important fields first
   const ids = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fMethod'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     if (el.dataset.touched === '1' && el.validity && !el.validity.valid){
-      // Prefer custom messages if present
       msgs.push(el.validationMessage || 'Please check this field.');
     }
   });
 
-  // checkbox note
   const agree = document.getElementById('disc1');
   if (agree && agree.dataset.touched === '1' && !agree.checked){
     msgs.push('Please agree that the information above is correct.');
   }
 
-  box.textContent = msgs.join('\n');  // one message per line
+  box.textContent = msgs.join('\n');
 }
-
-
 
 /* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
@@ -659,15 +624,14 @@ async function uploadPaymentProofJSON() {
   if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return false; }
 
   paidBtn.disabled = true;
-  cancelBtn.disabled = true;   // disable cancel too
+  cancelBtn.disabled = true;
   statusEl.textContent = 'Preparing your file…';
-
 
   const b64 = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const dataUrl = reader.result;  // "data:image/png;base64,AAAA..."
+        const dataUrl = reader.result;
         const comma = dataUrl.indexOf(',');
         resolve(dataUrl.slice(comma + 1));
       } catch (e) { reject(e); }
@@ -716,11 +680,9 @@ async function uploadPaymentProofJSON() {
       return true;
     }
 
-    // Only reached if NOT ok
     throw new Error('Server returned ' + res.status);
 
   } catch (errCors) {
-    // Fallback for servers without CORS: fire-and-forget
     try {
       await fetch(UPLOAD_API, {
         method: 'POST',
@@ -732,21 +694,21 @@ async function uploadPaymentProofJSON() {
       statusEl.classList.add('ok'); 
       statusEl.classList.remove('err');
       isUploading = false;
-      return true; // optimistic
+      return true;
     } catch (errNoCors) {
       console.error(errNoCors);
       statusEl.textContent = 'Upload failed. Please try again.'; 
       statusEl.classList.add('err'); 
       statusEl.classList.remove('ok');
       paidBtn.disabled = false;
-      cancelBtn.disabled = false;   // re-enable cancel if failed
+      cancelBtn.disabled = false;
       isUploading = false;
       return false;
     }
   }
 }
 
-  // --- Attribute formatting helpers (mirror cart.html minimal) ---
+/* --- Attribute formatting helpers --- */
 function escapeHtml(s){
   return String(s)
     .replaceAll('&','&amp;')
@@ -755,13 +717,9 @@ function escapeHtml(s){
     .replaceAll('"','&quot;')
     .replaceAll("'",'&#39;');
 }
-
-// "series" can be stored under a few different keys in cart items
 function normSeries(obj){
   return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim();
 }
-
-// Build a compact attribute line like: "SV: Paldea Evolved - 2023 · Ultra Rare · NM"
 function formatAttrs(it){
   const series = normSeries(it);
   const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
@@ -787,8 +745,6 @@ function renderSummary(){
 
   const cart = getCart();
 
-  // Build line items with quantity
-    // Build line items with quantity + attributes (like cart.html)
   const rows = cart.map(i => {
     const qty  = Number(i.qty ?? i.quantity ?? 1);
     const unit = Number(i.price ?? 0);
@@ -796,7 +752,7 @@ function renderSummary(){
     const line = unit * q;
 
     const name  = i.name || 'Item';
-    const attrs = formatAttrs(i); // <- builds "Series: Set - 2023 · Rarity · Condition"
+    const attrs = formatAttrs(i);
 
     const left = `
       <div class="sum-item">
@@ -813,7 +769,6 @@ function renderSummary(){
 
   if (itemsEl) itemsEl.innerHTML = rows || '<div class="hint">No items.</div>';
 
-  // Subtotal = sum of (price * qty)
   const subtotal = cart.reduce((s, i) => {
     const qty  = Number(i.qty ?? i.quantity ?? 1);
     const unit = Number(i.price ?? 0);
@@ -821,7 +776,6 @@ function renderSummary(){
     return s + (unit * q);
   }, 0);
 
-  // Shipping pulled from cart selection saved in localStorage
   const saved  = getSavedShippingFromCart();
   const ship   = Number(saved?.fee ?? 0);
 
@@ -829,7 +783,6 @@ function renderSummary(){
   if (shippingEl) shippingEl.textContent = fmt(ship);
   if (totalEl)    totalEl.textContent    = fmt(subtotal + ship);
 }
-
 
 function isValidShipForm(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
@@ -852,45 +805,40 @@ function syncPayCta(){
   cta.classList.add('show');
 }
 
-
 /* ========= Init ========= */
 function init(){
   applySavedShippingToForm();
   renderSummary();
   syncPayCta();
 
-   document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
-  const onInput = () => { setTouched(el); markValidity(el); renderSummary(); syncPayCta(); renderErrors(); };
-  const onChange = onInput;
-  const onBlur = () => { setTouched(el); markValidity(el); renderErrors(); };
+  document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
+    const onInput = () => { setTouched(el); markValidity(el); renderSummary(); syncPayCta(); renderErrors(); };
+    const onChange = onInput;
+    const onBlur = () => { setTouched(el); markValidity(el); renderErrors(); };
+    el.addEventListener('input', onInput);
+    el.addEventListener('change', onChange);
+    el.addEventListener('blur', onBlur);
+  });
+  document.getElementById('fAddr1')?.setAttribute('readonly','');
 
-  el.addEventListener('input', onInput);
-  el.addEventListener('change', onChange);
-  el.addEventListener('blur', onBlur);
-  // NOTE: do NOT mark on load — keeps everything neutral initially
-});
-document.getElementById('fAddr1')?.setAttribute('readonly','');
+  document.getElementById('btnPay')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (isModalOpen) return;
 
-document.getElementById('btnPay')?.addEventListener('click', async (e) => {
-  const btn = e.currentTarget;
-  if (isModalOpen) return; // already open, ignore
+    btn.disabled = true;
+    btn.textContent = "Loading payment screen";
+    btn.classList.add("waiting");
 
-  btn.disabled = true;
-  btn.textContent = "Loading payment screen";
-  btn.classList.add("waiting");
-
-  try {
-    await openQr();
-  } finally {
-    // keep disabled while modal is open; re-enable when modal closes
-    if (!isModalOpen) {
-      btn.disabled = false;
-      btn.textContent = "Make Payment";
-      btn.classList.remove("waiting");
+    try {
+      await openQr();
+    } finally {
+      if (!isModalOpen) {
+        btn.disabled = false;
+        btn.textContent = "Make Payment";
+        btn.classList.remove("waiting");
+      }
     }
-  }
-});
-
+  });
 
   document.getElementById('qrClose')?.addEventListener('click', confirmAbortAndExit);
   document.getElementById('qrCancel')?.addEventListener('click', confirmAbortAndExit);
@@ -906,7 +854,6 @@ document.getElementById('btnPay')?.addEventListener('click', async (e) => {
     }
   });
 
-  // Disable the "paid" button until a file is chosen
   const paidBtn = document.getElementById('qrPaid');
   const proof   = document.getElementById('proofFile');
   if (paidBtn && proof){
@@ -918,25 +865,25 @@ document.getElementById('btnPay')?.addEventListener('click', async (e) => {
       statusEl.classList.remove('ok','err');
     });
   }
-  
 
- // Helper for staged messages
+  // warm up audio after any gesture (safari quirks)
+  window.addEventListener('pointerdown', () => {
+    const a = document.getElementById('uploadSfx');
+    if (a && a.readyState < 2) { try { a.load(); } catch{} }
+  }, { once:true });
+}
+
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   e.preventDefault();
 
-  // 🔊 Play SFX on click
-  try {
-    document.getElementById('uploadSfx')?.play();
-  } catch(err) {
-    console.warn("SFX play failed:", err);
-  }
+  // 🔊 Play SFX immediately on user gesture
+  playUploadSfx();
 
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
-  // Stop the 10-min QR timer so it won't kick user back to cart
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
@@ -944,14 +891,12 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   statusEl.classList.add('ok');
   statusEl.classList.remove('err');
 
-  // Show messages in sequence (total ~15s)
   statusEl.textContent = 'Thank you for the wait — upload completed ✓';  
   await sleep(2500);                                                       
 
   statusEl.textContent = 'We will verify and send order confirmation soon.'; 
   await sleep(3000);                                                      
 
-  // 5-second countdown 
   for (let s = 5; s >= 1; s--) {
     statusEl.textContent = `You’ll be redirected to the store in ${s} second${s===1?'':'s'}…`;
     await sleep(1000);
@@ -964,60 +909,54 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   window.location.replace('index.html');
   return;
 });
-  
-    const emailEl = document.getElementById('fEmail');
-emailEl?.addEventListener('input', () => {
-  const { ok, msg } = validateEmailDomain(emailEl.value);
-  const touched = emailEl.value.length > 0;
-  setTouched(emailEl);
-  emailEl.setCustomValidity(ok || !touched ? '' : msg);
-  markValidity(emailEl);
-  renderErrors(); syncPayCta();
-});
-emailEl?.addEventListener('blur', () => {
-  const { ok, msg } = validateEmailDomain(emailEl.value);
-  setTouched(emailEl);
-  emailEl.setCustomValidity(ok ? '' : msg);
-  markValidity(emailEl);
-  renderErrors();
-});
 
-
-
-  const postalEl = document.getElementById('fPostal');
-  const postalHintEl = document.getElementById('postalHint');
-  const hint = (msg, state='info') => {
-    if (postalHintEl) postalHintEl.textContent = msg || '';
-    if (postalEl) { postalEl.dataset.state = state; postalEl.title = msg || ''; }
-  };
-
-  let lastPostalReqId = 0;
-
-  async function tryLookupPostal(){
-    if (!postalEl) return;
-    const val = postalEl.value.replace(/\D/g,'');
-    if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
-
-    const myId = ++lastPostalReqId;
-    hint('Looking up…');
-
-    try {
-      const addr = await fetchSGAddressByPostal(val);
-      if (myId !== lastPostalReqId) return;
-      fillAddressFields(addr);
-      hint('Address found ✓','ok');
-    } catch(err){
-      if (myId !== lastPostalReqId) return;
-      const m = String(err?.message || '');
-      if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
-      else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
-      else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
-      else                               hint('Lookup error. Please try again.','err');
-      console.warn('[Postal lookup failed]', err);
-    }
+const EMAIL_DOMAINS = ['gmail.com','yahoo.com','outlook.com','hotmail.com','live.com','icloud.com'];
+function validateEmailDomain(value){
+  const v = String(value || '').trim().toLowerCase();
+  if (!v) return { ok:false, msg:'Email is required' };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
+    return { ok:false, msg:'Enter a valid email address' };
   }
+  const domain = v.split('@')[1] || '';
+  if (!EMAIL_DOMAINS.includes(domain)) {
+    return { ok:false, msg:`Please use a common email domain (e.g. ${EMAIL_DOMAINS.slice(0,3).join(', ')})` };
+  }
+  return { ok:true, msg:'' };
+}
 
-    const phoneEl = document.getElementById('fPhone');
+const postalEl = document.getElementById('fPostal');
+const postalHintEl = document.getElementById('postalHint');
+const hint = (msg, state='info') => {
+  if (postalHintEl) postalHintEl.textContent = msg || '';
+  if (postalEl) { postalEl.dataset.state = state; postalEl.title = msg || ''; }
+};
+let lastPostalReqId = 0;
+
+async function tryLookupPostal(){
+  if (!postalEl) return;
+  const val = postalEl.value.replace(/\D/g,'');
+  if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
+
+  const myId = ++lastPostalReqId;
+  hint('Looking up…');
+
+  try {
+    const addr = await fetchSGAddressByPostal(val);
+    if (myId !== lastPostalReqId) return;
+    fillAddressFields(addr);
+    hint('Address found ✓','ok');
+  } catch(err){
+    if (myId !== lastPostalReqId) return;
+    const m = String(err?.message || '');
+    if (m === 'INPUT_6_DIGITS')        hint('Please enter a 6-digit postal code.','err');
+    else if (m === 'LOOKUP_NET' || m === 'LOOKUP_HTTP') hint('Lookup error. Please check your connection and try again.','err');
+    else if (m === 'POSTAL_NOT_FOUND') hint('Postal not found. Please key address manually.','err');
+    else                               hint('Lookup error. Please try again.','err');
+    console.warn('[Postal lookup failed]', err);
+  }
+}
+
+const phoneEl = document.getElementById('fPhone');
 phoneEl?.addEventListener('input', () => {
   phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
   const ok = /^[89]\d{7}$/.test(phoneEl.value);
@@ -1034,8 +973,7 @@ phoneEl?.addEventListener('blur', () => {
   renderErrors();
 });
 
-
-    const unitEl = document.getElementById('fUnit');
+const unitEl = document.getElementById('fUnit');
 unitEl?.addEventListener('input', () => {
   unitEl.value = unitEl.value.replace(/[^0-9A-Za-z-]/g,'').slice(0,8);
   const ok = /^[0-9A-Za-z-]{1,8}$/.test(unitEl.value);
@@ -1045,80 +983,58 @@ unitEl?.addEventListener('input', () => {
   renderErrors(); syncPayCta();
 });
 
-  if (typeof QRCode === 'undefined') {
-    console.warn('qrcode.min.js did not load. Check the script path.');
-  }
-
-  postalEl?.addEventListener('input', () => {
-    const digits = postalEl.value.replace(/\D/g,'');
-    if (digits.length === 6) tryLookupPostal(true);
-  });
-  postalEl?.addEventListener('input', debounce(() => {
-    const digits = postalEl.value.replace(/\D/g,'');
-    if (digits.length === 6) return;
-    tryLookupPostal();
-  }, 400));
-  postalEl?.addEventListener('blur', () => tryLookupPostal());
+if (typeof QRCode === 'undefined') {
+  console.warn('qrcode.min.js did not load. Check the script path.');
 }
+
+postalEl?.addEventListener('input', () => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) tryLookupPostal(true);
+});
+postalEl?.addEventListener('input', debounce(() => {
+  const digits = postalEl.value.replace(/\D/g,'');
+  if (digits.length === 6) return;
+  tryLookupPostal();
+}, 400));
+postalEl?.addEventListener('blur', () => tryLookupPostal());
+
 function beforeUnloadHandler(e){
   if (isRedirecting || suppressUnloadOnce) {
-    suppressUnloadOnce = false;   // consume bypass once
-    return;                       // no prompt
+    suppressUnloadOnce = false;
+    return;
   }
   if (isModalOpen || isUploading) {
     e.preventDefault();
-    e.returnValue = '';           // show native prompt
+    e.returnValue = '';
   }
 }
 window.addEventListener('beforeunload', beforeUnloadHandler);
 
-// If user hits Back while modal is open, re-push state and route them to our existing confirm flow
-// Handle Back button
 window.addEventListener('popstate', () => {
-  if (isRedirecting) return; // ignore if we're intentionally leaving
-
+  if (isRedirecting) return;
   if (isModalOpen) {
     try { history.pushState({qr:true}, '', location.href); } catch {}
     if (!document.getElementById('qrModal').hidden) {
-      confirmAbortAndExit(); // same as Cancel/Close
+      confirmAbortAndExit();
     }
   }
 });
 
-// Block F5 / Ctrl+R / Cmd+R
 document.addEventListener('keydown', (e) => {
   const isRefreshKey = (e.key === 'F5') || ((e.key?.toLowerCase?.() === 'r') && (e.ctrlKey || e.metaKey));
   if (!isRefreshKey) return;
 
   if (isModalOpen || isUploading) {
-    // Don’t let them refresh; warn instead
     e.preventDefault();
     alert('Payment in progress — please do not refresh or close this page.');
     return;
   }
 
-  // Modal is NOT open: ask and return them to home if they confirm
   e.preventDefault();
   const ok = window.confirm('Return to the store? Unsaved checkout info will be lost.');
   if (ok) window.location.href = 'index.html';
 });
-  // Allowed email domains
-const EMAIL_DOMAINS = ['gmail.com','yahoo.com','outlook.com','hotmail.com','live.com','icloud.com'];
 
-// return {ok:boolean, msg:string}
-function validateEmailDomain(value){
-  const v = String(value || '').trim().toLowerCase();
-  if (!v) return { ok:false, msg:'Email is required' };
-  // basic format check first (let the browser do most of it)
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
-    return { ok:false, msg:'Enter a valid email address' };
-  }
-  const domain = v.split('@')[1] || '';
-  if (!EMAIL_DOMAINS.includes(domain)) {
-    return { ok:false, msg:`Please use a common email domain (e.g. ${EMAIL_DOMAINS.slice(0,3).join(', ')})` };
-  }
-  return { ok:true, msg:'' };
-}
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
