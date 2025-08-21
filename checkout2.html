@@ -69,6 +69,22 @@
   .sum-body{ background:#fff; padding:10px 14px; }
   .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
   .sum-row .price{ font-weight:400; }
+  /* line-item name + attributes (left column) */
+.sum-item{display:flex; flex-direction:column; min-width:0;}
+.sum-item .name{font-weight:600;}
+.sum-item .attrs{
+  font-weight:400;
+  font-size:12px;
+  line-height:1.25;
+  color:#64748b;          /* muted */
+  margin-top:2px;
+  white-space:normal;     /* allow wrapping */
+  word-break:break-word;
+  max-width: 420px;       /* keep it tidy on desktop */
+}
+  @media (max-width:600px){
+  .sum-item .attrs{ max-width: 260px; }
+}
   .sum-total{ background:var(--surface-2); color:var(--text); padding:10px 14px; font-weight:800; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:var(--size-total); }
   .option-group{ display:grid; gap:8px; }
   .opt-item{ display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:start; padding:9px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
@@ -713,6 +729,39 @@ async function uploadPaymentProofJSON() {
     }
   }
 }
+<script>
+// --- Attribute formatting helpers (mirror cart.html minimal) ---
+function escapeHtml(s){
+  return String(s)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+
+// "series" can be stored under a few different keys in cart items
+function normSeries(obj){
+  return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim();
+}
+
+// Build a compact attribute line like: "SV: Paldea Evolved - 2023 · Ultra Rare · NM"
+function formatAttrs(it){
+  const series = normSeries(it);
+  const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
+  const year   = (it.year || it.release_year || '').toString().trim();
+  const rarity = (it.rarity || '').trim();
+  const cond   = (it.condition || '').trim();
+
+  const L = [];
+  if (series && set) L.push(`${series}: ${set}`);
+  else if (series)   L.push(series);
+  else if (set)      L.push(set);
+
+  const R = [year, rarity, cond].filter(Boolean).join(' · ');
+  return [L.join(''), R ? `- ${R}` : ''].filter(Boolean).join(' ');
+}
+</script>
 
 
 /* ========= Summary + CTA ========= */
@@ -725,14 +774,25 @@ function renderSummary(){
   const cart = getCart();
 
   // Build line items with quantity
+    // Build line items with quantity + attributes (like cart.html)
   const rows = cart.map(i => {
     const qty  = Number(i.qty ?? i.quantity ?? 1);
     const unit = Number(i.price ?? 0);
     const q    = Number.isFinite(qty) && qty > 0 ? qty : 1;
     const line = unit * q;
-    const name = i.name || 'Item';
+
+    const name  = i.name || 'Item';
+    const attrs = formatAttrs(i); // <- builds "Series: Set - 2023 · Rarity · Condition"
+
+    const left = `
+      <div class="sum-item">
+        <div class="name">${escapeHtml(name)}${q > 1 ? ` × ${q}` : ''}</div>
+        ${attrs ? `<div class="attrs">${escapeHtml(attrs)}</div>` : ''}
+      </div>
+    `;
+
     return `<div class="sum-row">
-              <span>${name}${q > 1 ? ` × ${q}` : ''}</span>
+              <span>${left}</span>
               <span class="price">${fmt(line)}</span>
             </div>`;
   }).join('');
