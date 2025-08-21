@@ -322,7 +322,9 @@ let isRedirecting = false;
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 const PAYNOW_API  = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
+const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8lv5gp8lLchlfXpTBxNRhd-Whg8VS4INsCpOguGakPSpPnOn3sl3g/exec'; 
 
+  
 /* === SFX helper (reset + play, keeps it in user-gesture chain) === */
 function playUploadSfx(){
   const a = document.getElementById('uploadSfx');
@@ -784,6 +786,67 @@ function renderSummary(){
   if (totalEl)    totalEl.textContent    = fmt(subtotal + ship);
 }
 
+  function gatherOrderPayload() {
+  // 1) Get form values
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const customer_name = v('fName');
+  const email         = v('fEmail');
+  const phone         = v('fPhone');
+  const postal        = v('fPostal');
+  const addr1         = v('fAddr1');
+  const addr2         = v('fAddr2');
+  const unit          = v('fUnit');
+  const city          = v('fCity') || 'Singapore';
+  const methodLabel   = v('fMethodLabel');
+  const methodId      = v('fMethod');
+
+  // 2) Cart summary (reuse helpers you already have)
+  const cart = getCart(); // [{name, price, qty, ...}]
+  const savedShip = getSavedShippingFromCart();
+  const shipFee   = Number(savedShip?.fee ?? 0);
+
+  let subtotal = 0;
+  const items = cart.map(i => {
+    const qty  = Number(i.qty ?? i.quantity ?? 1) || 1;
+    const unit = Number(i.price ?? 0) || 0;
+    const line = unit * qty;
+    subtotal  += line;
+
+    // replicate attribute formatting for the PDF
+    const attrs = formatAttrs(i);
+    return {
+      name: String(i.name || 'Item'),
+      attrs,
+      qty,
+      unit_price: unit,
+      line_total: line
+    };
+  });
+
+  const totals = {
+    subtotal,
+    shipping: shipFee,
+    total: subtotal + shipFee
+  };
+
+  return {
+    order_id: currentOrderId || genOrderId(), // use existing id if set by QR open
+    created_at: new Date().toISOString(),
+    customer_name,
+    email,
+    phone,
+    postal,
+    addr1,
+    addr2,
+    unit,
+    city,
+    shipping_method: methodLabel || methodId,
+    remarks: (document.getElementById('orderNotes')?.value || '').trim(),
+    items,
+    totals
+  };
+}
+  
 function isValidShipForm(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
   for (const id of reqIds){
@@ -884,6 +947,45 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
+  try {
+    const orderPayload = gatherOrderPayload();
+    // include currentOrderId explicitly if present
+    orderPayload.order_id = currentOrderId || orderPayload.order_id;
+
+    // Try standard JSON POST first
+    let pdfResOk = false;
+    try {
+      const pdfRes = await fetch(EMAIL_PDF_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      if ((pdfRes.headers.get('content-type') || '').includes('application/json')) {
+        const data = await pdfRes.json();
+        pdfResOk = !!(data && data.ok);
+      } else {
+        pdfResOk = pdfRes.ok; // fallback if no JSON
+      }
+    } catch (_) {/* ignore */}
+
+    // If CORS blocks, fallback to no-cors (best-effort)
+    if (!pdfResOk) {
+      await fetch(EMAIL_PDF_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+        mode: 'no-cors'
+      });
+      // can't read response in no-cors; assume success
+      pdfResOk = true;
+    }
+
+    if (!pdfResOk) console.warn('PDF emailer did not confirm success, but continuing UX flow.');
+  } catch (err) {
+    console.error('PDF emailer error:', err);
+    // Do not block buyer UX if email send fails; you’ll still have the upload proof.
+  }
+  
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
