@@ -274,6 +274,7 @@
 let isUploading = false;
 let isOpeningQr = false;
 let isModalOpen = false;
+let suppressUnloadOnce = false; // allow one safe redirect without prompt
 
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
@@ -757,11 +758,12 @@ for (let s = 5; s >= 1; s--) {
   await sleep(1000);
 }
 
+// Allow this one redirect to proceed without the unload prompt
+suppressUnloadOnce = true;
+// (optional but tidy) also mark modal as closed so other guards stop firing
+isModalOpen = false;
 
-  // Redirect to
-  window.location.href = 'index.html'; // change to your actual target page
-});
-
+window.location.href = 'index.html';
 
   const postalEl = document.getElementById('fPostal');
   const postalHintEl = document.getElementById('postalHint');
@@ -825,11 +827,17 @@ for (let s = 5; s >= 1; s--) {
 }
 // Show native "Leave site?" prompt when modal is open or upload is running
 window.addEventListener('beforeunload', (e) => {
+  if (suppressUnloadOnce) {
+    // consume the bypass exactly once
+    suppressUnloadOnce = false;
+    return; // no prompt
+  }
   if (isModalOpen || isUploading) {
     e.preventDefault();
-    e.returnValue = '';  // required for Chrome/Edge to show the prompt
+    e.returnValue = '';  // show native "Leave site?" prompt
   }
 });
+
 // If user hits Back while modal is open, re-push state and route them to our existing confirm flow
 window.addEventListener('popstate', () => {
   if (isModalOpen) {
