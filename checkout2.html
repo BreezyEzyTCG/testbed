@@ -338,7 +338,10 @@
       </div>
     </div>
   </div>
-
+  
+<!-- 🔊 Hidden audio element -->
+  <audio id="uploadSfx" src="assets/audio/Uploading.mp3" preload="auto"></audio>
+  
 <script>
 let isUploading = false;
 let isOpeningQr = false;
@@ -922,10 +925,18 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   e.preventDefault();
+
+  // 🔊 Play SFX on click
+  try {
+    document.getElementById('uploadSfx')?.play();
+  } catch(err) {
+    console.warn("SFX play failed:", err);
+  }
+
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
-  // Stop the 10‑min QR timer so it won't kick user back to cart
+  // Stop the 10-min QR timer so it won't kick user back to cart
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
@@ -935,24 +946,23 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
 
   // Show messages in sequence (total ~15s)
   statusEl.textContent = 'Thank you for the wait — upload completed ✓';  
-await sleep(2500);                                                       
+  await sleep(2500);                                                       
 
-statusEl.textContent = 'We will verify and send order confirmation soon.'; 
-await sleep(3000);                                                      
+  statusEl.textContent = 'We will verify and send order confirmation soon.'; 
+  await sleep(3000);                                                      
 
-// 5-second countdown 
-for (let s = 5; s >= 1; s--) {
-  statusEl.textContent = `You’ll be redirected to the store in ${s} second${s===1?'':'s'}…`;
-  await sleep(1000);
-}
+  // 5-second countdown 
+  for (let s = 5; s >= 1; s--) {
+    statusEl.textContent = `You’ll be redirected to the store in ${s} second${s===1?'':'s'}…`;
+    await sleep(1000);
+  }
 
-// Allow this one redirect to proceed without the unload prompt
-suppressUnloadOnce = true;
-isRedirecting = true;                                // tell other traps to stand down
-isModalOpen = false;                                 // stop modal guards
-window.removeEventListener('beforeunload', beforeUnloadHandler);  // belt & suspenders
-window.location.replace('index.html');
-return;  // ensure this handler stops here
+  suppressUnloadOnce = true;
+  isRedirecting = true;
+  isModalOpen = false;
+  window.removeEventListener('beforeunload', beforeUnloadHandler);
+  window.location.replace('index.html');
+  return;
 });
   
     const emailEl = document.getElementById('fEmail');
