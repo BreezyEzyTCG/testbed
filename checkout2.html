@@ -54,6 +54,9 @@
   input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
   input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
   .invalid{border-color:#ef4444 !important;box-shadow:0 0 0 3px rgba(239,68,68,.15) !important;}
+.valid{border-color:#16a34a !important;box-shadow:0 0 0 3px rgba(22,163,74,.15) !important;}
+/* error list under the button */
+.errlist{color:#b91c1c; margin-top:8px;line-height:1.4;white-space:pre-line;}
   #fMethodLabel[readonly]{ background:#fff; color:inherit; opacity:1; cursor:default; }
   .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
   .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
@@ -209,6 +212,7 @@
 
             <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
             <div class="hint">Button is greyed out until all required fields are valid.</div>
+            <div id="formErrors" class="hint errlist" aria-live="polite"></div>
           </div>
         </div>
       </section>
@@ -531,11 +535,47 @@ function fillAddressFields(addr){
 /* ========= Utilities ========= */
 function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
 function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
-function markValidity(el){
-  // Use browser validity + our customValidity
-  const bad = el.validity && !el.validity.valid;
-  el.classList.toggle('invalid', !!bad);
+
+  // mark field as 'touched' the first time user interacts
+function setTouched(el){
+  if (!el.dataset.touched) el.dataset.touched = '1';
 }
+
+// show red only when touched + invalid; green when valid and non-empty
+function markValidity(el){
+  const hasVal = !!el.value;
+  const bad = el.validity && !el.validity.valid;
+  const showRed = (el.dataset.touched === '1') && bad;
+  el.classList.toggle('invalid', !!showRed);
+  el.classList.toggle('valid', hasVal && !bad);
+}
+
+// Build a single error list (for touched fields only)
+function renderErrors(){
+  const box = document.getElementById('formErrors');
+  if (!box) return;
+
+  const msgs = [];
+  // order matters: put most important fields first
+  const ids = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fMethod'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.dataset.touched === '1' && el.validity && !el.validity.valid){
+      // Prefer custom messages if present
+      msgs.push(el.validationMessage || 'Please check this field.');
+    }
+  });
+
+  // checkbox note
+  const agree = document.getElementById('disc1');
+  if (agree && agree.dataset.touched === '1' && !agree.checked){
+    msgs.push('Please agree that the information above is correct.');
+  }
+
+  box.textContent = msgs.join('\n');  // one message per line
+}
+
 
 
 /* ========= Upload (JSON, same as demo) ========= */
@@ -672,15 +712,14 @@ function isValidShipForm(){
 }
 
 function syncPayCta(){
-  // refresh visual validity on required fields
-  document.querySelectorAll('#shipForm input[required], #shipForm select[required]').forEach(markValidity);
-
   const cta = document.getElementById('btnPay');
-  if (cta){
-    if (isValidShipForm()) cta.removeAttribute('disabled');
-    else cta.setAttribute('disabled','');
-    cta.classList.add('show');
-  }
+  if (!cta) return;
+
+  const ok = isValidShipForm();
+  if (ok) cta.removeAttribute('disabled');
+  else cta.setAttribute('disabled','');
+
+  cta.classList.add('show');
 }
 
 
@@ -691,12 +730,15 @@ function init(){
   syncPayCta();
 
    document.querySelectorAll('#shipForm input, #shipForm select').forEach(el=>{
-    const handler = () => { markValidity(el); renderSummary(); syncPayCta(); };
-    el.addEventListener('input', handler);
-    el.addEventListener('change', handler);
-    // run once on load so prefilled values are checked
-    markValidity(el);
-  });
+  const onInput = () => { setTouched(el); markValidity(el); renderSummary(); syncPayCta(); renderErrors(); };
+  const onChange = onInput;
+  const onBlur = () => { setTouched(el); markValidity(el); renderErrors(); };
+
+  el.addEventListener('input', onInput);
+  el.addEventListener('change', onChange);
+  el.addEventListener('blur', onBlur);
+  // NOTE: do NOT mark on load — keeps everything neutral initially
+});
 
 
 document.getElementById('btnPay')?.addEventListener('click', async (e) => {
@@ -790,16 +832,17 @@ return;  // ensure this handler stops here
 emailEl?.addEventListener('input', () => {
   const { ok, msg } = validateEmailDomain(emailEl.value);
   const touched = emailEl.value.length > 0;
+  setTouched(emailEl);
   emailEl.setCustomValidity(ok || !touched ? '' : msg);
-  emailEl.title = ok ? '' : msg;
-  emailEl.classList.toggle('invalid', !ok && touched);
-  syncPayCta();
+  markValidity(emailEl);
+  renderErrors(); syncPayCta();
 });
 emailEl?.addEventListener('blur', () => {
   const { ok, msg } = validateEmailDomain(emailEl.value);
+  setTouched(emailEl);
   emailEl.setCustomValidity(ok ? '' : msg);
-  emailEl.title = ok ? '' : msg;
-  emailEl.classList.toggle('invalid', !ok);
+  markValidity(emailEl);
+  renderErrors();
 });
 
 
@@ -838,31 +881,32 @@ emailEl?.addEventListener('blur', () => {
   }
 
     const phoneEl = document.getElementById('fPhone');
-  phoneEl?.addEventListener('input', () => {
-    phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
-    const ok = /^[89]\d{7}$/.test(phoneEl.value);
-    phoneEl.setCustomValidity(ok || phoneEl.value.length === 0 ? '' : 'Must start with 8 or 9');
-    phoneEl.title = ok ? '' : 'Must start with 8 or 9';
-    phoneEl.classList.toggle('invalid', !ok && phoneEl.value.length > 0);
-    syncPayCta();
-  });
-  phoneEl?.addEventListener('blur', () => {
-    const ok = /^[89]\d{7}$/.test(phoneEl.value);
-    phoneEl.setCustomValidity(ok ? '' : 'Must start with 8 or 9');
-    phoneEl.title = ok ? '' : 'Must start with 8 or 9';
-    phoneEl.classList.toggle('invalid', !ok);
-  });
+phoneEl?.addEventListener('input', () => {
+  phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,8);
+  const ok = /^[89]\d{7}$/.test(phoneEl.value);
+  setTouched(phoneEl);
+  phoneEl.setCustomValidity(ok || phoneEl.value.length === 0 ? '' : 'Phone must be 8 digits and start with 8 or 9.');
+  markValidity(phoneEl);
+  renderErrors(); syncPayCta();
+});
+phoneEl?.addEventListener('blur', () => {
+  const ok = /^[89]\d{7}$/.test(phoneEl.value);
+  setTouched(phoneEl);
+  phoneEl.setCustomValidity(ok ? '' : 'Phone must be 8 digits and start with 8 or 9.');
+  markValidity(phoneEl);
+  renderErrors();
+});
 
 
     const unitEl = document.getElementById('fUnit');
-  unitEl?.addEventListener('input', () => {
-    unitEl.value = unitEl.value.replace(/[^0-9A-Za-z-]/g,'').slice(0,8);
-    const ok = /^[0-9A-Za-z-]{1,8}$/.test(unitEl.value);
-    unitEl.setCustomValidity(ok || unitEl.value.length === 0 ? '' : 'Use letters/numbers/dash only, max 8');
-    unitEl.title = ok ? '' : 'Use letters/numbers/dash only, max 8';
-    unitEl.classList.toggle('invalid', !ok && unitEl.value.length > 0);
-    syncPayCta();
-  });
+unitEl?.addEventListener('input', () => {
+  unitEl.value = unitEl.value.replace(/[^0-9A-Za-z-]/g,'').slice(0,8);
+  const ok = /^[0-9A-Za-z-]{1,8}$/.test(unitEl.value);
+  setTouched(unitEl);
+  unitEl.setCustomValidity(ok || unitEl.value.length === 0 ? '' : 'Use letters/numbers/dash only, max 8.');
+  markValidity(unitEl);
+  renderErrors(); syncPayCta();
+});
 
   if (typeof QRCode === 'undefined') {
     console.warn('qrcode.min.js did not load. Check the script path.');
