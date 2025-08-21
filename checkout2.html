@@ -322,7 +322,9 @@ let isRedirecting = false;
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 const PAYNOW_API  = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
+const ORDER_API  = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8lv5gp8lLchlfXpTBxNRhd-Whg8VS4INsCpOguGakPSpPnOn3sl3g/exec';
 
+  
 /* === SFX helper (reset + play, keeps it in user-gesture chain) === */
 function playUploadSfx(){
   const a = document.getElementById('uploadSfx');
@@ -608,6 +610,78 @@ function renderErrors(){
   box.textContent = msgs.join('\n');
 }
 
+ function buildOrderPayload(){
+  const name   = document.getElementById('fName')?.value || '';
+  const email  = document.getElementById('fEmail')?.value || '';
+  const phone  = document.getElementById('fPhone')?.value || '';
+  const postal = document.getElementById('fPostal')?.value || '';
+  const addr1  = document.getElementById('fAddr1')?.value || '';
+  const addr2  = document.getElementById('fAddr2')?.value || '';
+  const unit   = document.getElementById('fUnit')?.value || '';
+  const city   = document.getElementById('fCity')?.value || '';
+  const methodId    = document.getElementById('fMethod')?.value || '';
+  const methodLabel = document.getElementById('fMethodLabel')?.value || '';
+  const notes  = document.getElementById('orderNotes')?.value || '';
+
+  const cart = getCart();
+  const savedShip = getSavedShippingFromCart();
+  const shipFee   = Number(savedShip?.fee ?? 0);
+
+  let subtotal = 0;
+  const items = cart.map(it => {
+    const qty  = Number(it.qty ?? it.quantity ?? 1) || 1;
+    const unitPrice = Number(it.price ?? 0) || 0;
+    const line = unitPrice * qty;
+    subtotal += line;
+    const attrs = formatAttrs(it);
+    return { name: it.name || 'Item', qty, unit: unitPrice, line, attrs };
+  });
+
+  const total = subtotal + shipFee;
+
+  return {
+    orderId: currentOrderId || genOrderId(),
+    timestamp: new Date().toISOString(),
+    customer: { name, email, phone },
+    shipping: { postal, addr1, addr2, unit, city, methodId, methodLabel },
+    notes,
+    items,
+    totals: {
+      subtotal, shipping: shipFee, total,
+      subtotalText: fmt(subtotal),
+      shippingText: fmt(shipFee),
+      totalText: fmt(total)
+    },
+    payment: { method: 'PayNow' }
+  };
+}
+
+async function submitOrder(payload){
+  try {
+    const res = await fetch(ORDER_API + '?endpoint=order', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    // Non-blocking; OK if CORS prevents reading response
+    if ((res.headers.get('content-type') || '').includes('application/json')) {
+      const data = await res.json();
+      if (!data.ok) console.warn('[Order] API error:', data.error);
+    }
+  } catch (err) {
+    // Fallback fire-and-forget
+    try {
+      await fetch(ORDER_API + '?endpoint=order', {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+    } catch(e2) {
+      console.warn('[Order] submit failed:', e2);
+    }
+  }
+}
+ 
 /* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
   const paidBtn  = document.getElementById('qrPaid');
@@ -883,6 +957,13 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
 
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
+
+  try {
+  const payload = buildOrderPayload();
+  await submitOrder(payload);
+} catch (err) {
+  console.warn('[Order] Submission failed (non-blocking):', err);
+}
 
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
