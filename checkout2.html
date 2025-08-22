@@ -9,6 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://www.onemap.gov.sg">
+<!-- allow our page to load fonts and call Apps Script / OneMap -->
+<meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        img-src 'self' data: https:;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src https://fonts.gstatic.com;
+        script-src 'self' 'unsafe-inline' https://script.google.com https://www.onemap.gov.sg;
+        connect-src 'self' https://script.google.com https://script.googleusercontent.com https://www.onemap.gov.sg;
+        media-src 'self' https:;
+      ">
 
 <style>
   :root{
