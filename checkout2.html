@@ -317,6 +317,7 @@ let isOpeningQr = false;
 let isModalOpen = false;
 let suppressUnloadOnce = false;
 let isRedirecting = false;
+let lastProofUrl = '';  
 
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
@@ -664,14 +665,16 @@ async function uploadPaymentProofJSON() {
     if (ct.includes('application/json')) {
       const data = await res.json();
       if (data && (data.ok || data.success)) {
-        statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-        statusEl.classList.add('ok'); 
-        statusEl.classList.remove('err');
-        isUploading = false;
-        return true;
-      } else {
-        throw new Error(data?.error || 'Upload failed to reach server');
-      }
+  // Try multiple keys because different endpoints name them differently
+  lastProofUrl = data.proof_url || data.fileUrl || data.url || data.webViewLink || data.webContentLink || '';
+  statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
+  statusEl.classList.add('ok'); 
+  statusEl.classList.remove('err');
+  isUploading = false;
+  return true;
+} else {
+  throw new Error(data?.error || 'Upload failed to reach server');
+}
     }
 
     if (res.ok) {
@@ -949,9 +952,12 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
 
   try {
     const orderPayload = gatherOrderPayload();
-    // include currentOrderId explicitly if present
-    orderPayload.order_id = currentOrderId || orderPayload.order_id;
+orderPayload.order_id = currentOrderId || orderPayload.order_id;
 
+// NEW: pass the proof URL if we have it
+if (lastProofUrl) {
+  orderPayload.proof_url = lastProofUrl;
+}
     // Try standard JSON POST first
     let pdfResOk = false;
     try {
