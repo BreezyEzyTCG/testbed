@@ -317,7 +317,9 @@ let isOpeningQr = false;
 let isModalOpen = false;
 let suppressUnloadOnce = false;
 let isRedirecting = false;
-let lastProofUrl = '';  
+let lastProofUrl = ''; 
+let _tickExpiredHandled = false;
+
 
   function formatDDMMYYYYHHMM(d = new Date()) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -331,7 +333,37 @@ const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9K
 const PAYNOW_API  = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
 const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
 const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8lv5gp8lLchlfXpTBxNRhd-Whg8VS4INsCpOguGakPSpPnOn3sl3g/exec';
+/* ===== Inventory reservation API (Apps Script Web App) ===== */
+const INVENTORY_API = '<<YOUR_WEB_APP_URL_HERE>>'; // TODO: replace
 
+async function apiHold(items, userRef){
+  const res = await fetch(INVENTORY_API, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ action:'hold', items, user_ref: userRef || '' })
+  });
+  return res.json();
+}
+
+async function apiCancel(holdId, holdToken, reason){
+  if (!holdId || !holdToken) return { ok:true };
+  const res = await fetch(INVENTORY_API, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ action:'cancel', hold_id: holdId, hold_token: holdToken, reason: reason || '' })
+  });
+  return res.json();
+}
+
+async function apiConfirm(holdId, holdToken, orderId){
+  if (!holdId || !holdToken || !orderId) return { ok:false, error:'Missing fields' };
+  const res = await fetch(INVENTORY_API, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ action:'confirm', hold_id: holdId, hold_token: holdToken, order_id: orderId })
+  });
+  return res.json();
+}
 
 /* === SFX helper (reset + play, keeps it in user-gesture chain) === */
 function playUploadSfx(){
@@ -515,6 +547,20 @@ async function openQrCreateNew(){
   const orderId   = genOrderId();
   currentOrderId  = orderId;
 
+  // NEW: build hold items from cart
+  const holdItems = buildHoldItemsFromCart();
+
+  // Optional: use email as a user reference once form is valid
+  const userRef = (document.getElementById('fEmail')?.value || '').trim();
+
+  // 🔴 Reserve inventory
+  const holdRes = await apiHold(holdItems, userRef);
+  if (!holdRes?.ok || !holdRes.hold_id || !holdRes.hold_token) {
+    alert(holdRes?.error || 'Could not reserve stock. Please review your cart and try again.');
+    return;
+  }
+  const holdId    = holdRes.hold_id;
+  const holdToken = holdRes.hold_token;
   try {
     const res = await jsonpFetch(PAYNOW_API, {
       endpoint: 'pay',
@@ -532,24 +578,29 @@ async function openQrCreateNew(){
     // === Save draft for 15-min persistence ===
 const draft = {
   orderId: orderId,
-  qrPayload: res.payload,          // we re-render QR from payload on restore
-  endTime: Date.now() + TIMER_MS,  // absolute timestamp
+  qrPayload: res.payload,
+  endTime: Date.now() + TIMER_MS,
   amountText: totalText,
   payToLabel: res.payToLabel || 'PayNow',
-  createdAt: Date.now(),           // ✅ comma fixed
-  cartHash: cartFingerprint(),     // ✅ keep cart hash
-  totalCents: totalCentsFromText(totalText) // ✅ keep cents
+  createdAt: Date.now(),
+  cartHash: cartFingerprint(),
+  totalCents: totalCentsFromText(totalText), // keep cents
+  // persist the reservation
+  holdId,
+  holdToken
 };
-setDraft(draft);
+    setDraft(draft);
 
     // === Reserve in Sheets (create/refresh the "to-be order") ===
 try {
   const payload = gatherOrderPayload();
   payload.order_id   = orderId;
- payload.expires_at = formatDDMMYYYYHHMM(new Date(Date.now() + TIMER_MS));
-.replace(/\//g, '-')   // 25/08/2025 -> 25-08-2025
-.replace(',', '')      // remove the comma between date and time
+  payload.expires_at = formatDDMMYYYYHHMM(new Date(Date.now() + TIMER_MS))
+  .replace(/\//g,'-')
+  .replace(',', '');
 
+  payload.hold_id    = holdId;
+  payload.hold_token = holdToken;
   payload.qr_payload = res.payload;
   payload.action     = 'reserve';
   payload.source     = 'checkout';
@@ -575,9 +626,11 @@ try {
 
     try { history.pushState({qr:true}, '', location.href); } catch {}
   } catch (err) {
-    console.error('[PayNow] fetch failed:', err);
-    alert('Sorry, we could not generate the payment QR right now. Please try again.');
-  }
+  console.error('[PayNow] fetch failed:', err);
+  // cancel the reservation we just made
+  try { await apiCancel(holdId, holdToken, 'PAYNOW_FAIL'); } catch {}
+  alert('Sorry, we could not generate the payment QR right now. Please try again.');
+}
 }
 // Guarded public opener: reuse existing draft if still valid
 async function openQr(formData){
@@ -620,7 +673,7 @@ function closeQr(){
   }
 }
 
-function confirmAbortAndExit(){
+async function confirmAbortAndExit(){
   if (isUploading) {
     alert('Upload in progress—please wait a moment so we don’t lose your proof.');
     return;
@@ -631,6 +684,14 @@ function confirmAbortAndExit(){
   if (!ok) return;
 
   closeQr();
+
+  // 🔴 NEW: cancel the reservation before clearing draft
+  const d = getDraft();
+  if (d?.holdId && d?.holdToken) {
+    try { await apiCancel(d.holdId, d.holdToken, 'USER_ABORT'); } catch {}
+  }
+  clearDraft();
+
   window.location.href = 'index.html';
 }
 
@@ -641,7 +702,7 @@ function mmss(ms){
   return `${m}:${s}`;
 }
 
-function tick(){
+async function tick(){
   const remainMs = Math.max(0, endTime - Date.now());
   const el = document.getElementById('qrTimer');
   if (el) {
@@ -650,19 +711,33 @@ function tick(){
     if (remainSec <= 60) el.classList.add('timer-urgent');
     else el.classList.remove('timer-urgent');
   }
+
   if (remainMs <= 0){
+    if (_tickExpiredHandled) return;     // re-entry guard
+    _tickExpiredHandled = true;
+
     clearInterval(countdown);
     countdown = null;
+
     closeQr();
 
     const d = getDraft();
-    if (d && d.orderId) {
-      notifyExpire(d.orderId);
+    try {
+      if (d?.orderId) await notifyExpire(d.orderId, 'TIMEOUT'); // await so it has a chance to send
+    } catch {}
+
+    if (d?.holdId && d?.holdToken) {
+      try { await apiCancel(d.holdId, d.holdToken, 'TIMEOUT'); } catch {}
     }
+
     clearDraft();
 
     window.alert('Payment session expired. Please open checkout again to get a new QR.');
-    window.location.href = "index.html";
+
+    // optional: mark redirecting and keep history clean
+    isRedirecting = true;
+    try { window.removeEventListener('beforeunload', beforeUnloadHandler); } catch {}
+    window.location.replace('index.html');
   }
 }
 
@@ -921,6 +996,20 @@ function renderSummary(){
   if (totalEl)    totalEl.textContent    = fmt(subtotal + ship);
 }
 
+  /* Build reservation items from the cart (server uses these to match rows) */
+function buildHoldItemsFromCart(){
+  const cart = getCart();
+  return cart.map(i => ({
+    name: String(i.name || 'Item'),
+    category: String(i.category || ''),
+    subcategory: String(i.subcategory || i.set || ''),
+    rarity: String(i.rarity || ''),
+    condition: String(i.condition || ''),
+    series_name: String(normSeries(i) || ''), // uses your normSeries helper
+    qty: Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1)
+  }));
+}
+  
   function gatherOrderPayload() {
   // 1) Get form values
   const v = id => (document.getElementById(id)?.value || '').trim();
@@ -1081,8 +1170,19 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
+  // ✅ NEW: confirm the reservation on the server
+const d = getDraft();
+if (d?.holdId && d?.holdToken && (currentOrderId || d.orderId)) {
   try {
-    const orderPayload = gatherOrderPayload();
+    const conf = await apiConfirm(d.holdId, d.holdToken, currentOrderId || d.orderId);
+    if (!conf?.ok) console.warn('Inventory confirm failed:', conf?.error);
+  } catch (e) {
+    console.warn('Inventory confirm error:', e);
+  }
+}
+
+try {
+  const orderPayload = gatherOrderPayload();
     orderPayload.order_id = currentOrderId || orderPayload.order_id;
     if (lastProofUrl) orderPayload.proof_url = lastProofUrl;
 
@@ -1253,17 +1353,22 @@ window.addEventListener('popstate', () => {
   }
 });
 
-window.addEventListener('storage', (e) => {
+window.addEventListener('storage', async (e) => {
   if (e.key !== DRAFT_KEY) return;
 
   const d = getDraft();
 
   // If draft was cleared or expired in another tab → close here too
   if (!d || isExpired(d)) {
-    if (countdown) { clearInterval(countdown); countdown = null; }
-    closeQr();
-    return;
+  if (countdown) { clearInterval(countdown); countdown = null; }
+  // cancel if we still have a live hold
+  if (d?.holdId && d?.holdToken) {
+    try { await apiCancel(d.holdId, d.holdToken, 'EXTERNAL_CLEAR'); } catch {}
   }
+  closeQr();
+  return;
+}
+
 
   // Mirror an updated still-valid draft
   currentOrderId = d.orderId || currentOrderId;
