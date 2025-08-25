@@ -529,27 +529,23 @@ const draft = {
   endTime: Date.now() + TIMER_MS,  // absolute timestamp
   amountText: totalText,
   payToLabel: res.payToLabel || 'PayNow',
-  createdAt: Date.now(),           // 👈 add comma here
-  cartHash: cartFingerprint(),     // 👈 NEW
-  totalCents: totalCentsFromText(totalText) // 👈 NEW
+  createdAt: Date.now(),           // ✅ comma fixed
+  cartHash: cartFingerprint(),     // ✅ keep cart hash
+  totalCents: totalCentsFromText(totalText) // ✅ keep cents
 };
-
 setDraft(draft);
-
 
     // === Reserve in Sheets (create/refresh the "to-be order") ===
 try {
-  const payload = gatherOrderPayload();     // you already have this
-  payload.order_id   = orderId;             // ensure same ID as QR
+  const payload = gatherOrderPayload();
+  payload.order_id   = orderId;
   payload.expires_at = new Date(Date.now() + TIMER_MS).toISOString();
   payload.qr_payload = res.payload;
   payload.action     = 'reserve';
   payload.source     = 'checkout';
 
-  // Replace with your Web App URL from the deployment step:
   const RESERVE_API = 'https://script.google.com/macros/s/AKfycbyNAIzqGn_dRSfuG08mHewR5dX-ki9-a1g6Rr-Ztc5wlvEqqz0iXjDIEgO8UhBWSHndog/exec';
 
-   // Fire-and-forget; no response reading (opaque request)
   fetch(RESERVE_API, {
     method: 'POST',
     mode: 'no-cors',
@@ -579,7 +575,6 @@ async function openQr(formData){
   const currentHash  = cartFingerprint();
   const currentTotal = totalCentsFromText(document.getElementById('sumTotal')?.textContent || '');
 
-    // If a draft exists but cart/amount changed → ask to regenerate
   if (d && !isExpired(d)) {
     // Reopen with previous QR + resume countdown
     currentOrderId = d.orderId || currentOrderId;
@@ -646,20 +641,19 @@ function tick(){
     else el.classList.remove('timer-urgent');
   }
   if (remainMs <= 0){
-  clearInterval(countdown);
-  countdown = null;
-  closeQr();
+    clearInterval(countdown);
+    countdown = null;
+    closeQr();
 
-  const d = getDraft();
-  if (d && d.orderId) {
-    // best-effort notify; don't block UI
-    notifyExpire(d.orderId);
+    const d = getDraft();
+    if (d && d.orderId) {
+      notifyExpire(d.orderId);
+    }
+    clearDraft();
+
+    window.alert('Payment session expired. Please open checkout again to get a new QR.');
+    window.location.href = "index.html";
   }
-  clearDraft();
-
-  window.alert('Payment session expired. Please open checkout again to get a new QR.');
-  window.location.href = "index.html";
-}
 }
 
 /* ========= OneMap postal -> address ========= */
@@ -790,21 +784,20 @@ async function uploadPaymentProofJSON() {
     });
 
     const ct = res.headers.get('content-type') || '';
-if (ct.includes('application/json')) {
-  const data = await res.json();
-  if (data && (data.ok || data.success)) {
-    // 👇 Try common keys your uploader might return
-    lastProofUrl = data.proof_url || data.fileUrl || data.url || data.webViewLink || data.webContentLink || lastProofUrl;
+    if (ct.includes('application/json')) {
+      const data = await res.json();
+      if (data && (data.ok || data.success)) {
+        lastProofUrl = data.proof_url || data.fileUrl || data.url || data.webViewLink || data.webContentLink || lastProofUrl;
 
-    statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-    statusEl.classList.add('ok');
-    statusEl.classList.remove('err');
-    isUploading = false;
-    return true;
-  } else {
-    throw new Error(data?.error || 'Upload failed to reach server');
-  }
-}
+        statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
+        statusEl.classList.add('ok');
+        statusEl.classList.remove('err');
+        isUploading = false;
+        return true;
+      } else {
+        throw new Error(data?.error || 'Upload failed to reach server');
+      }
+    }
 
     if (res.ok) {
       statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
@@ -933,7 +926,7 @@ function renderSummary(){
   const methodId      = v('fMethod');
 
   // 2) Cart summary (reuse helpers you already have)
-  const cart = getCart(); // [{name, price, qty, ...}]
+  const cart = getCart();
   const savedShip = getSavedShippingFromCart();
   const shipFee   = Number(savedShip?.fee ?? 0);
 
@@ -944,7 +937,6 @@ function renderSummary(){
     const line = unit * qty;
     subtotal  += line;
 
-    // replicate attribute formatting for the PDF
     const attrs = formatAttrs(i);
     return {
       name: String(i.name || 'Item'),
@@ -962,7 +954,7 @@ function renderSummary(){
   };
 
   return {
-    order_id: currentOrderId || genOrderId(), // use existing id if set by QR open
+    order_id: currentOrderId || genOrderId(),
     created_at: new Date().toISOString(),
     customer_name,
     email,
@@ -1081,14 +1073,9 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
 
   try {
     const orderPayload = gatherOrderPayload();
-orderPayload.order_id = currentOrderId || orderPayload.order_id; // keep
-if (lastProofUrl) orderPayload.proof_url = lastProofUrl;         // <-- NEW
+    orderPayload.order_id = currentOrderId || orderPayload.order_id;
+    if (lastProofUrl) orderPayload.proof_url = lastProofUrl;
 
-// NEW: pass the proof URL if we have it
-if (lastProofUrl) {
-  orderPayload.proof_url = lastProofUrl;
-}
-    // Try standard JSON POST first
     let pdfResOk = false;
     try {
       const pdfRes = await fetch(EMAIL_PDF_API, {
@@ -1100,11 +1087,10 @@ if (lastProofUrl) {
         const data = await pdfRes.json();
         pdfResOk = !!(data && data.ok);
       } else {
-        pdfResOk = pdfRes.ok; // fallback if no JSON
+        pdfResOk = pdfRes.ok;
       }
     } catch (_) {/* ignore */}
 
-    // If CORS blocks, fallback to no-cors (best-effort)
     if (!pdfResOk) {
       await fetch(EMAIL_PDF_API, {
         method: 'POST',
@@ -1112,14 +1098,11 @@ if (lastProofUrl) {
         body: JSON.stringify(orderPayload),
         mode: 'no-cors'
       });
-      // can't read response in no-cors; assume success
       pdfResOk = true;
     }
-
     if (!pdfResOk) console.warn('PDF emailer did not confirm success, but continuing UX flow.');
   } catch (err) {
     console.error('PDF emailer error:', err);
-    // Do not block buyer UX if email send fails; you’ll still have the upload proof.
   }
   
   if (countdown) { clearInterval(countdown); countdown = null; }
@@ -1140,7 +1123,7 @@ if (lastProofUrl) {
     await sleep(1000);
   }
   
-clearDraft();
+  clearDraft();
 
   suppressUnloadOnce = true;
   isRedirecting = true;
@@ -1259,6 +1242,7 @@ window.addEventListener('popstate', () => {
     }
   }
 });
+
 window.addEventListener('storage', (e) => {
   if (e.key !== DRAFT_KEY) return;
 
@@ -1298,6 +1282,7 @@ document.addEventListener('keydown', (e) => {
   const ok = window.confirm('Return to the store? Unsaved checkout info will be lost.');
   if (ok) window.location.href = 'index.html';
 });
+
 // Auto-restore a live draft when the page loads
 window.addEventListener('DOMContentLoaded', async () => {
   const d = getDraft();
@@ -1323,23 +1308,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       return; // user will click Make Payment again
     }
   }
-
-  // Resume existing session
-  currentOrderId = d.orderId || currentOrderId;
-  if (d.qrPayload) renderQr(d.qrPayload);
-  endTime = d.endTime;
-
-  document.getElementById('qrPayTo').textContent   = d.payToLabel || 'PayNow';
-  document.getElementById('qrAmount').textContent  = d.amountText || document.getElementById('sumTotal')?.textContent || '$0.00';
-  document.getElementById('qrOrderId').textContent = d.orderId || '—';
-
-  tick();
-  if (countdown) clearInterval(countdown);
-  countdown = setInterval(tick, 1000);
-  document.getElementById('qrModal').hidden = false;
-  isModalOpen = true;
-});
-
 
   // Resume existing session
   currentOrderId = d.orderId || currentOrderId;
