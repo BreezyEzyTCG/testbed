@@ -616,7 +616,7 @@ function confirmAbortAndExit(){
     return;
   }
   const ok = window.confirm(
-    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to the store.'
+    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to the store. if you've already paid, make sure to upload your proof of payment.'
   );
   if (!ok) return;
 
@@ -1112,8 +1112,8 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   statusEl.classList.add('ok');
   statusEl.classList.remove('err');
 
-  statusEl.textContent = 'Thank you for the wait — upload completed ✓';  
-  await sleep(2500);                                                       
+  statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';  
+  await sleep(2000);                                                       
 
   statusEl.textContent = 'We will verify and send order confirmation soon.'; 
   await sleep(3000);                                                      
@@ -1279,7 +1279,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   e.preventDefault();
-  const ok = window.confirm('Return to the store? Unsaved checkout info will be lost.');
+  const ok = window.confirm('Return to the store? A new payment QR will be generated if there's any changes made to your cart/mailing option.');
   if (ok) window.location.href = 'index.html';
 });
 
