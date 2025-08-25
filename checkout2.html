@@ -1274,7 +1274,7 @@ document.addEventListener('keydown', (e) => {
   if (ok) window.location.href = 'index.html';
 });
 // Auto-restore a live draft when the page loads
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const d = getDraft();
   if (!d) return;
 
@@ -1294,23 +1294,31 @@ window.addEventListener('DOMContentLoaded', () => {
       return; // user will click Make Payment again
     }
 
-  window.addEventListener('storage', (e) => {
+  // Put this once (outside DOMContentLoaded is fine)
+window.addEventListener('storage', (e) => {
   if (e.key !== DRAFT_KEY) return;
+
   const d = getDraft();
+
+  // If draft was cleared or is now expired in another tab → close here too
   if (!d || isExpired(d)) {
+    if (countdown) { clearInterval(countdown); countdown = null; }
     closeQr();
     return;
   }
+
+  // Otherwise a (still-valid) draft was created/updated elsewhere → mirror it
   currentOrderId = d.orderId || currentOrderId;
   if (d.qrPayload) renderQr(d.qrPayload);
   endTime = d.endTime;
+
+  if (countdown) { clearInterval(countdown); }
   tick();
-  if (countdown) clearInterval(countdown);
   countdown = setInterval(tick, 1000);
+
   document.getElementById('qrModal').hidden = false;
   isModalOpen = true;
 });
-
 
   // Resume existing session
   currentOrderId = d.orderId || currentOrderId;
