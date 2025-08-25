@@ -350,7 +350,7 @@ function jsonpFetch(baseUrl, params) {
     const s = document.createElement('script');
     s.src = `${baseUrl}?${qs.toString()}`;
 
-    const timeout = setTimeout(() => { cleanup(); reject(new Error('PAY_JSONP_TIMEOUT')); }, 10000);
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('PAY_JSONP_TIMEOUT')); }, 15000);
     function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
 
     window[cb] = (data) => { cleanup(); resolve(data); };
@@ -467,6 +467,38 @@ async function openQr(){
     document.getElementById('qrOrderId').textContent = orderId;
 
     renderQr(res.payload);
+
+    // === Reserve in Sheets (create/refresh the "to-be order") ===
+try {
+  const payload = gatherOrderPayload();     // you already have this
+  payload.order_id   = orderId;             // ensure same ID as QR
+  payload.expires_at = new Date(Date.now() + TIMER_MS).toISOString();
+  payload.qr_payload = res.payload;
+  payload.action     = 'reserve';
+  payload.source     = 'checkout';
+
+  // Replace with your Web App URL from the deployment step:
+  const RESERVE_API = 'https://script.google.com/macros/s/AKfycbyNAIzqGn_dRSfuG08mHewR5dX-ki9-a1g6Rr-Ztc5wlvEqqz0iXjDIEgO8UhBWSHndog/exec';
+
+  try {
+    await fetch(RESERVE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (_) {
+    // last-resort: best-effort no-cors
+    await fetch(RESERVE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      mode: 'no-cors'
+    });
+  }
+} catch (err) {
+  console.warn('[reserve] failed (non-blocking):', err);
+}
+
 
     sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
 
