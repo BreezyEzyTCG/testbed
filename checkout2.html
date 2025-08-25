@@ -529,10 +529,11 @@ const draft = {
   endTime: Date.now() + TIMER_MS,  // absolute timestamp
   amountText: totalText,
   payToLabel: res.payToLabel || 'PayNow',
-  createdAt: Date.now()
-   cartHash: cartFingerprint(),                // 👈 NEW
-  totalCents: totalCentsFromText(totalText)   // 👈 NEW
+  createdAt: Date.now(),           // 👈 add comma here
+  cartHash: cartFingerprint(),     // 👈 NEW
+  totalCents: totalCentsFromText(totalText) // 👈 NEW
 };
+
 setDraft(draft);
 
 
@@ -1258,6 +1259,30 @@ window.addEventListener('popstate', () => {
     }
   }
 });
+window.addEventListener('storage', (e) => {
+  if (e.key !== DRAFT_KEY) return;
+
+  const d = getDraft();
+
+  // If draft was cleared or expired in another tab → close here too
+  if (!d || isExpired(d)) {
+    if (countdown) { clearInterval(countdown); countdown = null; }
+    closeQr();
+    return;
+  }
+
+  // Mirror an updated still-valid draft
+  currentOrderId = d.orderId || currentOrderId;
+  if (d.qrPayload) renderQr(d.qrPayload);
+  endTime = d.endTime;
+
+  if (countdown) { clearInterval(countdown); }
+  tick();
+  countdown = setInterval(tick, 1000);
+
+  document.getElementById('qrModal').hidden = false;
+  isModalOpen = true;
+});
 
 document.addEventListener('keydown', (e) => {
   const isRefreshKey = (e.key === 'F5') || ((e.key?.toLowerCase?.() === 'r') && (e.ctrlKey || e.metaKey));
@@ -1278,7 +1303,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   const d = getDraft();
   if (!d) return;
 
-  if (isExpired(d)) { notifyExpire(d.orderId, 'TIMEOUT'); clearDraft(); return; }
+  if (isExpired(d)) { 
+    notifyExpire(d.orderId, 'TIMEOUT'); 
+    clearDraft(); 
+    return; 
+  }
 
   const currentHash  = cartFingerprint();
   const currentTotal = totalCentsFromText(document.getElementById('sumTotal')?.textContent || '');
@@ -1293,32 +1322,24 @@ window.addEventListener('DOMContentLoaded', async () => {
       clearDraft();
       return; // user will click Make Payment again
     }
-
-  // Put this once (outside DOMContentLoaded is fine)
-window.addEventListener('storage', (e) => {
-  if (e.key !== DRAFT_KEY) return;
-
-  const d = getDraft();
-
-  // If draft was cleared or is now expired in another tab → close here too
-  if (!d || isExpired(d)) {
-    if (countdown) { clearInterval(countdown); countdown = null; }
-    closeQr();
-    return;
   }
 
-  // Otherwise a (still-valid) draft was created/updated elsewhere → mirror it
+  // Resume existing session
   currentOrderId = d.orderId || currentOrderId;
   if (d.qrPayload) renderQr(d.qrPayload);
   endTime = d.endTime;
 
-  if (countdown) { clearInterval(countdown); }
-  tick();
-  countdown = setInterval(tick, 1000);
+  document.getElementById('qrPayTo').textContent   = d.payToLabel || 'PayNow';
+  document.getElementById('qrAmount').textContent  = d.amountText || document.getElementById('sumTotal')?.textContent || '$0.00';
+  document.getElementById('qrOrderId').textContent = d.orderId || '—';
 
+  tick();
+  if (countdown) clearInterval(countdown);
+  countdown = setInterval(tick, 1000);
   document.getElementById('qrModal').hidden = false;
   isModalOpen = true;
 });
+
 
   // Resume existing session
   currentOrderId = d.orderId || currentOrderId;
