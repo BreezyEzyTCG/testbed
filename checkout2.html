@@ -419,6 +419,31 @@ function applySavedShippingToForm(){
   }
 }
 
+  function getCartSafe(){
+  try { const a = JSON.parse(localStorage.getItem('cart') || '[]'); return Array.isArray(a) ? a : []; }
+  catch { return []; }
+}
+function getShippingSafe(){
+  try { return JSON.parse(localStorage.getItem('shippingMethod') || 'null'); }
+  catch { return null; }
+}
+function cartFingerprint(){
+  const cart = getCartSafe().map(i => ({
+    name: i.name || '',
+    price: Number(i.price || 0),
+    qty: Number(i.qty ?? i.quantity ?? 1),
+    // include any attrs that affect price if you have them:
+    set: i.set || i.subcategory || '',
+    year: i.year || i.release_year || ''
+  }));
+  const ship = getShippingSafe();
+  return JSON.stringify({ cart, shipId: ship?.id || ship?.label || '' });
+}
+function totalCentsFromText(s){
+  const n = Number(String(s).replace(/[^0-9.]/g,''));
+  return Math.round((Number.isFinite(n) ? n : 0) * 100);
+}
+
   /* ====== 15‑MINUTE PAYMENT SESSION PERSISTENCE ====== */
 const DRAFT_KEY = 'breezy.checkout.draft';
 const SESSION_MINUTES = 15;                   // 15 minutes
@@ -437,14 +462,13 @@ function now(){ return Date.now(); }
 function isExpired(d){ return !d || !d.endTime || (now() >= Number(d.endTime)); }
 function remainingMs(d){ return Math.max(0, Number(d.endTime) - now()); }
 
-async function notifyExpire(orderId){
+async function notifyExpire(orderId, reason){
   if (!orderId) return;
-  // fire-and-forget; backend should be idempotent
   try {
     await fetch(EXPIRE_API, {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ action:'expire', orderId })
+      body: JSON.stringify({ action:'expire', orderId, reason: reason || 'TIMEOUT' })
     });
   } catch (e) {}
 }
@@ -506,6 +530,8 @@ const draft = {
   amountText: totalText,
   payToLabel: res.payToLabel || 'PayNow',
   createdAt: Date.now()
+   cartHash: cartFingerprint(),                // 👈 NEW
+  totalCents: totalCentsFromText(totalText)   // 👈 NEW
 };
 setDraft(draft);
 
@@ -548,7 +574,11 @@ try {
 }
 // Guarded public opener: reuse existing draft if still valid
 async function openQr(formData){
-  const d = getDraft();
+ const d = getDraft();
+  const currentHash  = cartFingerprint();
+  const currentTotal = totalCentsFromText(document.getElementById('sumTotal')?.textContent || '');
+
+    // If a draft exists but cart/amount changed → ask to regenerate
   if (d && !isExpired(d)) {
     // Reopen with previous QR + resume countdown
     currentOrderId = d.orderId || currentOrderId;
@@ -1248,12 +1278,21 @@ window.addEventListener('DOMContentLoaded', () => {
   const d = getDraft();
   if (!d) return;
 
-  if (isExpired(d)) {
-    // tell backend once, then clear
-    notifyExpire(d.orderId);
-    clearDraft();
-    return;
-  }
+  if (isExpired(d)) { notifyExpire(d.orderId, 'TIMEOUT'); clearDraft(); return; }
+
+  const currentHash  = cartFingerprint();
+  const currentTotal = totalCentsFromText(document.getElementById('sumTotal')?.textContent || '');
+
+  if (d.cartHash !== currentHash || d.totalCents !== currentTotal) {
+    const ok = window.confirm(
+      `Your cart changed from ${d.amountText} to ${document.getElementById('sumTotal')?.textContent || ''}.\n` +
+      `Generate a new QR for the updated amount?`
+    );
+    if (ok) {
+      try { await notifyExpire(d.orderId, 'CART_CHANGED'); } catch {}
+      clearDraft();
+      return; // user will click Make Payment again
+    }
 
   window.addEventListener('storage', (e) => {
   if (e.key !== DRAFT_KEY) return;
