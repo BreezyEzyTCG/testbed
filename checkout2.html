@@ -1112,11 +1112,11 @@ document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   statusEl.classList.add('ok');
   statusEl.classList.remove('err');
 
-  statusEl.textContent = 'Thank you for the wait — upload completed ✓';  
-  await sleep(2500);                                                       
+  statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';  
+  await sleep(1500);                                                       
 
   statusEl.textContent = 'We will verify and send order confirmation soon.'; 
-  await sleep(3000);                                                      
+  await sleep(2000);                                                      
 
   for (let s = 5; s >= 1; s--) {
     statusEl.textContent = `You’ll be redirected to the store in ${s} second${s===1?'':'s'}…`;
