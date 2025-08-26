@@ -1374,20 +1374,20 @@ function renderMiniCart(){
   const parts = prod ? getStatusParts(prod) : { available: stock|0, reserved:0, reservedNote:'', statusHTML:'', btnLabel:'' };
 
   // decide mini note
-  // decide mini note
 let miniNoteHTML = '';
 if (parts.available <= 0) {
-  if (parts.reserved > 0 && prod?.status_label) {
-    // Backend already gave us a nice label like "On hold — ~5 min"
-    miniNoteHTML = ` <span class="mc-note hold">${prod.status_label}</span>`;
+  if (prod?.status_label) {
+    // Always use backend label (On hold — ~X min, last unit in checkout, etc.)
+    miniNoteHTML = ` <span class="mc-note ${parts.reserved > 0 ? 'hold' : 'oos'}">${prod.status_label}</span>`;
   } else {
-    // Pure out of stock
     miniNoteHTML = ` <span class="mc-note oos">Out of stock</span>`;
   }
 } else if (parts.reserved > 0) {
-  // Still some stock, but others in checkout
+  // Still some stock but others are checking out
   miniNoteHTML = ` <span class="mc-note">${parts.reservedNote.replace('reserved-note','')}</span>`;
 }
+
+    
 
 
 
