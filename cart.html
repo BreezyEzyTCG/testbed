@@ -1061,106 +1061,99 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [])
   /* ===== Reconcile cart with live inventory ===== */
 function reconcileCartWithInventory(cart){
   let changed = false;
-  const removed = [];          // we keep items instead of removing; left for API symmetry
+  const removed = [];   // kept for API symmetry (we’re not removing lines)
   const clamped = [];
   const priced  = [];
-  const nowOos  = [];          // items that just became out of stock
+  const nowOos  = [];
+  const nowHold = [];
   const next    = [];
 
-  // compare only the fields we mutate
   const differs = (a, b) => (
     a.key !== b.key ||
-    Number(a.price) !== Number(b.price) ||
-    Number(a.stock) !== Number(b.stock) ||
+    Number(a.price)    !== Number(b.price) ||
+    Number(a.stock)    !== Number(b.stock) ||
     Number(a.quantity) !== Number(b.quantity) ||
-    (a.status || '') !== (b.status || '') ||
+    (a.status || '')   !== (b.status || '') ||
     (a.category || '') !== (b.category || '') ||
     (a.subcategory || '') !== (b.subcategory || '')
   );
 
   for (const item of cart){
+    // find product by new key first, then old key (back-compat)
     const prod = prodByNewKey.get(item.key) || prodByOldKey.get(item.key);
+
+    // Decide new status using the same rules as index.html
+    const newStatus = statusFromProduct(prod);
+
+    // Keep name/attrs for modal display
     const { name, attrs } = splitNameAndAttrs(item);
 
-    // util: push & mark change; optionally record OOS transition
-    const pushWithChangeCheck = (newItem, transitionedToOos=false) => {
-      if (differs(item, newItem)) {
-        changed = true;
-        if (transitionedToOos) nowOos.push({ name, attrs });
-      }
-      next.push(newItem);
-    };
-
-    // === Case 1: product row missing entirely -> treat as OOS (keep user's qty!)
-    if (!prod) {
-      const newItem = {
-        ...item,
-        stock: 0,
-        // IMPORTANT: keep previous quantity so when inventory revives we can clamp & show modal
-        quantity: Number(item.quantity) || 1,
-        status: 'oos'
-      };
-      const transitioned = item.status !== 'oos';
-      pushWithChangeCheck(newItem, transitioned);
-      continue;
-    }
-
-    const maxStock    = Math.max(0, Number(prod.stock) || 0);
-    const upgradedKey = makeKey({
+    // Build upgraded key & latest price/stock when prod exists
+    const upgradedKey = prod ? makeKey({
       name: prod.name,
       series: prod["series name"],
       rarity: prod.rarity,
       condition: prod.condition,
       category: prod.category,
       subcategory: prod.subcategory
-    });
-    const priceNow = Number(prod.price) || 0;
+    }) : item.key;
 
-    // === Case 2: exists but stock == 0 -> OOS (keep user's qty for later clamp)
-    if (maxStock <= 0) {
+    const newPrice = prod ? (Number(prod.price) || 0)  : (Number(item.price) || 0);
+    const avail    = prod ? (Number(prod.stock) || 0)  : 0; // available = Stock − Reserved (from sheet)
+
+    // Transition buckets for the modal
+    const was = (item.status || '');
+    if (was !== newStatus){
+      if (newStatus === 'oos')  nowOos.push({ name, attrs });
+      if (newStatus === 'hold') nowHold.push({ name, attrs });
+    }
+
+    // In-stock path (also covers revival from hold/oos)
+    if (prod && avail > 0){
+      const beforeQty = Number(item.quantity) || 0;
+      const afterQty  = Math.min(beforeQty || 1, avail);
+      if (afterQty !== beforeQty){
+        clamped.push({ name, attrs, before: beforeQty, after: afterQty });
+      }
+
+      const beforePrice = Number(item.price) || 0;
+      if (beforePrice !== newPrice){
+        priced.push({ name, attrs, before: beforePrice, after: newPrice });
+      }
+
       const newItem = {
         ...item,
         key: upgradedKey,
-        price: priceNow,
-        stock: 0,
-        quantity: Number(item.quantity) || 1, // keep context
-        status: 'oos'
+        category: item.category ?? prod.category ?? '',
+        subcategory: item.subcategory ?? prod.subcategory ?? '',
+        price: newPrice,
+        stock: avail,           // store current available
+        quantity: afterQty,
+        status: ''              // purchasable again
       };
-      const transitioned = item.status !== 'oos';
-      pushWithChangeCheck(newItem, transitioned);
+      if (differs(item, newItem)) changed = true;
+      next.push(newItem);
       continue;
     }
 
-    // === Case 3: in stock -> normal line, clamp qty if needed (covers "revival" too)
-    const beforeQty = Math.max(0, Number(item.quantity) || 0);
-    const afterQty  = Math.min(beforeQty || 1, maxStock);
-    if (afterQty !== beforeQty) {
-      // This fires both when stock dropped AND when an OOS item revived but desired qty > stock
-      clamped.push({ name, attrs, before: beforeQty, after: afterQty });
-    }
-
-    const beforePrice = Number(item.price) || 0;
-    if (beforePrice !== priceNow) {
-      priced.push({ name, attrs, before: beforePrice, after: priceNow });
-    }
-
+    // Hold or OOS path: keep user’s quantity (so when stock revives we can clamp/show modal),
+    // but disable purchase via status + keep stock=0 for UI
     const newItem = {
       ...item,
       key: upgradedKey,
-      category: item.category ?? prod.category ?? '',
-      subcategory: item.subcategory ?? prod.subcategory ?? '',
-      price: priceNow,
-      stock: maxStock,
-      quantity: afterQty,
-      status: '' // purchasable again if it was 'oos'
+      price: newPrice,
+      stock: 0,
+      quantity: Number(item.quantity) || 1,
+      status: newStatus          // 'hold' or 'oos'
     };
-
-    pushWithChangeCheck(newItem, /*transitionedToOos=*/false);
+    if (differs(item, newItem)) changed = true;
+    next.push(newItem);
   }
 
   if (changed) saveCart(next);
-  return { cart: next, changed, removed, clamped, priced, nowOos };
+  return { cart: next, changed, removed, clamped, priced, nowOos, nowHold };
 }
+
 
   /* ===== Shipping + Add-ons ===== */
   const SHIPPING_DEFAULT = { id: null, fee: 0 };
@@ -1242,6 +1235,19 @@ function decQty(key){
     return String(key).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
 
+    function statusFromProduct(prod){
+  if (!prod) return 'oos'; // row missing = hard OOS
+
+  const available = Number(prod.stock) || 0;     // already Stock − Reserved (same as index.html)
+  const reserved  = Number(prod.reserved) || 0;
+  const label     = (prod.status_label || '').trim();
+
+  if (available > 0) return '';                  // purchasable
+  // available == 0:
+  if (reserved > 0 || label) return 'hold';      // temporarily on hold (last unit being checked out)
+  return 'oos';                                  // truly out of stock
+}
+
   /* ===== Centralised summary updater ===== */
   function updateSummaryTotals(subtotalFromCart){
     const subtotal = typeof subtotalFromCart === 'number'
@@ -1314,7 +1320,19 @@ async function renderCart() {
     }
 
     const normals = cart.filter(i => !i.status);
-    const oos     = cart.filter(i => i.status === 'oos');
+    const holds   = cart.filter(i => i.status === 'hold');     // stay in main list
+    const oos     = cart.filter(i => i.status === 'oos');      // grouped below
+
+    // when computing subtotal:
+    if (!item.status) subtotal += line; // excludes both hold and oos
+    
+    // small status note:
+    const statusNote =
+      item.status === 'oos'
+        ? `<div style="font-size:.8rem;color:#dc2626;font-weight:600;margin-top:3px;">Out of stock</div>`
+      : item.status === 'hold'
+        ? `<div style="font-size:.8rem;color:#b45309;font-weight:600;margin-top:3px;">Temporarily on hold</div>`
+        : ``;
 
     let subtotal = 0;
 
