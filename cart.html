@@ -1043,65 +1043,95 @@
 
   /* ===== Reconcile cart with live inventory ===== */
   function reconcileCartWithInventory(cart){
-    let changed = false;
-    const removed = [];
-    const clamped = [];
-    const priced  = []; 
-    const next = [];
+  let changed = false;
+  const clamped = [];
+  const priced  = []; 
+  const next = [];
 
-    for (const item of cart){
-      // prefer direct match on new key; fall back to old key (legacy carts)
-      const prod = prodByNewKey.get(item.key) || prodByOldKey.get(item.key);
-      const { name, attrs } = splitNameAndAttrs(item);
+  for (const item of cart){
+    // prefer direct match on new key; fall back to old key (legacy carts)
+    const prod = prodByNewKey.get(item.key) || prodByOldKey.get(item.key);
+    const { name, attrs } = splitNameAndAttrs(item);
 
-      if (!prod || (Number(prod.stock)||0) <= 0){
-        removed.push({ name, attrs });
-        changed = true;
-        continue;
-      }
-
-      const max = Number(prod.stock)||0;
-      const beforeQty = Number(item.quantity)||0;
-      const afterQty = Math.min(beforeQty || 1, max);
-
-      if (afterQty !== beforeQty) {
-        clamped.push({ name, attrs, before: beforeQty, after: afterQty });
-        changed = true;
-      }
-
-      const upgradedKey = makeKey({
-  name: prod.name,
-  series: prod["series name"],
-  rarity: prod.rarity,
-  condition: prod.condition,
-  category: prod.category,
-  subcategory: prod.subcategory
-});
-
-// ---- ADD: price-change detection ----
-const beforePrice = Number(item.price) || 0;
-const newPrice    = Number(prod.price) || 0;
-if (beforePrice !== newPrice) {
-  priced.push({ name, attrs, before: beforePrice, after: newPrice });
-  changed = true;
-}
-// -------------------------------------
-
-if (item.key !== upgradedKey) changed = true;
-
-next.push({
-  ...item,
-  key: upgradedKey,
-  category: item.category ?? prod.category ?? '',
-  subcategory: item.subcategory ?? prod.subcategory ?? '',
-  price: newPrice,                // ensure cart uses latest price
-  stock: max,
-  quantity: afterQty
-});
+    // If product row no longer exists at all → keep item but mark fully out of stock
+    if (!prod) {
+      next.push({
+        ...item,
+        stock: 0,
+        quantity: 0,
+        status: 'oos' // fully gone from inventory
+      });
+      changed = true;
+      continue;
     }
-    if (changed) saveCart(next);
-    return { cart: next, changed, removed, clamped, priced };  // <-- include priced
+
+    const max = Number(prod.stock) || 0;
+
+    // If product exists but stock is 0 → keep item, show in a special "On Hold" section
+    if (max <= 0) {
+      next.push({
+        ...item,
+        key: makeKey({
+          name: prod.name,
+          series: prod["series name"],
+          rarity: prod.rarity,
+          condition: prod.condition,
+          category: prod.category,
+          subcategory: prod.subcategory
+        }),
+        price: Number(prod.price) || 0,
+        stock: 0,
+        // keep user’s selected quantity for context (not purchasable)
+        quantity: Number(item.quantity) || 1,
+        status: 'hold' // visible but not purchasable
+      });
+      changed = true;
+      continue;
+    }
+
+    // Normal in-stock flow
+    const beforeQty = Number(item.quantity) || 0;
+    const afterQty = Math.min(beforeQty || 1, max);
+    if (afterQty !== beforeQty) {
+      clamped.push({ name, attrs, before: beforeQty, after: afterQty });
+      changed = true;
+    }
+
+    // Detect price changes
+    const beforePrice = Number(item.price) || 0;
+    const newPrice    = Number(prod.price) || 0;
+    if (beforePrice !== newPrice) {
+      priced.push({ name, attrs, before: beforePrice, after: newPrice });
+      changed = true;
+    }
+
+    const upgradedKey = makeKey({
+      name: prod.name,
+      series: prod["series name"],
+      rarity: prod.rarity,
+      condition: prod.condition,
+      category: prod.category,
+      subcategory: prod.subcategory
+    });
+    if (item.key !== upgradedKey) changed = true;
+
+    next.push({
+      ...item,
+      key: upgradedKey,
+      category: item.category ?? prod.category ?? '',
+      subcategory: item.subcategory ?? prod.subcategory ?? '',
+      price: newPrice,                // ensure cart uses latest price
+      stock: max,
+      quantity: afterQty,
+      status: ''                      // clear any previous status
+    });
   }
+
+  if (changed) saveCart(next);
+  // NOTE: removed[] is no longer used because nothing is dropped
+  return { cart: next, changed, removed: [], clamped, priced };
+}
+
 
   /* ===== Shipping + Add-ons ===== */
   const SHIPPING_DEFAULT = { id: null, fee: 0 };
@@ -1120,13 +1150,6 @@ next.push({
   }
   function saveAddons(list){
     localStorage.setItem('addonsSelected', JSON.stringify(Array.isArray(list) ? list : []));
-  }
-
-  function readSelectedShippingFromDOM(){
-    const el = document.querySelector('input[name="shipping"]:checked');
-    if(!el) return SHIPPING_DEFAULT;
-    const fee = parseFloat(el.dataset.fee || '0') || 0;
-    return { id: el.value, fee };
   }
 
   function readSelectedShippingFromDOM(){
@@ -1153,27 +1176,34 @@ next.push({
 
   /* ===== Qty ops: use the item's stored key, not recomputed ===== */
   function incQty(key){
-    const cart = getCart();
-    const it = cart.find(i => i.key === key);
-    if(!it) return;
-    const max = Number(it.stock ?? Infinity);
-    const cur = Number(it.quantity) || 0;
-    if (cur >= max){
-      showToast(`Max available is ${isFinite(max) ? max : 0}.`);
-      return;
-    }
-    it.quantity = cur + 1;
-    saveCart(cart);
-    renderCart();
+  const cart = getCart();
+  const it = cart.find(i => i.key === key);
+  if(!it) return;
+  if (it.status) { showToast?.('This item is currently unavailable.'); return; }
+
+  const max = Number(it.stock ?? Infinity);
+  const cur = Number(it.quantity) || 0;
+  if (cur >= max){
+    showToast?.(`Max available is ${isFinite(max) ? max : 0}.`);
+    return;
   }
-  function decQty(key){
-    const cart = getCart();
-    const i = cart.findIndex(it => it.key === key);
-    if(i < 0) return;
-    const q = (Number(cart[i].quantity)||0) - 1;
-    if(q <= 0){ cart.splice(i,1); } else { cart[i].quantity = q; }
-    saveCart(cart); renderCart();
-  }
+  it.quantity = cur + 1;
+  saveCart(cart);
+  renderCart();
+}
+
+function decQty(key){
+  const cart = getCart();
+  const i = cart.findIndex(it => it.key === key);
+  if(i < 0) return;
+  const it = cart[i];
+  if (it.status) { showToast?.('This item is currently unavailable.'); return; }
+
+  const q = (Number(it.quantity)||0) - 1;
+  if(q <= 0){ cart.splice(i,1); } else { cart[i].quantity = q; }
+  saveCart(cart); renderCart();
+}
+
   function removeItem(key){
     const cart = getCart().filter(i => i.key !== key);
     saveCart(cart); renderCart();
@@ -1207,132 +1237,237 @@ next.push({
 
   /* === renderCart with spinner + button state (CHANGED) === */
   async function renderCart() {
-    showSpinner(); /* NEW */
-    if (!allProducts.length) {
-      await fetchInventoryFromSheet();
+  showSpinner();
+  if (!allProducts.length) {
+    await fetchInventoryFromSheet();
+  }
+  let cart = getCart();
+
+  const { cart: fixed, changed, removed, clamped, priced } = reconcileCartWithInventory(cart);
+  if (changed){
+    // we no longer “remove”, but still useful to show qty/price changes
+    openOOSModal(removed, clamped, priced);
+  }
+  cart = fixed;
+
+  const cartContainer = document.getElementById("cart-items");
+  const cartList = document.getElementById("cart-list");
+  cartContainer.innerHTML = "";
+  if (cartList) cartList.innerHTML = "";
+
+  if (cart.length === 0) {
+    cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+    if (cartList) {
+      cartList.innerHTML = `
+        <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
+          <div style="opacity:.75;">Your cart is empty.</div>
+        </div>`;
     }
-    let cart = getCart();
+    window.currentCartSubtotal = 0;
+    updateSummaryTotals(0);
+    updateCheckoutDisabled();
+    hideSpinner();
+    return;
+  }
 
-    const { cart: fixed, changed, removed, clamped, priced } = reconcileCartWithInventory(cart);
-    if (changed){
-      openOOSModal(removed, clamped, priced);
-    }
-    cart = fixed;
+  // Split into groups for rendering
+  const normals = cart.filter(i => !i.status);
+  const holds   = cart.filter(i => i.status === 'hold');
+  const oos     = cart.filter(i => i.status === 'oos');
 
-    const cartContainer = document.getElementById("cart-items");
-    const cartList = document.getElementById("cart-list");
-    cartContainer.innerHTML = "";
-    if (cartList) cartList.innerHTML = "";
+  // Subtotal ONLY includes normal (purchasable) items
+  let subtotal = 0;
 
-    let subtotal = 0;
+  // Helper to render one table row
+  const renderRow = (item) => {
+    const imagePath = item.image || item.image_url || "assets/images/default.png";
+    const qty  = Number(item.quantity) || 0;
+    const unit = Number(item.price) || 0;
+    const line = unit * Math.max(qty, 0);
 
-    if (cart.length === 0) {
-      cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
-      if (cartList) {
-        cartList.innerHTML = `
-          <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
-            <div style="opacity:.75;">Your cart is empty.</div>
-          </div>`;
-      }
-      window.currentCartSubtotal = 0;
-      updateSummaryTotals(0);
-      updateCheckoutDisabled();   /* NEW */
-      hideSpinner();              /* NEW */
-      return;
-    }
+    // Only add to subtotal for normal items
+    if (!item.status) subtotal += line;
 
-    cart.forEach(item => {
-      const row = document.createElement("tr");
-      const imagePath = item.image || item.image_url || "assets/images/default.png";
-      const qty  = Number(item.quantity) || 0;
-      const unit = Number(item.price) || 0;
-      const line = qty * unit;
-      subtotal += line;
+    const isMaxed = qty >= (Number(item.stock) || Infinity);
+    const safeKey = escapeKeyString(item.key);
 
-      const isMaxed = qty >= (Number(item.stock) || Infinity);
-      const safeKey = escapeKeyString(item.key);
+    const disabledCtrls = item.status ? 'aria-disabled="true" data-disabled="1" title="Unavailable"' : '';
 
-      row.innerHTML = `
-        <td class="col-item">
-          <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-            <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-            <div style="min-width:0;">
-              <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
-              <div class="item-attrs">
-                ${(item.series ? `${item.series}` : '')}
-                ${(item.rarity ? ` · ${item.rarity}` : '')}
-                ${(item.condition ? ` · ${item.condition}` : '')}
-              </div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div class="qty-controls">
-            <button class="icon-btn" aria-label="Reduce" onclick="decQty('${safeKey}')">
-              <img src="assets/images/minus%20button.svg" alt="-">
-            </button>
-            <span class="pill">${qty}</span>
-            <button class="icon-btn" aria-label="Add"
-                    onclick="incQty('${safeKey}')"
-                    ${ isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '' }>
-              <img src="assets/images/plus%20button.svg" alt="+">
-            </button>
-            <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
-              <img src="assets/images/bin.svg" alt="Remove">
-            </button>
-          </div>
-        </td>
-        <td>$${unit.toFixed(2)}</td>
-        <td><strong>$${line.toFixed(2)}</strong></td>
-      `;
-      cartContainer.appendChild(row);
+    const statusNote = item.status === 'hold'
+      ? `<div style="font-size:.8rem; color:#b45309; font-weight:600; margin-top:3px;">Temporarily on hold</div>`
+      : item.status === 'oos'
+      ? `<div style="font-size:.8rem; color:#dc2626; font-weight:600; margin-top:3px;">Out of stock</div>`
+      : ``;
 
-      if (cartList) {
-        const ci = document.createElement('div');
-        ci.className = 'cart-item';
-        const isMaxedMobile = isMaxed;
+    const tr = document.createElement("tr");
+    tr.className = item.status === 'hold' ? 'cart-hold'
+               : item.status === 'oos'  ? 'cart-oos'
+               : '';
 
-        ci.innerHTML = `
-          <div class="ci-thumb">
-            <img src="${imagePath}" alt="${item.name || 'Item'}" />
-          </div>
-
-          <div class="ci-meta">
-            <h4 class="ci-name" title="${item.name || ''}">${item.name || ''}</h4>
-            <p class="ci-attrs">
+    tr.innerHTML = `
+      <td class="col-item">
+        <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+          <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+          <div style="min-width:0;">
+            <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
+            <div class="item-attrs">
               ${(item.series ? `${item.series}` : '')}
               ${(item.rarity ? ` · ${item.rarity}` : '')}
               ${(item.condition ? ` · ${item.condition}` : '')}
-            </p>
-            <p class="ci-sub">$${unit.toFixed(2)} each</p>
-            <div class="ci-qty">
-              <button class="icon-btn" aria-label="Reduce" onclick="decQty('${safeKey}')">
-                <img src="assets/images/minus%20button.svg" alt="-">
-              </button>
-              <span class="pill">${qty}</span>
-              <button class="icon-btn" aria-label="Add"
-                onclick="incQty('${safeKey}')"
-                ${ isMaxedMobile ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '' }>
-                <img src="assets/images/plus%20button.svg" alt="+">
-              </button>
-              <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
-                <img src="assets/images/bin.svg" alt="Remove">
-              </button>
             </div>
+            ${statusNote}
           </div>
+        </div>
+      </td>
+      <td class="col-qty">
+        <div class="qty-controls">
+          <button class="icon-btn" aria-label="Reduce"
+                  onclick="decQty('${safeKey}')"
+                  ${item.status ? 'aria-disabled="true"' : ''}>
+            <img src="assets/images/minus%20button.svg" alt="-">
+          </button>
+          <span class="pill">${qty}</span>
+          <button class="icon-btn" aria-label="Add"
+                  onclick="incQty('${safeKey}')"
+                  ${ item.status ? 'aria-disabled="true" title="Unavailable"'
+                                 : (isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '') }>
+            <img src="assets/images/plus%20button.svg" alt="+">
+          </button>
+          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
+            <img src="assets/images/bin.svg" alt="Remove">
+          </button>
+        </div>
+      </td>
+      <td>$${unit.toFixed(2)}</td>
+      <td><strong>$${line.toFixed(2)}</strong></td>
+    `;
+    return tr;
+  };
 
-          <div class="ci-right"><strong>$${line.toFixed(2)}</strong></div>
-        `;
+  // Helper to render one MOBILE card
+  const renderMobileCard = (item) => {
+    const imagePath = item.image || item.image_url || "assets/images/default.png";
+    const qty  = Number(item.quantity) || 0;
+    const unit = Number(item.price) || 0;
+    const line = unit * Math.max(qty, 0);
 
-        cartList.appendChild(ci);
-      }
-    });
+    const safeKey = escapeKeyString(item.key);
+    const isMaxedMobile = qty >= (Number(item.stock) || Infinity);
 
-    window.currentCartSubtotal = subtotal;
-    updateSummaryTotals(subtotal);
-    updateCheckoutDisabled(); /* NEW */
-    hideSpinner();            /* NEW */
+    const statusNote = item.status === 'hold'
+      ? `<div style="font-size:.7rem; color:#b45309; font-weight:700; margin-top:2px;">Temporarily on hold</div>`
+      : item.status === 'oos'
+      ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Out of stock</div>`
+      : ``;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'cart-item ' + (item.status === 'hold' ? 'ci-hold' : item.status === 'oos' ? 'ci-oos' : '');
+
+    wrap.innerHTML = `
+      <div class="ci-thumb">
+        <img src="${imagePath}" alt="${item.name || 'Item'}" />
+      </div>
+
+      <div class="ci-meta">
+        <h4 class="ci-name" title="${item.name || ''}">${item.name || ''}</h4>
+        <p class="ci-attrs">
+          ${(item.series ? `${item.series}` : '')}
+          ${(item.rarity ? ` · ${item.rarity}` : '')}
+          ${(item.condition ? ` · ${item.condition}` : '')}
+        </p>
+        ${statusNote}
+        <p class="ci-sub">$${unit.toFixed(2)} each</p>
+        <div class="ci-qty">
+          <button class="icon-btn" aria-label="Reduce"
+                  onclick="decQty('${safeKey}')"
+                  ${item.status ? 'aria-disabled="true"' : ''}>
+            <img src="assets/images/minus%20button.svg" alt="-">
+          </button>
+          <span class="pill">${qty}</span>
+          <button class="icon-btn" aria-label="Add"
+            onclick="incQty('${safeKey}')"
+            ${ item.status ? 'aria-disabled="true" title="Unavailable"'
+                           : (isMaxedMobile ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '') }>
+            <img src="assets/images/plus%20button.svg" alt="+">
+          </button>
+          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
+            <img src="assets/images/bin.svg" alt="Remove">
+          </button>
+        </div>
+      </div>
+
+      <div class="ci-right"><strong>$${line.toFixed(2)}</strong></div>
+    `;
+    return wrap;
+  };
+
+  // Render desktop table, grouped
+  const appendGroupHeader = (label, color) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:${color}; background:#fafafa;">${label}</td>`;
+    cartContainer.appendChild(tr);
+  };
+
+  // Normal
+  if (normals.length) {
+    normals.forEach(item => cartContainer.appendChild(renderRow(item)));
+  } else {
+    // If no normals but some holds/oos, still show a helpful line
+    if (holds.length || oos.length) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">No items currently available to purchase.</td>`;
+      cartContainer.appendChild(tr);
+    }
   }
+
+  // On Hold
+  if (holds.length) {
+    appendGroupHeader('On Hold', '#b45309');
+    holds.forEach(item => cartContainer.appendChild(renderRow(item)));
+  }
+
+  // Out of Stock
+  if (oos.length) {
+    appendGroupHeader('Out of Stock', '#dc2626');
+    oos.forEach(item => cartContainer.appendChild(renderRow(item)));
+  }
+
+  // Mobile list
+  if (cartList) {
+    const addMobileGroupHeader = (label, color) => {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:6px 8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; margin-top:4px;';
+      d.innerHTML = `<span style="color:${color};">${label}</span>`;
+      cartList.appendChild(d);
+    };
+
+    if (normals.length) {
+      normals.forEach(item => cartList.appendChild(renderMobileCard(item)));
+    } else if (holds.length || oos.length) {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:8px; text-align:center; opacity:.8;';
+      d.textContent = 'No items currently available to purchase.';
+      cartList.appendChild(d);
+    }
+
+    if (holds.length) {
+      addMobileGroupHeader('On Hold', '#b45309');
+      holds.forEach(item => cartList.appendChild(renderMobileCard(item)));
+    }
+
+    if (oos.length) {
+      addMobileGroupHeader('Out of Stock', '#dc2626');
+      oos.forEach(item => cartList.appendChild(renderMobileCard(item)));
+    }
+  }
+
+  // Totals (only normals)
+  window.currentCartSubtotal = subtotal;
+  updateSummaryTotals(subtotal);
+  updateCheckoutDisabled();
+  hideSpinner();
+}
+
 
   function clearCart() {
     localStorage.removeItem("cart");
@@ -1346,25 +1481,33 @@ next.push({
   }
 
   function checkout() {
-    if (!disclaimersAccepted()) {
-      alert("Please accept both disclaimers before proceeding to checkout.");
-      return;
-    }
-    window.location.href = "checkout2.html";
+  const cart = getCart();
+  const hasPurchasable = cart.some(i => !i.status && (Number(i.quantity)||0) > 0);
+  if (!hasPurchasable) {
+    alert("Your cart has no available items to purchase yet.");
+    return;
   }
+  if (!disclaimersAccepted()) {
+    alert("Please accept both disclaimers before proceeding to checkout.");
+    return;
+  }
+  window.location.href = "checkout2.html";
+}
+
 
   /* === Enable only when cart has items AND disclaimers checked (CHANGED) === */
   function updateCheckoutDisabled(){
-    const btn = document.getElementById('checkoutBtn');
-    if(!btn) return;
+  const btn = document.getElementById('checkoutBtn');
+  if(!btn) return;
 
-    const cart = getCart();
-    const hasItems = cart.length > 0;
-    const disclaimersOk = disclaimersAccepted();
+  const cart = getCart();
+  const hasPurchasable = cart.some(i => !i.status && (Number(i.quantity)||0) > 0);
+  const disclaimersOk = disclaimersAccepted();
 
-    const enabled = hasItems && disclaimersOk;
-    btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
-  }
+  const enabled = hasPurchasable && disclaimersOk;
+  btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+}
+
 
   // === Restore selections & bind change handlers when DOM is ready ===
   document.addEventListener('DOMContentLoaded', () => {
@@ -1586,8 +1729,17 @@ next.push({
   0% { transform: rotate(0deg);}
   100% { transform: rotate(360deg);}
 }
-</style>
 
-      
+/* Status styling for grouped lines */
+.cart-hold td, .ci-hold { 
+  background:#1f25de;   /* soft amber */
+  opacity:.85;
+}
+.cart-oos td, .ci-oos { 
+  background:#fee2e2;   /* soft red */
+  opacity:.8;
+}
+
+</style>      
 </body>
 </html>
