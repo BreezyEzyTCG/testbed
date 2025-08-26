@@ -336,6 +336,27 @@ const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8
 /* ===== Inventory reservation API (Apps Script Web App) ===== */
 const INVENTORY_API = 'https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec'; 
 
+  // Same normalizer you use on cart page (short version)
+function normalizeCart(arr){
+  return (arr || []).map(i => {
+    const obj = { ...i };
+    obj.category    = obj.category    ?? '';
+    obj.subcategory = obj.subcategory ?? '';
+    // keep existing key; cart page already upgrades it
+    return obj;
+  });
+}
+
+function getCart(){
+  try{
+    const raw = JSON.parse(localStorage.getItem("cart") || "[]");
+    return normalizeCart(Array.isArray(raw) ? raw : []);
+  }catch{ return []; }
+}
+
+// A line is purchasable only if it has NO status flag and has qty > 0
+const isPurchasable = i => !i.status && (Number(i.quantity)||0) > 0;
+
 // Replace your old fetch-based functions with these:
 async function apiHold(items, userRef){
   return await jsonpFetchB64(INVENTORY_API, 'hold', { items, user_ref: userRef || '' });
@@ -484,17 +505,19 @@ function getShippingSafe(){
   catch { return null; }
 }
 function cartFingerprint(){
-  const cart = getCartSafe().map(i => ({
-    name: i.name || '',
-    price: Number(i.price || 0),
-    qty: Number(i.qty ?? i.quantity ?? 1),
-    // include any attrs that affect price if you have them:
-    set: i.set || i.subcategory || '',
-    year: i.year || i.release_year || ''
-  }));
+  const cart = getCartSafe()
+    .filter(isPurchasable)                      // ✅ match what we charge
+    .map(i => ({
+      name: i.name || '',
+      price: Number(i.price || 0),
+      qty: Number(i.qty ?? i.quantity ?? 1),
+      set: i.set || i.subcategory || '',
+      year: i.year || i.release_year || ''
+    }));
   const ship = getShippingSafe();
   return JSON.stringify({ cart, shipId: ship?.id || ship?.label || '' });
 }
+
 function totalCentsFromText(s){
   const n = Number(String(s).replace(/[^0-9.]/g,''));
   return Math.round((Number.isFinite(n) ? n : 0) * 100);
@@ -998,59 +1021,70 @@ function renderSummary(){
   const totalEl    = document.getElementById('sumTotal');
 
   const cart = getCart();
+  const purch = cart.filter(isPurchasable);                 // ✅ only chargeable lines
+  const excludedCount = cart.length - purch.length;
 
-  const rows = cart.map(i => {
+  const rows = purch.map(i => {
     const qty  = Number(i.qty ?? i.quantity ?? 1);
     const unit = Number(i.price ?? 0);
-    const q    = Number.isFinite(qty) && qty > 0 ? qty : 1;
+    const q    = Math.max(1, qty|0);
     const line = unit * q;
-
     const name  = i.name || 'Item';
     const attrs = formatAttrs(i);
-
-    const left = `
-      <div class="sum-item">
-        <div class="name">${escapeHtml(name)}${q > 1 ? ` × ${q}` : ''}</div>
-        ${attrs ? `<div class="attrs">${escapeHtml(attrs)}</div>` : ''}
-      </div>
-    `;
-
-    return `<div class="sum-row">
-              <span>${left}</span>
-              <span class="price">${fmt(line)}</span>
-            </div>`;
+    return `
+      <div class="sum-row">
+        <span>
+          <div class="sum-item">
+            <div class="name">${escapeHtml(name)}${q > 1 ? ` × ${q}` : ''}</div>
+            ${attrs ? `<div class="attrs">${escapeHtml(attrs)}</div>` : ''}
+          </div>
+        </span>
+        <span class="price">${fmt(line)}</span>
+      </div>`;
   }).join('');
 
-  if (itemsEl) itemsEl.innerHTML = rows || '<div class="hint">No items.</div>';
+  if (itemsEl) {
+    itemsEl.innerHTML =
+      rows ||
+      `<div class="hint">No purchasable items. Items on hold/out-of-stock are not charged.</div>`;
+    if (excludedCount > 0) {
+      itemsEl.insertAdjacentHTML('beforeend',
+        `<div class="hint" style="margin-top:6px;">
+           ${excludedCount} item${excludedCount>1?'s':''} excluded (on hold / out of stock)
+         </div>`);
+    }
+  }
 
-  const subtotal = cart.reduce((s, i) => {
+  const subtotal = purch.reduce((s, i) => {
     const qty  = Number(i.qty ?? i.quantity ?? 1);
     const unit = Number(i.price ?? 0);
-    const q    = Number.isFinite(qty) && qty > 0 ? qty : 1;
-    return s + (unit * q);
+    return s + (unit * Math.max(1, qty|0));
   }, 0);
 
-  const saved  = getSavedShippingFromCart();
-  const ship   = Number(saved?.fee ?? 0);
+  const saved = getSavedShippingFromCart();
+  const ship  = Number(saved?.fee ?? 0);
 
   if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
   if (shippingEl) shippingEl.textContent = fmt(ship);
   if (totalEl)    totalEl.textContent    = fmt(subtotal + ship);
 }
 
+
   /* Build reservation items from the cart (server uses these to match rows) */
 function buildHoldItemsFromCart(){
-  const cart = getCart();
-  return cart.map(i => ({
-    name: String(i.name || 'Item'),
-    category: String(i.category || ''),
-    subcategory: String(i.subcategory || i.set || ''),
-    rarity: String(i.rarity || ''),
-    condition: String(i.condition || ''),
-    series_name: String(normSeries(i) || ''), // uses your normSeries helper
-    qty: Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1)
-  }));
+  return getCart()
+    .filter(isPurchasable)                     // ✅ do not send hold/oos to backend
+    .map(i => ({
+      name: String(i.name || 'Item'),
+      category: String(i.category || ''),
+      subcategory: String(i.subcategory || i.set || ''),
+      rarity: String(i.rarity || ''),
+      condition: String(i.condition || ''),
+      series_name: String(normSeries(i) || ''),
+      qty: Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1)
+    }));
 }
+
   
   function gatherOrderPayload() {
   // 1) Get form values
@@ -1066,27 +1100,28 @@ function buildHoldItemsFromCart(){
   const methodLabel   = v('fMethodLabel');
   const methodId      = v('fMethod');
 
-  // 2) Cart summary (reuse helpers you already have)
+    // 2) Cart summary (chargeables only)
   const cart = getCart();
+  const purch = cart.filter(isPurchasable);    // ✅
   const savedShip = getSavedShippingFromCart();
   const shipFee   = Number(savedShip?.fee ?? 0);
 
   let subtotal = 0;
-  const items = cart.map(i => {
-    const qty  = Number(i.qty ?? i.quantity ?? 1) || 1;
+  const items = purch.map(i => {
+    const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
     const unit = Number(i.price ?? 0) || 0;
     const line = unit * qty;
     subtotal  += line;
 
-    const attrs = formatAttrs(i);
     return {
       name: String(i.name || 'Item'),
-      attrs,
+      attrs: formatAttrs(i),
       qty,
       unit_price: unit,
       line_total: line
     };
   });
+
 
   const totals = {
     subtotal,
@@ -1119,19 +1154,19 @@ function isValidShipForm(){
     if (!el || !el.value || (el.validity && !el.validity.valid)) return false;
   }
   const agree = document.getElementById('disc1');
-  return !!(agree && agree.checked);
+  const hasPurch = getCart().some(isPurchasable);           // ✅
+  return !!(agree && agree.checked && hasPurch);
 }
 
 function syncPayCta(){
   const cta = document.getElementById('btnPay');
   if (!cta) return;
-
   const ok = isValidShipForm();
-  if (ok) cta.removeAttribute('disabled');
-  else cta.setAttribute('disabled','');
-
+  cta.toggleAttribute('disabled', !ok);
   cta.classList.add('show');
+  cta.title = ok ? '' : 'Add at least one available item to proceed.';
 }
+
 
 /* ========= Init ========= */
 function init(){
