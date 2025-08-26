@@ -578,19 +578,19 @@ async function openQrCreateNew(){
     return;
   }
   if (!holdRes?.ok) {
-    const problems = (holdRes?.lacks || []).map(x => {
-      const name   = x?.item?.name || 'Item';
-      const reason = x?.reason || 'UNAVAILABLE';
-      const left   = (typeof x?.available === 'number') ? ` (left: ${x.available})` : '';
-      return `• ${name} — ${reason}${left}`;
-    }).join('\n');
+  const problems = (holdRes?.lacks || []).map(x => {
+    const name   = x?.item?.name || 'Item';
+    const reason = x?.reason || 'UNAVAILABLE';
+    const left   = (typeof x?.available === 'number') ? ` (left: ${x.available})` : '';
+    return `• ${name} — ${reason}${left}`;
+  }).join('\n');
 
-    alert(problems
-      ? `Some items can’t be reserved:\n\n${problems}\n\nPlease update your cart and try again.`
-      : (holdRes?.error || 'Could not reserve stock. Please review your cart and try again.')
-    );
-    return;
-  }
+  alert(problems
+    ? `Some items can’t be reserved:\n\n${problems}\n\nPlease update your cart and try again.`
+    : (holdRes?.error || 'Could not reserve stock. Please review your cart and try again.')
+  );
+  return;
+}
 
   const holdId    = holdRes.hold_id;
   const holdToken = holdRes.hold_token;
