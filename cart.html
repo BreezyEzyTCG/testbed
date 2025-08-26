@@ -1355,10 +1355,6 @@ async function renderCart() {
       const isMaxed = qty >= (Number(item.stock) || Infinity);
       const safeKey = escapeKeyString(item.key);
 
-      const statusNote = item.status === 'oos'
-        ? `<div style="font-size:.8rem; color:#dc2626; font-weight:600; margin-top:3px;">Out of stock</div>`
-        : ``;
-
       const tr = document.createElement("tr");
       tr.className = item.status === 'oos' ? 'cart-oos' : '';
       tr.innerHTML = `
