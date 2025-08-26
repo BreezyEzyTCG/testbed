@@ -565,43 +565,38 @@ async function openQrCreateNew(){
   const orderId   = genOrderId();
   currentOrderId  = orderId;
 
-  // NEW: build hold items from cart
+  // 1) Build items to reserve
   const holdItems = buildHoldItemsFromCart();
+  const userRef   = (document.getElementById('fEmail')?.value || '').trim();
 
-  // Optional: use email as a user reference once form is valid
-  const userRef = (document.getElementById('fEmail')?.value || '').trim();
+  // 2) Place reservation
+  let holdRes;
+  try {
+    holdRes = await apiHold(holdItems, userRef);
+  } catch (err) {
+    alert('Could not reach the reservation server. Please try again.');
+    return;
+  }
+  if (!holdRes?.ok) {
+    const problems = (holdRes?.lacks || []).map(x => {
+      const name   = x?.item?.name || 'Item';
+      const reason = x?.reason || 'UNAVAILABLE';
+      const left   = (typeof x?.available === 'number') ? ` (left: ${x.available})` : '';
+      return `• ${name} — ${reason}${left}`;
+    }).join('\n');
 
-  // 🔴 Reserve inventory
-let holdRes;
-try {
-  holdRes = await apiHold(holdItems, userRef);
-} catch (err) {
-  alert('Could not reach the reservation server. Please try again.');
-  return;
-}
+    alert(problems
+      ? `Some items can’t be reserved:\n\n${problems}\n\nPlease update your cart and try again.`
+      : (holdRes?.error || 'Could not reserve stock. Please review your cart and try again.')
+    );
+    return;
+  }
 
-if (!holdRes?.ok) {
-  const problems = (holdRes?.lacks || []).map(x => {
-    const name = x?.item?.name || 'Item';
-    const reason = x?.reason || 'UNAVAILABLE';
-    const left = (typeof x?.available === 'number') ? ` (left: ${x.available})` : '';
-    return `• ${name} — ${reason}${left}`;
-  }).join('\n');
+  const holdId    = holdRes.hold_id;
+  const holdToken = holdRes.hold_token;
 
-  alert(problems
-    ? `Some items can’t be reserved:\n\n${problems}\n\nPlease update your cart and try again.`
-    : (holdRes?.error || 'Could not reserve stock. Please review your cart and try again.')
-  );
-  return;
-}
-
-// ✅ success → continue
-const holdId    = holdRes.hold_id;
-const holdToken = holdRes.hold_token;
-
-// …then your PayNow JSONP call, QR render, draft save, etc.
-
-
+  // 3) Try to generate PayNow QR. If this fails, cancel the reservation in catch.
+  try {
     const res = await jsonpFetch(PAYNOW_API, {
       endpoint: 'pay',
       amount: totalNum.toFixed(2),
@@ -615,47 +610,43 @@ const holdToken = holdRes.hold_token;
 
     renderQr(res.payload);
 
-    // === Save draft for 15-min persistence ===
-const draft = {
-  orderId: orderId,
-  qrPayload: res.payload,
-  endTime: Date.now() + TIMER_MS,
-  amountText: totalText,
-  payToLabel: res.payToLabel || 'PayNow',
-  createdAt: Date.now(),
-  cartHash: cartFingerprint(),
-  totalCents: totalCentsFromText(totalText), // keep cents
-  // persist the reservation
-  holdId,
-  holdToken
-};
+    // 4) Save draft (so modal survives reloads)
+    const draft = {
+      orderId,
+      qrPayload: res.payload,
+      endTime: Date.now() + TIMER_MS,
+      amountText: totalText,
+      payToLabel: res.payToLabel || 'PayNow',
+      createdAt: Date.now(),
+      cartHash: cartFingerprint(),
+      totalCents: totalCentsFromText(totalText),
+      holdId,
+      holdToken
+    };
     setDraft(draft);
 
-    // === Reserve in Sheets (create/refresh the "to-be order") ===
-try {
-  const payload = gatherOrderPayload();
-  payload.order_id   = orderId;
-  payload.expires_at = formatDDMMYYYYHHMM(new Date(Date.now() + TIMER_MS))
-  .replace(/\//g,'-')
-  .replace(',', '');
+    // 5) Ping your reserve logger (no-cors fire-and-forget)
+    try {
+      const payload = gatherOrderPayload();
+      payload.order_id   = orderId;
+      payload.expires_at = formatDDMMYYYYHHMM(new Date(Date.now() + TIMER_MS)).replace(/\//g,'-').replace(',', '');
+      payload.hold_id    = holdId;
+      payload.hold_token = holdToken;
+      payload.qr_payload = res.payload;
+      payload.action     = 'reserve';
+      payload.source     = 'checkout';
 
-  payload.hold_id    = holdId;
-  payload.hold_token = holdToken;
-  payload.qr_payload = res.payload;
-  payload.action     = 'reserve';
-  payload.source     = 'checkout';
+      const RESERVE_API = 'https://script.google.com/macros/s/AKfycbyNAIzqGn_dRSfuG08mHewR5dX-ki9-a1g6Rr-Ztc5wlvEqqz0iXjDIEgO8UhBWSHndog/exec';
+      fetch(RESERVE_API, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn('[reserve] send failed:', err));
+    } catch (e) {
+      console.warn('[reserve] payload build failed:', e);
+    }
 
-  const RESERVE_API = 'https://script.google.com/macros/s/AKfycbyNAIzqGn_dRSfuG08mHewR5dX-ki9-a1g6Rr-Ztc5wlvEqqz0iXjDIEgO8UhBWSHndog/exec';
-
-  fetch(RESERVE_API, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  }).catch(err => console.warn('[reserve] send failed:', err));
-} catch (e) {
-  console.warn('[reserve] payload build failed:', e);
-}
     sessionStorage.setItem('pendingOrder', JSON.stringify({ id: orderId, total: totalText }));
 
     endTime = Date.now() + TIMER_MS;
@@ -666,12 +657,12 @@ try {
 
     try { history.pushState({qr:true}, '', location.href); } catch {}
   } catch (err) {
-  console.error('[PayNow] fetch failed:', err);
-  // cancel the reservation we just made
-  try { await apiCancel(holdId, holdToken, 'PAYNOW_FAIL'); } catch {}
-  alert('Sorry, we could not generate the payment QR right now. Please try again.');
+    console.error('[PayNow] fetch failed:', err);
+    try { await apiCancel(holdId, holdToken, 'PAYNOW_FAIL'); } catch {}
+    alert('Sorry, we could not generate the payment QR right now. Please try again.');
+  }
 }
-}
+
 // Guarded public opener: reuse existing draft if still valid
 async function openQr(formData){
  const d = getDraft();
