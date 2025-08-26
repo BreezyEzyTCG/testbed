@@ -803,15 +803,14 @@
     `);
   }
 
-  if (nowHold.length){
+  if (nowOos.length){
     parts.push(`
-      <h4>Temporarily on hold:</h4>
+      <h4>Now out of stock:</h4>
       <ul class="oos-list">
-        ${nowHold.map(({name, attrs}) => `
+        ${nowOos.map(({name, attrs}) => `
           <li class="oos-item">
             <span class="name">${escapeHtml(name)}</span>
             ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
-            <span class="status-note">(unavailable until released)</span>
           </li>
         `).join('')}
       </ul>
@@ -860,11 +859,11 @@
   return parts.join('');
 }
 
-  function openOOSModal(removed = [], clamped = [], priced = [], nowHold = []){
+  function openOOSModal(removed = [], clamped = [], priced = [], nowOos = []){
   const modal = document.getElementById('oosModal');
   if (!modal) return;
   const body = modal.querySelector('.oos-body');
-  body.innerHTML = buildOOSModalHTML(removed, clamped, priced, nowHold);
+  body.innerHTML = buildOOSModalHTML(removed, clamped, priced, nowOos);
   modal.hidden = false;
 
   const okBtn = modal.querySelector('.oos-primary') || modal.querySelector('button');
