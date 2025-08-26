@@ -1353,22 +1353,22 @@ window.addEventListener('popstate', () => {
   }
 });
 
+// Make sure DRAFT_KEY is defined above this
+// const DRAFT_KEY = '...';
+
 window.addEventListener('storage', async (e) => {
   if (e.key !== DRAFT_KEY) return;
 
   const d = getDraft();
 
-  // If draft was cleared or expired in another tab → close here too
   if (!d || isExpired(d)) {
-  if (countdown) { clearInterval(countdown); countdown = null; }
-  // cancel if we still have a live hold
-  if (d?.holdId && d?.holdToken) {
-    try { await apiCancel(d.holdId, d.holdToken, 'EXTERNAL_CLEAR'); } catch {}
+    if (countdown) { clearInterval(countdown); countdown = null; }
+    if (d?.holdId && d?.holdToken) {
+      try { await apiCancel(d.holdId, d.holdToken, 'EXTERNAL_CLEAR'); } catch {}
+    }
+    closeQr();
+    return;
   }
-  closeQr();
-  return;
-}
-
 
   // Mirror an updated still-valid draft
   currentOrderId = d.orderId || currentOrderId;
@@ -1382,6 +1382,7 @@ window.addEventListener('storage', async (e) => {
   document.getElementById('qrModal').hidden = false;
   isModalOpen = true;
 });
+
 
 document.addEventListener('keydown', (e) => {
   const isRefreshKey = (e.key === 'F5') || ((e.key?.toLowerCase?.() === 'r') && (e.ctrlKey || e.metaKey));
