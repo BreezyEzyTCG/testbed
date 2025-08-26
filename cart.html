@@ -807,7 +807,7 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
 
   if (nowHold?.length){
     parts.push(`
-      <h4>Now on hold:</h4>
+      <h4>On hold — someone is finalizing payment for these items:</h4>
       <ul class="oos-list">
         ${nowHold.map(({name, attrs}) => `
           <li class="oos-item">
@@ -821,7 +821,7 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
 
   if (clamped?.length){
     parts.push(`
-      <h4>Adjusted quantity to what's left:</h4>
+      <h4>Adjusted quantity to what's available:</h4>
       <ul class="oos-list">
         ${clamped.map(({name, attrs, before, after}) => `
           <li class="oos-item">
@@ -1355,7 +1355,7 @@ async function renderCart() {
       const statusNote = item.status === 'oos'
     ? `<div style="font-size:.8rem; color:#dc2626; font-weight:600; margin-top:3px;">Out of stock</div>`
     : item.status === 'hold'
-    ? `<div style="font-size:.8rem; color:#b45309; font-weight:600; margin-top:3px;">Temporarily on hold</div>`
+    ? `<div style="font-size:.8rem; color:#DC2626; font-weight:600; margin-top:3px;">On hold</div>`
     : ``;
 
 
@@ -1421,7 +1421,7 @@ async function renderCart() {
       const statusNote = item.status === 'oos'
   ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Gone, for now:</div>`
   : item.status === 'hold'
-  ? `<div style="font-size:.7rem; color:#b45309; font-weight:700; margin-top:2px;">Temporarily on hold</div>`
+  ? `<div style="font-size:.7rem; color:#DC2626; font-weight:700; margin-top:2px;">On hold</div>`
   : ``;
 
       const wrap = document.createElement('div');
@@ -1777,7 +1777,7 @@ async function renderCart() {
 
 /* Status styling for grouped lines */
 .cart-hold td, .ci-hold { 
-  background:#b9b9b9;   
+  background:#FFC481;   
   opacity:.85;
 }
 .cart-oos td, .ci-oos { 
