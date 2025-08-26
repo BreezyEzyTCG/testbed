@@ -1567,12 +1567,22 @@ allProducts = rows.map(src => {
   container.innerHTML = "";
 
   list.forEach((p) => {
-    // backend should already give Stock = buyable units, Reserved, and StatusLabel
-    const available   = safeNumber(p.stock, 0);
-    const reserved    = safeNumber(p.reserved, 0);
+    const available   = safeNumber(p.stock, 0);                 // buyable units (Stock − Reserved from backend)
+    const reserved    = safeNumber(p.reserved ?? p.Reserved, 0);
     const statusLabel = String(p.statuslabel || p.status_label || '').trim();
     const price       = safeNumber(p.price, 0);
     const out         = available <= 0;
+
+    // ---- decide status line to show on the card
+    let displayStatus = '';
+    if (available > 0 && reserved > 0) {
+      displayStatus = 'Some units on hold';
+    } else if (available === 0 && reserved > 0) {
+      displayStatus = statusLabel || 'On hold — may free up soon';
+    } else if (available === 0 && reserved === 0) {
+      displayStatus = 'Out of stock';
+    }
+    // ---------------------------------------------
 
     const badge = getBadgeInfo(p.badge);
     const esc = s => String(s||'').replace(/'/g,"\\'");
@@ -1602,17 +1612,15 @@ allProducts = rows.map(src => {
         <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
         <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
         <p class="stock"><strong>Stock:</strong> ${available}</p>
-        ${statusLabel ? `<p class="status-line">${statusLabel}</p>` : ``}
+        ${displayStatus ? `<p class="status-line">${displayStatus}</p>` : ``}
       </div>
       <div class="product-actions">
-        <button type="button" ${btnAttrs}>${out ? (statusLabel || "Out of Stock") : "Add to Cart"}</button>
+        <button type="button" ${btnAttrs}>${out ? (displayStatus || "Out of Stock") : "Add to Cart"}</button>
       </div>
     `;
     container.appendChild(card);
   });
 }
-
-
 
     /* ---------- Dropdown population ---------- */
     // Case-insensitive, trimmed, de-duplicated, alphabetically sorted
