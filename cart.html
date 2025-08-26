@@ -1056,31 +1056,31 @@
   }
 
   /* ===== Reconcile cart with live inventory ===== */
-  function reconcileCartWithInventory(cart){
+  /* ===== Reconcile cart with live inventory ===== */
+function reconcileCartWithInventory(cart){
   let changed = false;
+  const removed = [];          // we keep items instead of removing; left for API symmetry
   const clamped = [];
   const priced  = [];
-  const nowOos  = [];      // items that just became out of stock
-  const next = [];
+  const nowOos  = [];          // items that just became out of stock
+  const next    = [];
 
-  const differs = (a, b) => {
-    // Only compare fields we mutate in reconcile
-    return (
-      a.key !== b.key ||
-      a.price !== b.price ||
-      a.stock !== b.stock ||
-      a.quantity !== b.quantity ||
-      (a.status || '') !== (b.status || '') ||
-      (a.category || '') !== (b.category || '') ||
-      (a.subcategory || '') !== (b.subcategory || '')
-    );
-  };
+  // compare only the fields we mutate
+  const differs = (a, b) => (
+    a.key !== b.key ||
+    Number(a.price) !== Number(b.price) ||
+    Number(a.stock) !== Number(b.stock) ||
+    Number(a.quantity) !== Number(b.quantity) ||
+    (a.status || '') !== (b.status || '') ||
+    (a.category || '') !== (b.category || '') ||
+    (a.subcategory || '') !== (b.subcategory || '')
+  );
 
   for (const item of cart){
     const prod = prodByNewKey.get(item.key) || prodByOldKey.get(item.key);
     const { name, attrs } = splitNameAndAttrs(item);
 
-    // Helper to finish an item with change detection
+    // util: push & mark change; optionally record OOS transition
     const pushWithChangeCheck = (newItem, transitionedToOos=false) => {
       if (differs(item, newItem)) {
         changed = true;
@@ -1089,29 +1089,13 @@
       next.push(newItem);
     };
 
-    // Product row gone ⇒ treat as OOS
+    // === Case 1: product row missing entirely -> treat as OOS (keep user's qty!)
     if (!prod) {
-      const newItem = { ...item, stock: 0, quantity: 0, status: 'oos' };
-      const transitioned = item.status !== 'oos';
-      pushWithChangeCheck(newItem, transitioned);
-      continue;
-    }
-
-    const max = Number(prod.stock) || 0;
-    const upgradedKey = makeKey({
-      name: prod.name, series: prod["series name"], rarity: prod.rarity,
-      condition: prod.condition, category: prod.category, subcategory: prod.subcategory
-    });
-    const newPrice = Number(prod.price) || 0;
-
-    // OOS if stock ≤ 0
-    if (max <= 0) {
       const newItem = {
         ...item,
-        key: upgradedKey,
-        price: newPrice,
         stock: 0,
-        quantity: Number(item.quantity) || 1,   // keep context
+        // IMPORTANT: keep previous quantity so when inventory revives we can clamp & show modal
+        quantity: Number(item.quantity) || 1,
         status: 'oos'
       };
       const transitioned = item.status !== 'oos';
@@ -1119,30 +1103,61 @@
       continue;
     }
 
-    // Normal in-stock
-    const beforeQty = Number(item.quantity) || 0;
-    const afterQty  = Math.min(beforeQty || 1, max);
-    if (afterQty !== beforeQty) clamped.push({ name, attrs, before: beforeQty, after: afterQty });
+    const maxStock    = Math.max(0, Number(prod.stock) || 0);
+    const upgradedKey = makeKey({
+      name: prod.name,
+      series: prod["series name"],
+      rarity: prod.rarity,
+      condition: prod.condition,
+      category: prod.category,
+      subcategory: prod.subcategory
+    });
+    const priceNow = Number(prod.price) || 0;
+
+    // === Case 2: exists but stock == 0 -> OOS (keep user's qty for later clamp)
+    if (maxStock <= 0) {
+      const newItem = {
+        ...item,
+        key: upgradedKey,
+        price: priceNow,
+        stock: 0,
+        quantity: Number(item.quantity) || 1, // keep context
+        status: 'oos'
+      };
+      const transitioned = item.status !== 'oos';
+      pushWithChangeCheck(newItem, transitioned);
+      continue;
+    }
+
+    // === Case 3: in stock -> normal line, clamp qty if needed (covers "revival" too)
+    const beforeQty = Math.max(0, Number(item.quantity) || 0);
+    const afterQty  = Math.min(beforeQty || 1, maxStock);
+    if (afterQty !== beforeQty) {
+      // This fires both when stock dropped AND when an OOS item revived but desired qty > stock
+      clamped.push({ name, attrs, before: beforeQty, after: afterQty });
+    }
 
     const beforePrice = Number(item.price) || 0;
-    if (beforePrice !== newPrice) priced.push({ name, attrs, before: beforePrice, after: newPrice });
+    if (beforePrice !== priceNow) {
+      priced.push({ name, attrs, before: beforePrice, after: priceNow });
+    }
 
     const newItem = {
       ...item,
       key: upgradedKey,
       category: item.category ?? prod.category ?? '',
       subcategory: item.subcategory ?? prod.subcategory ?? '',
-      price: newPrice,
-      stock: max,
+      price: priceNow,
+      stock: maxStock,
       quantity: afterQty,
-      status: ''  // purchasable
+      status: '' // purchasable again if it was 'oos'
     };
 
     pushWithChangeCheck(newItem, /*transitionedToOos=*/false);
   }
 
   if (changed) saveCart(next);
-  return { cart: next, changed, removed: [], clamped, priced, nowOos };
+  return { cart: next, changed, removed, clamped, priced, nowOos };
 }
 
   /* ===== Shipping + Add-ons ===== */
@@ -1248,206 +1263,225 @@ function decQty(key){
   }
 
   /* === renderCart with spinner + button state (CHANGED) === */
-  async function renderCart() {
+  /* === renderCart with spinner + button state (FINAL) === */
+async function renderCart() {
   showSpinner();
-  if (!allProducts.length) { await fetchInventoryFromSheet(); }
-  let cart = getCart();
-
-  const { cart: fixed, changed, removed, clamped, priced, nowOos } =
-  reconcileCartWithInventory(cart);
-
-// Only show the modal when there are user-visible changes
-const hasVisibleDiffs =
-  (removed && removed.length) ||
-  (clamped && clamped.length) ||
-  (priced  && priced.length)  ||
-  (nowOos  && nowOos.length);
-
-if (hasVisibleDiffs) {
-  openOOSModal(removed, clamped, priced, nowOos);
-}
-
-cart = fixed;
-
-  const cartContainer = document.getElementById("cart-items");
-  const cartList = document.getElementById("cart-list");
-  cartContainer.innerHTML = "";
-  if (cartList) cartList.innerHTML = "";
-
-  if (cart.length === 0) {
-    cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
-    if (cartList) {
-      cartList.innerHTML = `
-        <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
-          <div style="opacity:.75;">Your cart is empty.</div>
-        </div>`;
+  try {
+    // 1) Make sure we have fresh inventory
+    if (!allProducts.length) {
+      await fetchInventoryFromSheet();
     }
-    window.currentCartSubtotal = 0;
-    updateSummaryTotals(0);
-    updateCheckoutDisabled();
-    hideSpinner();
-    return;
-  }
 
-  // Groups: purchasable vs OOS
-  const normals = cart.filter(i => !i.status);
-  const oos     = cart.filter(i => i.status === 'oos');
+    // 2) Read current cart and reconcile with live inventory
+    let cart = getCart();
+    const { cart: fixed, removed, clamped, priced, nowOos } =
+      reconcileCartWithInventory(cart);
 
-  let subtotal = 0;
+    // Only show the modal when there are user-visible changes
+    const hasVisibleDiffs =
+      (removed && removed.length) ||
+      (clamped && clamped.length) ||
+      (priced  && priced.length)  ||
+      (nowOos  && nowOos.length);
 
-  const renderRow = (item) => {
-    const imagePath = item.image || item.image_url || "assets/images/default.png";
-    const qty  = Number(item.quantity) || 0;
-    const unit = Number(item.price) || 0;
-    const line = unit * Math.max(qty, 0);
+    if (hasVisibleDiffs) {
+      openOOSModal(removed, clamped, priced, nowOos);
+    }
 
-    if (!item.status) subtotal += line;
+    // Use the reconciled cart for rendering
+    cart = fixed;
 
-    const isMaxed = qty >= (Number(item.stock) || Infinity);
-    const safeKey = escapeKeyString(item.key);
+    // 3) Prepare DOM targets
+    const cartContainer = document.getElementById("cart-items");
+    const cartList      = document.getElementById("cart-list");
+    if (cartContainer) cartContainer.innerHTML = "";
+    if (cartList)      cartList.innerHTML = "";
 
-    const statusNote = item.status === 'oos'
-      ? `<div style="font-size:.8rem; color:#dc2626; font-weight:600; margin-top:3px;">Out of stock</div>`
-      : ``;
+    // 4) Empty-cart UI
+    if (!cart.length) {
+      if (cartContainer) {
+        cartContainer.innerHTML =
+          `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+      }
+      if (cartList) {
+        cartList.innerHTML = `
+          <div class="cart-item" style="justify-content:center; grid-template-columns:1fr;">
+            <div style="opacity:.75;">Your cart is empty.</div>
+          </div>`;
+      }
+      window.currentCartSubtotal = 0;
+      updateSummaryTotals(0);
+      updateCheckoutDisabled();
+      return;
+    }
 
-    const tr = document.createElement("tr");
-    tr.className = item.status === 'oos' ? 'cart-oos' : '';
+    // 5) Split groups: purchasable vs OOS
+    const normals = cart.filter(i => !i.status);
+    const oos     = cart.filter(i => i.status === 'oos');
 
-    tr.innerHTML = `
-      <td class="col-item">
-        <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-          <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
-          <div style="min-width:0;">
-            <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
-            <div class="item-attrs">
-              ${(item.series ? `${item.series}` : '')}
-              ${(item.rarity ? ` · ${item.rarity}` : '')}
-              ${(item.condition ? ` · ${item.condition}` : '')}
+    // Subtotal is ONLY for purchasable lines
+    let subtotal = 0;
+
+    // ----- helpers (desktop row + mobile card)
+    const renderRow = (item) => {
+      const imagePath = item.image || item.image_url || "assets/images/default.png";
+      const qty  = Number(item.quantity) || 0;
+      const unit = Number(item.price)    || 0;
+      const line = unit * Math.max(qty, 0);
+
+      if (!item.status) subtotal += line;
+
+      const isMaxed = qty >= (Number(item.stock) || Infinity);
+      const safeKey = escapeKeyString(item.key);
+
+      const statusNote = item.status === 'oos'
+        ? `<div style="font-size:.8rem; color:#dc2626; font-weight:600; margin-top:3px;">Out of stock</div>`
+        : ``;
+
+      const tr = document.createElement("tr");
+      tr.className = item.status === 'oos' ? 'cart-oos' : '';
+
+      tr.innerHTML = `
+        <td class="col-item">
+          <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+            <div class="thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
+            <div style="min-width:0;">
+              <div class="item-name" title="${item.name || ''}">${item.name || ''}</div>
+              <div class="item-attrs">
+                ${(item.series ? `${item.series}` : '')}
+                ${(item.rarity ? ` · ${item.rarity}` : '')}
+                ${(item.condition ? ` · ${item.condition}` : '')}
+              </div>
+              ${statusNote}
             </div>
-            ${statusNote}
+          </div>
+        </td>
+        <td class="col-qty">
+          <div class="qty-controls">
+            <button class="icon-btn" aria-label="Reduce"
+                    onclick="decQty('${safeKey}')"
+                    ${item.status ? 'aria-disabled="true"' : ''}>
+              <img src="assets/images/minus%20button.svg" alt="-">
+            </button>
+            <span class="pill">${qty}</span>
+            <button class="icon-btn" aria-label="Add"
+                    onclick="incQty('${safeKey}')"
+                    ${ item.status ? 'aria-disabled="true" title="Unavailable"'
+                                   : (isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '') }>
+              <img src="assets/images/plus%20button.svg" alt="+">
+            </button>
+            <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
+              <img src="assets/images/bin.svg" alt="Remove">
+            </button>
+          </div>
+        </td>
+        <td>$${unit.toFixed(2)}</td>
+        <td><strong>$${line.toFixed(2)}</strong></td>
+      `;
+      return tr;
+    };
+
+    const renderMobileCard = (item) => {
+      const imagePath = item.image || item.image_url || "assets/images/default.png";
+      const qty  = Number(item.quantity) || 0;
+      const unit = Number(item.price)    || 0;
+      const line = unit * Math.max(qty, 0);
+
+      const safeKey = escapeKeyString(item.key);
+      const isMaxedMobile = qty >= (Number(item.stock) || Infinity);
+
+      const statusNote = item.status === 'oos'
+        ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Out of stock</div>`
+        : ``;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'cart-item ' + (item.status === 'oos' ? 'ci-oos' : '');
+
+      wrap.innerHTML = `
+        <div class="ci-thumb">
+          <img src="${imagePath}" alt="${item.name || 'Item'}" />
+        </div>
+
+        <div class="ci-meta">
+          <h4 class="ci-name" title="${item.name || ''}">${item.name || ''}</h4>
+          <p class="ci-attrs">
+            ${(item.series ? `${item.series}` : '')}
+            ${(item.rarity ? ` · ${item.rarity}` : '')}
+            ${(item.condition ? ` · ${item.condition}` : '')}
+          </p>
+          ${statusNote}
+          <p class="ci-sub">$${unit.toFixed(2)} each</p>
+          <div class="ci-qty">
+            <button class="icon-btn" aria-label="Reduce"
+                    onclick="decQty('${safeKey}')"
+                    ${item.status ? 'aria-disabled="true"' : ''}>
+              <img src="assets/images/minus%20button.svg" alt="-">
+            </button>
+            <span class="pill">${qty}</span>
+            <button class="icon-btn" aria-label="Add"
+              onclick="incQty('${safeKey}')"
+              ${ item.status ? 'aria-disabled="true" title="Unavailable"'
+                             : (isMaxedMobile ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '') }>
+              <img src="assets/images/plus%20button.svg" alt="+">
+            </button>
+            <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
+              <img src="assets/images/bin.svg" alt="Remove">
+            </button>
           </div>
         </div>
-      </td>
-      <td class="col-qty">
-        <div class="qty-controls">
-          <button class="icon-btn" aria-label="Reduce"
-                  onclick="decQty('${safeKey}')"
-                  ${item.status ? 'aria-disabled="true"' : ''}>
-            <img src="assets/images/minus%20button.svg" alt="-">
-          </button>
-          <span class="pill">${qty}</span>
-          <button class="icon-btn" aria-label="Add"
-                  onclick="incQty('${safeKey}')"
-                  ${ item.status ? 'aria-disabled="true" title="Unavailable"'
-                                 : (isMaxed ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '') }>
-            <img src="assets/images/plus%20button.svg" alt="+">
-          </button>
-          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
-            <img src="assets/images/bin.svg" alt="Remove">
-          </button>
-        </div>
-      </td>
-      <td>$${unit.toFixed(2)}</td>
-      <td><strong>$${line.toFixed(2)}</strong></td>
-    `;
-    return tr;
-  };
 
-  const renderMobileCard = (item) => {
-    const imagePath = item.image || item.image_url || "assets/images/default.png";
-    const qty  = Number(item.quantity) || 0;
-    const unit = Number(item.price) || 0;
-    const line = unit * Math.max(qty, 0);
+        <div class="ci-right"><strong>$${line.toFixed(2)}</strong></div>
+      `;
+      return wrap;
+    };
+    // ----- end helpers
 
-    const safeKey = escapeKeyString(item.key);
-    const isMaxedMobile = qty >= (Number(item.stock) || Infinity);
+    // 6) Desktop table
+    if (cartContainer) {
+      if (normals.length) {
+        normals.forEach(item => cartContainer.appendChild(renderRow(item)));
+      } else if (oos.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">No items currently available to purchase.</td>`;
+        cartContainer.appendChild(tr);
+      }
 
-    const statusNote = item.status === 'oos'
-      ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Out of stock</div>`
-      : ``;
-
-    const wrap = document.createElement('div');
-    wrap.className = 'cart-item ' + (item.status === 'oos' ? 'ci-oos' : '');
-
-    wrap.innerHTML = `
-      <div class="ci-thumb">
-        <img src="${imagePath}" alt="${item.name || 'Item'}" />
-      </div>
-
-      <div class="ci-meta">
-        <h4 class="ci-name" title="${item.name || ''}">${item.name || ''}</h4>
-        <p class="ci-attrs">
-          ${(item.series ? `${item.series}` : '')}
-          ${(item.rarity ? ` · ${item.rarity}` : '')}
-          ${(item.condition ? ` · ${item.condition}` : '')}
-        </p>
-        ${statusNote}
-        <p class="ci-sub">$${unit.toFixed(2)} each</p>
-        <div class="ci-qty">
-          <button class="icon-btn" aria-label="Reduce"
-                  onclick="decQty('${safeKey}')"
-                  ${item.status ? 'aria-disabled="true"' : ''}>
-            <img src="assets/images/minus%20button.svg" alt="-">
-          </button>
-          <span class="pill">${qty}</span>
-          <button class="icon-btn" aria-label="Add"
-            onclick="incQty('${safeKey}')"
-            ${ item.status ? 'aria-disabled="true" title="Unavailable"'
-                           : (isMaxedMobile ? 'aria-disabled="true" data-maxed="1" title="Max stock reached"' : '') }>
-            <img src="assets/images/plus%20button.svg" alt="+">
-          </button>
-          <button class="icon-btn" aria-label="Remove" onclick="removeItem('${safeKey}')">
-            <img src="assets/images/bin.svg" alt="Remove">
-          </button>
-        </div>
-      </div>
-
-      <div class="ci-right"><strong>$${line.toFixed(2)}</strong></div>
-    `;
-    return wrap;
-  };
-
-  // Desktop
-  if (normals.length) {
-    normals.forEach(item => cartContainer.appendChild(renderRow(item)));
-  } else if (oos.length) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">No items currently available to purchase.</td>`;
-    cartContainer.appendChild(tr);
-  }
-
-  if (oos.length) {
-    const trH = document.createElement('tr');
-    trH.innerHTML = `<td colspan="4" class="cart-group-h cart-group-h--oos">Out of Stock</td>`;
-    cartContainer.appendChild(trH);
-    oos.forEach(item => cartContainer.appendChild(renderRow(item)));
-  }
-
-  // Mobile
-  if (cartList) {
-    if (normals.length) {
-      normals.forEach(item => cartList.appendChild(renderMobileCard(item)));
-    } else if (oos.length) {
-      const d = document.createElement('div');
-      d.style.cssText = 'padding:8px; text-align:center; opacity:.8;';
-      d.textContent = 'No items currently available to purchase.';
-      cartList.appendChild(d);
+      if (oos.length) {
+        const trH = document.createElement('tr');
+        trH.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:#dc2626; background:#fafafa;">Out of Stock</td>`;
+        cartContainer.appendChild(trH);
+        oos.forEach(item => cartContainer.appendChild(renderRow(item)));
+      }
     }
-    if (oos.length) {
-      const hdr = document.createElement('div');
-      hdr.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
-      hdr.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
-      cartList.appendChild(hdr);
-      oos.forEach(item => cartList.appendChild(renderMobileCard(item)));
-    }
-  }
 
-  window.currentCartSubtotal = subtotal;
-  updateSummaryTotals(subtotal);
-  updateCheckoutDisabled();
-  hideSpinner();
+    // 7) Mobile list
+    if (cartList) {
+      if (normals.length) {
+        normals.forEach(item => cartList.appendChild(renderMobileCard(item)));
+      } else if (oos.length) {
+        const d = document.createElement('div');
+        d.style.cssText = 'padding:8px; text-align:center; opacity:.8;';
+        d.textContent = 'No items currently available to purchase.';
+        cartList.appendChild(d);
+      }
+
+      if (oos.length) {
+        const hdr = document.createElement('div');
+        hdr.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
+        hdr.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
+        cartList.appendChild(hdr);
+        oos.forEach(item => cartList.appendChild(renderMobileCard(item)));
+      }
+    }
+
+    // 8) Totals + button state
+    window.currentCartSubtotal = subtotal;
+    updateSummaryTotals(subtotal);
+    updateCheckoutDisabled();
+  } finally {
+    hideSpinner();
+  }
 }
-
 
 
   function clearCart() {
