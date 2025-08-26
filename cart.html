@@ -786,8 +786,7 @@
   }
 
   /* ===== OOS Modal helpers ===== */
-  // ---- replace your current buildOOSModalHTML with this ----
-function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = []){
+function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [], nowHold = []) {
   const parts = [];
 
   if (removed.length){
@@ -817,7 +816,19 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [])
       </ul>
     `);
   }
-
+  if (nowHold.length){
+  parts.push(`
+    <h4>Now on hold:</h4>
+    <ul class="oos-list">
+      ${nowHold.map(({name, attrs}) => `
+        <li class="oos-item">
+          <span class="name">${escapeHtml(name)}</span>
+          ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
+        </li>
+      `).join('')}
+    </ul>
+  `);
+}
   if (clamped.length){
     parts.push(`
       <h4>Adjusted QTY to what's left:</h4>
@@ -860,14 +871,12 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [])
   return parts.join('');
 }
 
-
-  function openOOSModal(removed = [], clamped = [], priced = [], nowOos = []){
+  function openOOSModal(removed = [], clamped = [], priced = [], nowOos = [], nowHold = []) {
   const modal = document.getElementById('oosModal');
   if (!modal) return;
   const body = modal.querySelector('.oos-body');
-  body.innerHTML = buildOOSModalHTML(removed, clamped, priced, nowOos);
+  body.innerHTML = buildOOSModalHTML(removed, clamped, priced, nowOos, nowHold);
   modal.hidden = false;
-
   const okBtn = modal.querySelector('.oos-primary') || modal.querySelector('button');
   if (okBtn) setTimeout(() => okBtn.focus(), 0);
 }
@@ -925,24 +934,25 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [])
   }
 
   function normalizeCart(arr){
-    return arr.map(i => {
-      const obj = { ...i };
-      obj.category    = obj.category    ?? '';
-      obj.subcategory = obj.subcategory ?? '';
-      const hasNewShape = (obj.key && obj.key.split('||').length >= 6);
-      if (!hasNewShape) {
-        obj.key = makeKey({
-          name: obj.name,
-          series: obj.series || obj['series name'],
-          rarity: obj.rarity,
-          condition: obj.condition,
-          category: obj.category,
-          subcategory: obj.subcategory
-        });
-      }
-      return obj;
-    });
-  }
+  return arr.map(i => {
+    const obj = { ...i };
+    obj.category    = obj.category    ?? '';
+    obj.subcategory = obj.subcategory ?? '';
+
+    const hasNewShape = (obj.key && obj.key.split('||').length >= 6);
+    if (!hasNewShape) {
+      obj.key = makeKey({
+        name: obj.name,
+        series: obj.series || obj['series name'],
+        rarity: obj.rarity,
+        condition: obj.condition,
+        category: obj.category,
+        subcategory: obj.subcategory
+      });
+    }
+    return obj;
+  });
+}
 
   /* === Label helpers (unchanged visually) === */
   function normSeries(obj){
@@ -996,27 +1006,32 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [])
       if (!Array.isArray(rows)) throw new Error('JSON payload is not an array');
 
       allProducts = rows.map(src => {
-        const obj = {};
-        for (const [k,v] of Object.entries(src)) {
-          const key = String(k).trim().toLowerCase();
-          obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
-        }
-        if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
-        if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
+  const obj = {};
+  for (const [k, v] of Object.entries(src)) {
+    const key = String(k).trim().toLowerCase();
+    obj[key] = (key === 'price' || key === 'stock')
+      ? safeNumber(v)
+      : String(v ?? '').trim();
+  }
+  if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
+  if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
 
-        obj.name           = obj.name || '';
-        obj.category       = obj.category || '';
-        obj.subcategory    = obj.subcategory || '';
-        obj.description    = obj.description || '';
-        obj.condition      = obj.condition || '';
-        obj['series name'] = obj['series name'] || '';
-        obj.back           = obj.back || '';
-        obj.img2           = obj.img2 || '';
-        obj.img3           = obj.img3 || '';
-        obj.price          = safeNumber(obj.price, 0);
-        obj.stock          = safeNumber(obj.stock, 0);
-        return obj;
-      });
+  obj.name           = obj.name || '';
+  obj.category       = obj.category || '';
+  obj.subcategory    = obj.subcategory || '';
+  obj.description    = obj.description || '';
+  obj.condition      = obj.condition || '';
+  obj['series name'] = obj['series name'] || '';
+  obj.back = obj.back || ''; obj.img2 = obj.img2 || ''; obj.img3 = obj.img3 || '';
+  obj.price = safeNumber(obj.price, 0);
+  obj.stock = safeNumber(obj.stock, 0);
+
+  // ✅ NEW: make these numeric/string with fallbacks
+  obj.reserved     = safeNumber(obj.reserved ?? src.Reserved ?? src.reserved ?? 0, 0);
+  obj.status_label = String(obj.status_label ?? src.StatusLabel ?? src.statuslabel ?? '').trim();
+
+  return obj;
+});
 
       // Build lookup maps
       prodByNewKey = new Map();
@@ -1279,19 +1294,16 @@ async function renderCart() {
 
     let cart = getCart();
 
-    const { cart: fixed, changed, removed, clamped, priced, nowOos } =
-      reconcileCartWithInventory(cart);
+   const { cart: fixed, changed, removed, clamped, priced, nowOos, nowHold } =
+  reconcileCartWithInventory(cart);
 
     // Visible changes the shopper cares about
     const hasVisibleDiffs =
-      (removed && removed.length) ||
-      (clamped && clamped.length) ||
-      (priced  && priced.length)  ||
-      (nowOos  && nowOos.length);
+  (removed?.length || clamped?.length || priced?.length || nowOos?.length || nowHold?.length);
 
     // Open only when reconcile really changed the cart AND there are visible diffs
     if (changed && hasVisibleDiffs) {
-      openOOSModal(removed, clamped, priced, nowOos);
+      openOOSModal(removed, clamped, priced, nowOos, nowHold);
     }
 
     // Render with reconciled data
@@ -1323,17 +1335,7 @@ async function renderCart() {
     const holds   = cart.filter(i => i.status === 'hold');     // stay in main list
     const oos     = cart.filter(i => i.status === 'oos');      // grouped below
 
-    // when computing subtotal:
-    if (!item.status) subtotal += line; // excludes both hold and oos
-    
-    // small status note:
-    const statusNote =
-      item.status === 'oos'
-        ? `<div style="font-size:.8rem;color:#dc2626;font-weight:600;margin-top:3px;">Out of stock</div>`
-      : item.status === 'hold'
-        ? `<div style="font-size:.8rem;color:#b45309;font-weight:600;margin-top:3px;">Temporarily on hold</div>`
-        : ``;
-
+  
     let subtotal = 0;
 
     const renderRow = (item) => {
@@ -1341,6 +1343,12 @@ async function renderCart() {
       const qty  = Number(item.quantity) || 0;
       const unit = Number(item.price)    || 0;
       const line = unit * Math.max(qty, 0);
+      const statusNote = item.status === 'oos'
+    ? `<div style="font-size:.8rem; color:#dc2626; font-weight:600; margin-top:3px;">Out of stock</div>`
+    : item.status === 'hold'
+    ? `<div style="font-size:.8rem; color:#b45309; font-weight:600; margin-top:3px;">Temporarily on hold</div>`
+    : ``;
+
 
       if (!item.status) subtotal += line;
 
@@ -1402,8 +1410,10 @@ async function renderCart() {
       const safeKey = escapeKeyString(item.key);
       const isMaxedMobile = qty >= (Number(item.stock) || Infinity);
       const statusNote = item.status === 'oos'
-        ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Out of stock</div>`
-        : ``;
+  ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Out of stock</div>`
+  : item.status === 'hold'
+  ? `<div style="font-size:.7rem; color:#b45309; font-weight:700; margin-top:2px;">Temporarily on hold</div>`
+  : ``;
 
       const wrap = document.createElement('div');
       wrap.className = 'cart-item ' + (item.status === 'oos' ? 'ci-oos' : '');
