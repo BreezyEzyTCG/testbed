@@ -789,11 +789,25 @@
 function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [], nowHold = []) {
   const parts = [];
 
-  if (removed.length){
+  // Dedupe by key if present, else by name+attrs
+  const dedupe = (arr) => {
+    const seen = new Set();
+    return (arr || []).filter(x => {
+      const k = (x.key || `${x.name}||${x.attrs||''}`).toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  };
+
+  // “Gone, for now” == OOS → merge and show as one section
+  const allOos = dedupe([...(removed || []), ...(nowOos || [])]);
+
+  if (allOos.length){
     parts.push(`
-      <h4>Gone, for now:</h4>
+      <h4>Now out of stock:</h4>
       <ul class="oos-list">
-        ${removed.map(({name, attrs}) => `
+        ${allOos.map(({name, attrs}) => `
           <li class="oos-item">
             <span class="name">${escapeHtml(name)}</span>
             ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
@@ -803,11 +817,11 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
     `);
   }
 
-  if (nowOos.length){
+  if (nowHold?.length){
     parts.push(`
-      <h4>Now out of stock:</h4>
+      <h4>Now on hold:</h4>
       <ul class="oos-list">
-        ${nowOos.map(({name, attrs}) => `
+        ${nowHold.map(({name, attrs}) => `
           <li class="oos-item">
             <span class="name">${escapeHtml(name)}</span>
             ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
@@ -816,20 +830,8 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
       </ul>
     `);
   }
-  if (nowHold.length){
-  parts.push(`
-    <h4>Now on hold:</h4>
-    <ul class="oos-list">
-      ${nowHold.map(({name, attrs}) => `
-        <li class="oos-item">
-          <span class="name">${escapeHtml(name)}</span>
-          ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
-        </li>
-      `).join('')}
-    </ul>
-  `);
-}
-  if (clamped.length){
+
+  if (clamped?.length){
     parts.push(`
       <h4>Adjusted QTY to what's left:</h4>
       <ul class="oos-list">
@@ -844,7 +846,7 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
     `);
   }
 
-  if (priced.length){
+  if (priced?.length){
     parts.push(`
       <h4>Price updated:</h4>
       <ul class="oos-list">
@@ -862,14 +864,17 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
   if (!parts.length){
     parts.push(`<p>No changes.</p>`);
   }
+
   parts.push(`
     <div class="oos-tip">
       <p><strong>Got something you want but still browsing for more goodies?</strong></p>
       <p>Choose the <em>"consolidate order"</em> option so you can secure your items first!</p>
     </div>
   `);
+
   return parts.join('');
 }
+
 
   function openOOSModal(removed = [], clamped = [], priced = [], nowOos = [], nowHold = []) {
   const modal = document.getElementById('oosModal');
@@ -1251,18 +1256,19 @@ function decQty(key){
   }
 
     function statusFromProduct(prod){
-  if (!prod) return 'oos'; // row missing = hard OOS
-
-  const available = Number(prod.stock) || 0;     // already Stock − Reserved (same as index.html)
+  if (!prod) return 'oos';
+  const available = Number(prod.stock) || 0;   // this is already "Stock − Reserved"
   const reserved  = Number(prod.reserved) || 0;
-  const label     = (prod.status_label || '').trim();
+  const label     = String(prod.status_label || '').toLowerCase();
 
-  if (available > 0) return '';                  // purchasable
-  // available == 0:
-  if (reserved > 0 || label) return 'hold';      // temporarily on hold (last unit being checked out)
-  return 'oos';                                  // truly out of stock
+  if (available > 0) return '';                // in stock
+
+  // available === 0:
+  if (reserved > 0) return 'hold';            // last unit is being checked out
+  if (label.includes('hold')) return 'hold';  // optional: only treat explicit “hold” labels as hold
+
+  return 'oos';
 }
-
   /* ===== Centralised summary updater ===== */
   function updateSummaryTotals(subtotalFromCart){
     const subtotal = typeof subtotalFromCart === 'number'
@@ -1356,7 +1362,11 @@ async function renderCart() {
       const safeKey = escapeKeyString(item.key);
 
       const tr = document.createElement("tr");
-      tr.className = item.status === 'oos' ? 'cart-oos' : '';
+      
+      tr.className =
+      item.status === 'oos'  ? 'cart-oos'  :
+      item.status === 'hold' ? 'cart-hold' : '';
+
       tr.innerHTML = `
         <td class="col-item">
           <div style="display:flex; gap:10px; align-items:center; min-width:0;">
@@ -1412,7 +1422,11 @@ async function renderCart() {
   : ``;
 
       const wrap = document.createElement('div');
-      wrap.className = 'cart-item ' + (item.status === 'oos' ? 'ci-oos' : '');
+      wrap.className = 'cart-item ' + (
+        item.status === 'oos'  ? 'ci-oos'  :
+        item.status === 'hold' ? 'ci-hold' : ''
+      );
+
       wrap.innerHTML = `
         <div class="ci-thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
         <div class="ci-meta">
@@ -1449,39 +1463,44 @@ async function renderCart() {
 
     // Desktop list
     if (cartContainer) {
-      if (normals.length) {
-        normals.forEach(i => cartContainer.appendChild(renderRow(i)));
-      } else if (oos.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">No items currently available to purchase.</td>`;
-        cartContainer.appendChild(tr);
-      }
-      if (oos.length) {
-        const hdr = document.createElement('tr');
-        hdr.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:#dc2626; background:#fafafa;">Out of Stock</td>`;
-        cartContainer.appendChild(hdr);
-        oos.forEach(i => cartContainer.appendChild(renderRow(i)));
-      }
-    }
+  if (normals.length) normals.forEach(i => cartContainer.appendChild(renderRow(i)));
+  if (holds.length)   holds.forEach(i   => cartContainer.appendChild(renderRow(i)));
+
+  if (!normals.length && !holds.length && oos.length){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">
+      No items currently available to purchase.</td>`;
+    cartContainer.appendChild(tr);
+  }
+
+  if (oos.length) {
+    const hdr = document.createElement('tr');
+    hdr.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:#dc2626; background:#fafafa;">Out of Stock</td>`;
+    cartContainer.appendChild(hdr);
+    oos.forEach(i => cartContainer.appendChild(renderRow(i)));
+  }
+}
 
     // Mobile list
     if (cartList) {
-      if (normals.length) {
-        normals.forEach(i => cartList.appendChild(renderMobileCard(i)));
-      } else if (oos.length) {
-        const d = document.createElement('div');
-        d.style.cssText = 'padding:8px; text-align:center; opacity:.8;';
-        d.textContent = 'No items currently available to purchase.';
-        cartList.appendChild(d);
-      }
-      if (oos.length) {
-        const h = document.createElement('div');
-        h.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
-        h.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
-        cartList.appendChild(h);
-        oos.forEach(i => cartList.appendChild(renderMobileCard(i)));
-      }
-    }
+  if (normals.length) normals.forEach(i => cartList.appendChild(renderMobileCard(i)));
+  if (holds.length)   holds.forEach(i   => cartList.appendChild(renderMobileCard(i)));
+
+  if (!normals.length && !holds.length && oos.length){
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:8px; text-align:center; opacity:.8;';
+    d.textContent = 'No items currently available to purchase.';
+    cartList.appendChild(d);
+  }
+
+  if (oos.length) {
+    const h = document.createElement('div');
+    h.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
+    h.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
+    cartList.appendChild(h);
+    oos.forEach(i => cartList.appendChild(renderMobileCard(i)));
+  }
+}
 
     window.currentCartSubtotal = subtotal;
     updateSummaryTotals(subtotal);
