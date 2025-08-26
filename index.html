@@ -1375,13 +1375,12 @@ function renderMiniCart(){
 
   // decide mini note
   let miniNoteHTML = '';
-  if (parts.available <= 0){
-    const cls = (parts.reserved > 0) ? 'hold' : 'oos';
-    const txt = (parts.reserved > 0) ? 'On hold' : 'Out of stock';
-    miniNoteHTML = ` <span class="mc-note ${cls}">${txt}</span>`;
-  } else if (parts.reserved > 0){
-    miniNoteHTML = ` <span class="mc-note">${parts.reservedNote.replace('reserved-note','')}</span>`;
-  }
+  if (parts.available <= 0 && parts.reserved > 0){
+  miniNoteHTML = ` <span class="mc-note hold">On hold</span>`;
+} else if (parts.reserved > 0){
+  miniNoteHTML = ` <span class="mc-note">${parts.reservedNote.replace('reserved-note','')}</span>`;
+}
+
 
   const row = document.createElement("div");
   row.className = "mc-item" + ((_oos || Number(stock||0) <= 0) ? " mc-oos" : "");
