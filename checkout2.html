@@ -336,33 +336,28 @@ const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8
 /* ===== Inventory reservation API (Apps Script Web App) ===== */
 const INVENTORY_API = 'https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec'; 
 
+// Replace your old fetch-based functions with these:
 async function apiHold(items, userRef){
-  const res = await fetch(INVENTORY_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
-    body: JSON.stringify({ action:'hold', items, user_ref: userRef || '' })
-  });
-  return res.json();
+  return await jsonpFetchB64(INVENTORY_API, 'hold', { items, user_ref: userRef || '' });
 }
 
 async function apiCancel(holdId, holdToken, reason){
   if (!holdId || !holdToken) return { ok:true };
-  const res = await fetch(INVENTORY_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
-    body: JSON.stringify({ action:'cancel', hold_id: holdId, hold_token: holdToken, reason: reason || '' })
+  return await jsonpFetchB64(INVENTORY_API, 'cancel', {
+    hold_id: holdId,
+    hold_token: holdToken,
+    reason: reason || ''
   });
-  return res.json();
 }
 
 async function apiConfirm(holdId, holdToken, orderId){
-  if (!holdId || !holdToken || !orderId) return { ok:false, error:'Missing fields' };
-  const res = await fetch(INVENTORY_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
-    body: JSON.stringify({ action:'confirm', hold_id: holdId, hold_token: holdToken, order_id: orderId })
+  if (!holdId || !holdToken || !orderId)
+    return { ok:false, error:'Missing fields' };
+  return await jsonpFetchB64(INVENTORY_API, 'confirm', {
+    hold_id: holdId,
+    hold_token: holdToken,
+    order_id: orderId
   });
-  return res.json();
 }
 
 
@@ -399,6 +394,27 @@ function jsonpFetch(baseUrl, params) {
     document.head.appendChild(s);
   });
 }
+
+ // JSONP with base64 payload (for INVENTORY_API hold/cancel/confirm)
+function jsonpFetchB64(baseUrl, action, obj) {
+  const cb  = `inv_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  const json= JSON.stringify(obj || {});
+  const b64 = btoa(unescape(encodeURIComponent(json))); // UTF-8 -> base64
+  const qs  = new URLSearchParams({ action, payload_b64: b64, callback: cb, _: Date.now() });
+
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('JSONP_TIMEOUT')); }, 15000);
+    function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
+
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    s.onerror  = () => { cleanup(); reject(new Error('JSONP_LOAD_ERROR')); };
+
+    s.src = `${baseUrl}?${qs.toString()}`;
+    document.head.appendChild(s);
+  });
+}
+ 
 
 /* JSONP proxy to OneMap (bypasses CORS) */
 function proxyFetch(endpoint, params) {
