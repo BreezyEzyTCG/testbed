@@ -1020,22 +1020,20 @@ function renderSummary(){
   const shippingEl = document.getElementById('sumShipping');
   const totalEl    = document.getElementById('sumTotal');
 
-  const cart = getCart();
-  const purch = cart.filter(isPurchasable);                 // ✅ only chargeable lines
-  const excludedCount = cart.length - purch.length;
+  const raw  = getCart();
+  const cart = raw.filter(isPurchasable); // <- only show/charge purchasable
 
-  const rows = purch.map(i => {
-    const qty  = Number(i.qty ?? i.quantity ?? 1);
-    const unit = Number(i.price ?? 0);
-    const q    = Math.max(1, qty|0);
-    const line = unit * q;
+  const rows = cart.map(i => {
+    const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
+    const unit = Number(i.price ?? 0) || 0;
+    const line = unit * qty;
     const name  = i.name || 'Item';
     const attrs = formatAttrs(i);
     return `
       <div class="sum-row">
         <span>
           <div class="sum-item">
-            <div class="name">${escapeHtml(name)}${q > 1 ? ` × ${q}` : ''}</div>
+            <div class="name">${escapeHtml(name)}${qty > 1 ? ` × ${qty}` : ''}</div>
             ${attrs ? `<div class="attrs">${escapeHtml(attrs)}</div>` : ''}
           </div>
         </span>
@@ -1043,46 +1041,35 @@ function renderSummary(){
       </div>`;
   }).join('');
 
-  if (itemsEl) {
-    itemsEl.innerHTML =
-      rows ||
-      `<div class="hint">No purchasable items. Items on hold/out-of-stock are not charged.</div>`;
-    if (excludedCount > 0) {
-      itemsEl.insertAdjacentHTML('beforeend',
-        `<div class="hint" style="margin-top:6px;">
-           ${excludedCount} item${excludedCount>1?'s':''} excluded (on hold / out of stock)
-         </div>`);
-    }
-  }
+  itemsEl.innerHTML = rows || '<div class="hint">No items available to purchase.</div>';
 
-  const subtotal = purch.reduce((s, i) => {
-    const qty  = Number(i.qty ?? i.quantity ?? 1);
-    const unit = Number(i.price ?? 0);
-    return s + (unit * Math.max(1, qty|0));
+  const subtotal = cart.reduce((s, i) => {
+    const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
+    const u = Number(i.price ?? 0) || 0;
+    return s + (u * q);
   }, 0);
 
-  const saved = getSavedShippingFromCart();
-  const ship  = Number(saved?.fee ?? 0);
+  const saved  = getSavedShippingFromCart();
+  const ship   = Number(saved?.fee ?? 0);
 
-  if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
-  if (shippingEl) shippingEl.textContent = fmt(ship);
-  if (totalEl)    totalEl.textContent    = fmt(subtotal + ship);
+  subtotalEl.textContent = fmt(subtotal);
+  shippingEl.textContent = fmt(ship);
+  totalEl.textContent    = fmt(subtotal + ship);
 }
+
 
 
   /* Build reservation items from the cart (server uses these to match rows) */
 function buildHoldItemsFromCart(){
-  return getCart()
-    .filter(isPurchasable)                     // ✅ do not send hold/oos to backend
-    .map(i => ({
-      name: String(i.name || 'Item'),
-      category: String(i.category || ''),
-      subcategory: String(i.subcategory || i.set || ''),
-      rarity: String(i.rarity || ''),
-      condition: String(i.condition || ''),
-      series_name: String(normSeries(i) || ''),
-      qty: Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1)
-    }));
+  return getCart().filter(isPurchasable).map(i => ({
+    name: String(i.name || 'Item'),
+    category: String(i.category || ''),
+    subcategory: String(i.subcategory || i.set || ''),
+    rarity: String(i.rarity || ''),
+    condition: String(i.condition || ''),
+    series_name: String(normSeries(i) || ''),
+    qty: Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1)
+  }));
 }
 
   
