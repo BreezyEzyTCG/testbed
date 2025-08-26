@@ -786,23 +786,11 @@
   }
 
   /* ===== OOS Modal helpers ===== */
-function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [], nowHold = []) {
+function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [], nowHold = [], stockChanged = []) {
   const parts = [];
 
-  // Dedupe by key if present, else by name+attrs
-  const dedupe = (arr) => {
-    const seen = new Set();
-    return (arr || []).filter(x => {
-      const k = (x.key || `${x.name}||${x.attrs||''}`).toLowerCase();
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-  };
-
-  // “Gone, for now” == OOS → merge and show as one section
-  const allOos = dedupe([...(removed || []), ...(nowOos || [])]);
-
+  // Merge & show OOS once
+  const allOos = [...(removed || []), ...(nowOos || [])];
   if (allOos.length){
     parts.push(`
       <h4>Now out of stock:</h4>
@@ -833,7 +821,7 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
 
   if (clamped?.length){
     parts.push(`
-      <h4>Adjusted QTY to what's left:</h4>
+      <h4>Adjusted quantity to what's left:</h4>
       <ul class="oos-list">
         ${clamped.map(({name, attrs, before, after}) => `
           <li class="oos-item">
@@ -861,6 +849,22 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
     `);
   }
 
+  // 👇 NEW: show availability changes even if we didn’t clamp the user’s cart qty
+  if (stockChanged?.length){
+    parts.push(`
+      <h4>Availability changed:</h4>
+      <ul class="oos-list">
+        ${stockChanged.map(({name, attrs, before, after}) => `
+          <li class="oos-item">
+            <span class="name">${escapeHtml(name)}</span>
+            ${attrs ? `<span class="attrs">(${escapeHtml(attrs)})</span>` : ''}
+            <span class="qty-change">(${escapeHtml(String(before))} → ${escapeHtml(String(after))})</span>
+          </li>
+        `).join('')}
+      </ul>
+    `);
+  }
+
   if (!parts.length){
     parts.push(`<p>No changes.</p>`);
   }
@@ -876,11 +880,11 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
 }
 
 
-  function openOOSModal(removed = [], clamped = [], priced = [], nowOos = [], nowHold = []) {
+  function openOOSModal(removed = [], clamped = [], priced = [], nowOos = [], nowHold = [], stockChanged = []) {
   const modal = document.getElementById('oosModal');
   if (!modal) return;
   const body = modal.querySelector('.oos-body');
-  body.innerHTML = buildOOSModalHTML(removed, clamped, priced, nowOos, nowHold);
+  body.innerHTML = buildOOSModalHTML(removed, clamped, priced, nowOos, nowHold, stockChanged);
   modal.hidden = false;
   const okBtn = modal.querySelector('.oos-primary') || modal.querySelector('button');
   if (okBtn) setTimeout(() => okBtn.focus(), 0);
@@ -1078,14 +1082,14 @@ function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = [],
   }
 
   /* ===== Reconcile cart with live inventory ===== */
-  /* ===== Reconcile cart with live inventory ===== */
 function reconcileCartWithInventory(cart){
   let changed = false;
-  const removed = [];   // kept for API symmetry (we’re not removing lines)
+  const removed = [];
   const clamped = [];
   const priced  = [];
   const nowOos  = [];
   const nowHold = [];
+  const stockChanged = [];   // 👈 NEW
   const next    = [];
 
   const differs = (a, b) => (
@@ -1099,16 +1103,11 @@ function reconcileCartWithInventory(cart){
   );
 
   for (const item of cart){
-    // find product by new key first, then old key (back-compat)
     const prod = prodByNewKey.get(item.key) || prodByOldKey.get(item.key);
-
-    // Decide new status using the same rules as index.html
     const newStatus = statusFromProduct(prod);
 
-    // Keep name/attrs for modal display
     const { name, attrs } = splitNameAndAttrs(item);
 
-    // Build upgraded key & latest price/stock when prod exists
     const upgradedKey = prod ? makeKey({
       name: prod.name,
       series: prod["series name"],
@@ -1118,17 +1117,21 @@ function reconcileCartWithInventory(cart){
       subcategory: prod.subcategory
     }) : item.key;
 
-    const newPrice = prod ? (Number(prod.price) || 0)  : (Number(item.price) || 0);
-    const avail    = prod ? (Number(prod.stock) || 0)  : 0; // available = Stock − Reserved (from sheet)
+    const newPrice = prod ? (Number(prod.price) || 0) : (Number(item.price) || 0);
+    const avail    = prod ? (Number(prod.stock) || 0) : 0;
 
-    // Transition buckets for the modal
+    // 👇 compare availability vs what we had stored on the cart line
+    const prevAvail = Number(item.stock) || 0;
+    if (prod && prevAvail !== avail){
+      stockChanged.push({ name, attrs, before: prevAvail, after: avail });
+    }
+
     const was = (item.status || '');
     if (was !== newStatus){
       if (newStatus === 'oos')  nowOos.push({ name, attrs });
       if (newStatus === 'hold') nowHold.push({ name, attrs });
     }
 
-    // In-stock path (also covers revival from hold/oos)
     if (prod && avail > 0){
       const beforeQty = Number(item.quantity) || 0;
       const afterQty  = Math.min(beforeQty || 1, avail);
@@ -1147,32 +1150,32 @@ function reconcileCartWithInventory(cart){
         category: item.category ?? prod.category ?? '',
         subcategory: item.subcategory ?? prod.subcategory ?? '',
         price: newPrice,
-        stock: avail,           // store current available
+        stock: avail,
         quantity: afterQty,
-        status: ''              // purchasable again
+        status: ''
       };
       if (differs(item, newItem)) changed = true;
       next.push(newItem);
       continue;
     }
 
-    // Hold or OOS path: keep user’s quantity (so when stock revives we can clamp/show modal),
-    // but disable purchase via status + keep stock=0 for UI
+    // hold / oos path
     const newItem = {
       ...item,
       key: upgradedKey,
       price: newPrice,
       stock: 0,
       quantity: Number(item.quantity) || 1,
-      status: newStatus          // 'hold' or 'oos'
+      status: newStatus
     };
     if (differs(item, newItem)) changed = true;
     next.push(newItem);
   }
 
   if (changed) saveCart(next);
-  return { cart: next, changed, removed, clamped, priced, nowOos, nowHold };
+  return { cart: next, changed, removed, clamped, priced, nowOos, nowHold, stockChanged }; // 👈 include it
 }
+
 
 
   /* ===== Shipping + Add-ons ===== */
@@ -1300,17 +1303,17 @@ async function renderCart() {
 
     let cart = getCart();
 
-   const { cart: fixed, changed, removed, clamped, priced, nowOos, nowHold } =
+   const { cart: fixed, changed, removed, clamped, priced, nowOos, nowHold, stockChanged } =
   reconcileCartWithInventory(cart);
 
-    // Visible changes the shopper cares about
-    const hasVisibleDiffs =
-  (removed?.length || clamped?.length || priced?.length || nowOos?.length || nowHold?.length);
-
-    // Open only when reconcile really changed the cart AND there are visible diffs
+    const hasVisibleDiffs = !!(
+      (removed?.length) || (clamped?.length) || (priced?.length) ||
+      (nowOos?.length)  || (nowHold?.length) || (stockChanged?.length) // 👈
+    );
+    
     if (changed && hasVisibleDiffs) {
-      openOOSModal(removed, clamped, priced, nowOos, nowHold);
-    }
+      openOOSModal(removed, clamped, priced, nowOos, nowHold, stockChanged); // 👈
+}
 
     // Render with reconciled data
     cart = fixed;
