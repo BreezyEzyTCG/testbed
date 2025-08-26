@@ -833,6 +833,25 @@
   }           /* ← close .mini-cart */
 }             /* ← close @media */
 
+/* small status pill shown when stock is 0 but items are on hold */
+.status-pill{
+  display:inline-block;
+  margin-top:6px;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:600;
+  background:#fde68a;  /* soft amber */
+  color:#7c2d12;       /* dark amber text */
+}
+@media (prefers-color-scheme: dark){
+  .status-pill{
+    background:#7c2d12;
+    color:#fde68a;
+  }
+}
+
+
   </style>
 </head>
 <body>
@@ -1523,52 +1542,59 @@ function setupMiniCart(){
 }
 
     function renderStore(list){
-      const container = document.querySelector(".card-container");
-      container.innerHTML = "";
+  const container = document.querySelector(".card-container");
+  container.innerHTML = "";
 
-      list.forEach((p) => {
-        const stock = safeNumber(p.stock, 0);
-        const price = safeNumber(p.price, 0);
-        const out = stock <= 0;
+  list.forEach((p) => {
+    const stock = safeNumber(p.stock, 0);           // already = Stock - Reserved from backend
+    const price = safeNumber(p.price, 0);
+    const label = String(p.statuslabel || '').trim(); // <- new: human status from backend
+    const out   = stock <= 0;
 
-        const badge = getBadgeInfo(p.badge);
-        const safeName = String(p.name || "").replace(/'/g, "\\'");
-        const safeImg  = String(p.image_url || "").replace(/'/g, "\\'");
+    const badge = getBadgeInfo(p.badge);
 
-       const esc = s => String(s||'').replace(/'/g,"\\'");
-        const safeSeries     = esc(p["series name"]);
-        const safeRarity     = esc(p.rarity);
-        const safeCondition  = esc(p.condition);
-        const safeCategory   = esc(p.category);
-        const safeSubcat     = esc(p.subcategory);
+    const esc = s => String(s||'').replace(/'/g,"\\'");
+    const safeName      = esc(p.name);
+    const safeImg       = esc(p.image_url);
+    const safeSeries    = esc(p["series name"]);
+    const safeRarity    = esc(p.rarity);
+    const safeCondition = esc(p.condition);
+    const safeCategory  = esc(p.category);
+    const safeSubcat    = esc(p.subcategory);
 
-const btnAttrs = out
-  ? `disabled aria-disabled="true" tabindex="-1"`
-  : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${stock}, '${safeCategory}', '${safeSubcat}')"`;
+    const btnAttrs = out
+      ? `disabled aria-disabled="true" tabindex="-1"`
+      : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${stock}, '${safeCategory}', '${safeSubcat}')"`;    
 
+    const btnText = out ? (label || "Out of Stock") : "Add to Cart";
+    const statusHTML = (out && label)
+      ? `<div class="status-pill" title="${label}">${label}</div>`
+      : ``;
 
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
-          <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
-          <div class="title-block">
-            <h3 class="card-title">${p.name || ""}</h3>
-            <p class="series-name">${p["series name"] || ""}</p>
-          </div>
-          <div class="card-info">
-            <p class="price">$${price.toFixed(2)}</p>
-            <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
-            <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
-            <p class="stock"><strong>Stock:</strong> ${stock}</p>
-          </div>
-          <div class="product-actions">
-            <button type="button" ${btnAttrs}>${out ? "Out of Stock" : "Add to Cart"}</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
+      <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
+      <div class="title-block">
+        <h3 class="card-title">${p.name || ""}</h3>
+        <p class="series-name">${p["series name"] || ""}</p>
+      </div>
+      <div class="card-info">
+        <p class="price">$${price.toFixed(2)}</p>
+        <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
+        <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
+        <p class="stock"><strong>Stock:</strong> ${stock}</p>
+        ${statusHTML}
+      </div>
+      <div class="product-actions">
+        <button type="button" ${btnAttrs}>${btnText}</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
 
     /* ---------- Dropdown population ---------- */
     // Case-insensitive, trimmed, de-duplicated, alphabetically sorted
@@ -2065,6 +2091,10 @@ function clampPage(p){
       document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
 
       const out = safeNumber(product.stock, 0) <= 0;
+      const label = String(product.statuslabel || '').trim();
+      qv.addBtn.textContent = out ? (label || 'Out of Stock') : 'Add to Cart';
+      qv.addBtn.disabled = out;
+
     qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
     qv.addBtn.disabled = out;
     qv.addBtn.onclick = out ? null : () =>
