@@ -573,6 +573,7 @@ async function openQrCreateNew(){
   let holdRes;
   try {
     holdRes = await apiHold(holdItems, userRef);
+    console.log('[apiHold result]', holdRes);   // <--- ADD THIS LINE
   } catch (err) {
     alert('Could not reach the reservation server. Please try again.');
     return;
