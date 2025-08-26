@@ -463,6 +463,33 @@
     }
     #toast.show { display:block; opacity:1; }
 
+    /* small status pill shown when stock is 0 but items are on hold */
+.status-pill{
+  display:inline-block;
+  margin-top:6px;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:600;
+  background:#fde68a;  /* soft amber */
+  color:#7c2d12;       /* dark amber text */
+}
+@media (prefers-color-scheme: dark){
+  .status-pill{
+    background:#7c2d12;
+    color:#fde68a;
+  }
+}
+    .status-line{
+  margin: .1rem 0 0;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #b45309; /* amber-ish; looks fine in both themes */
+}
+@media (prefers-color-scheme: dark){
+  .status-line{ color:#f59e0b; }
+}
+
     /* ================== QUICKVIEW STYLES ================== */
     .qv-backdrop{
       position:fixed; inset:0; background:rgba(0,0,0,.55);
@@ -832,26 +859,6 @@
     width: 92vw;
   }           /* ← close .mini-cart */
 }             /* ← close @media */
-
-/* small status pill shown when stock is 0 but items are on hold */
-.status-pill{
-  display:inline-block;
-  margin-top:6px;
-  padding:3px 8px;
-  border-radius:999px;
-  font-size:.78rem;
-  font-weight:600;
-  background:#fde68a;  /* soft amber */
-  color:#7c2d12;       /* dark amber text */
-}
-@media (prefers-color-scheme: dark){
-  .status-pill{
-    background:#7c2d12;
-    color:#fde68a;
-  }
-}
-
-
   </style>
 </head>
 <body>
@@ -1488,29 +1495,32 @@ function setupMiniCart(){
     }
 
     // Normalize
-    allProducts = rows.map(src => {
-      const obj = {};
-      for (const [k, v] of Object.entries(src)) {
-        const key = String(k).trim().toLowerCase();
-        obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
-      }
-      if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
-      if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
+allProducts = rows.map(src => {
+  const obj = {};
+  for (const [k, v] of Object.entries(src)) {
+    const key = String(k).trim().toLowerCase();
+    obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
+  }
+  if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
+  if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
 
-      // Ensure expected keys exist
-      obj.name          = obj.name          || '';
-      obj.category      = obj.category      || '';
-      obj.subcategory   = obj.subcategory   || '';
-      obj.description   = obj.description   || '';
-      obj.condition     = obj.condition     || '';
-      obj['series name']= obj['series name']|| '';
-      obj.back          = obj.back          || '';
-      obj.img2          = obj.img2          || '';
-      obj.img3          = obj.img3          || '';
-      obj.price         = safeNumber(obj.price, 0);
-      obj.stock         = safeNumber(obj.stock, 0);
-      return obj;
-    });
+  // Ensure expected keys exist
+  obj.name           = obj.name           || '';
+  obj.category       = obj.category       || '';
+  obj.subcategory    = obj.subcategory    || '';
+  obj.description    = obj.description    || '';
+  obj.condition      = obj.condition      || '';
+  obj['series name'] = obj['series name'] || '';
+  obj.back           = obj.back           || '';
+  obj.img2           = obj.img2           || '';
+  obj.img3           = obj.img3           || '';
+  obj.price          = safeNumber(obj.price, 0);
+  obj.stock          = safeNumber(obj.stock, 0);         // ← this is already Available
+  obj.reserved       = safeNumber(src.Reserved ?? src.reserved ?? 0, 0);          // NEW
+  obj.status_label   = String(src.StatusLabel ?? src.statuslabel ?? obj.status_label ?? ''); // NEW
+  return obj;
+});
+
 
     populateAllDropdowns();
     filteredProducts = allProducts.slice();
@@ -1541,18 +1551,18 @@ function setupMiniCart(){
   return null;
 }
 
-    function renderStore(list){
+   function renderStore(list){
   const container = document.querySelector(".card-container");
   container.innerHTML = "";
 
   list.forEach((p) => {
-    const stock = safeNumber(p.stock, 0);           // already = Stock - Reserved from backend
-    const price = safeNumber(p.price, 0);
-    const label = String(p.statuslabel || '').trim(); // <- new: human status from backend
-    const out   = stock <= 0;
+    const available   = safeNumber(p.stock, 0); // already Stock − Reserved from backend
+    const reserved    = safeNumber(p.reserved, 0);
+    const statusLabel = String(p.status_label || '').trim();
+    const price       = safeNumber(p.price, 0);
+    const out         = available <= 0;
 
     const badge = getBadgeInfo(p.badge);
-
     const esc = s => String(s||'').replace(/'/g,"\\'");
     const safeName      = esc(p.name);
     const safeImg       = esc(p.image_url);
@@ -1564,12 +1574,7 @@ function setupMiniCart(){
 
     const btnAttrs = out
       ? `disabled aria-disabled="true" tabindex="-1"`
-      : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${stock}, '${safeCategory}', '${safeSubcat}')"`;    
-
-    const btnText = out ? (label || "Out of Stock") : "Add to Cart";
-    const statusHTML = (out && label)
-      ? `<div class="status-pill" title="${label}">${label}</div>`
-      : ``;
+      : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${available}, '${safeCategory}', '${safeSubcat}')"`; // pass available
 
     const card = document.createElement("div");
     card.className = "card";
@@ -1584,11 +1589,11 @@ function setupMiniCart(){
         <p class="price">$${price.toFixed(2)}</p>
         <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
         <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
-        <p class="stock"><strong>Stock:</strong> ${stock}</p>
-        ${statusHTML}
+        <p class="stock"><strong>Stock:</strong> ${available}</p>
+        ${statusLabel ? `<p class="status-line">${statusLabel}</p>` : ``}
       </div>
       <div class="product-actions">
-        <button type="button" ${btnAttrs}>${btnText}</button>
+        <button type="button" ${btnAttrs}>${out ? (statusLabel || "Out of Stock") : "Add to Cart"}</button>
       </div>
     `;
     container.appendChild(card);
@@ -2085,19 +2090,31 @@ function clampPage(p){
       qv.series.textContent = product['series name'] || '';
       qv.rarity.textContent = product.rarity ? `Rarity: ${product.rarity}` : '';
       qv.condition.textContent = product.condition ? `Condition: ${product.condition}` : '';
-      qv.stock.textContent = Number.isFinite(product.stock) ? `Stock: ${product.stock}` : '';
+      // Show available stock (already calculated in backend)
+qv.stock.textContent = Number.isFinite(product.stock)
+  ? `Stock: ${product.stock}` 
+  : '';
 
-      const desc = (product.description || "").trim();
-      document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, "<br>") : "-";
+// Keep description logic as-is
+const desc = (product.description || "").trim();
+document.getElementById('qvDesc').innerHTML = desc
+  ? desc.replace(/\n/g, "<br>")
+  : "-";
 
-      const out = safeNumber(product.stock, 0) <= 0;
-      const label = String(product.statuslabel || '').trim();
-      qv.addBtn.textContent = out ? (label || 'Out of Stock') : 'Add to Cart';
-      qv.addBtn.disabled = out;
+// Decide button label & availability
+const out   = safeNumber(product.stock, 0) <= 0;
+const label = String(product.statuslabel || '').trim();
 
-    qv.addBtn.textContent = out ? 'Out of Stock' : 'Add to Cart';
-    qv.addBtn.disabled = out;
-    qv.addBtn.onclick = out ? null : () =>
+// Button text: use StatusLabel if out-of-stock/hold, else "Add to Cart"
+qv.addBtn.textContent = out
+  ? (label || 'Out of Stock')
+  : 'Add to Cart';
+
+// Button state
+qv.addBtn.disabled = out;
+
+// Add to cart handler only if available
+qv.addBtn.onclick = out ? null : () =>
   addToCart(
     product.name || 'Item',
     safeNumber(product.price, 0),
@@ -2105,10 +2122,11 @@ function clampPage(p){
     product['series name'] || '',
     product.rarity || '',
     product.condition || '',
-    safeNumber(product.stock, 0),
+    safeNumber(product.stock, 0),   // already reduced by reservation
     product.category || '',
     product.subcategory || ''
   );
+
 
       qv.thumbs.innerHTML = '';
       qv.images.forEach((src, i) => {
