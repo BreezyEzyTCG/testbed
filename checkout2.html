@@ -339,7 +339,7 @@ const INVENTORY_API = 'https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_
 async function apiHold(items, userRef){
   const res = await fetch(INVENTORY_API, {
     method: 'POST',
-    headers: { 'Content-Type':'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
     body: JSON.stringify({ action:'hold', items, user_ref: userRef || '' })
   });
   return res.json();
@@ -349,7 +349,7 @@ async function apiCancel(holdId, holdToken, reason){
   if (!holdId || !holdToken) return { ok:true };
   const res = await fetch(INVENTORY_API, {
     method: 'POST',
-    headers: { 'Content-Type':'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
     body: JSON.stringify({ action:'cancel', hold_id: holdId, hold_token: holdToken, reason: reason || '' })
   });
   return res.json();
@@ -359,11 +359,12 @@ async function apiConfirm(holdId, holdToken, orderId){
   if (!holdId || !holdToken || !orderId) return { ok:false, error:'Missing fields' };
   const res = await fetch(INVENTORY_API, {
     method: 'POST',
-    headers: { 'Content-Type':'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
     body: JSON.stringify({ action:'confirm', hold_id: holdId, hold_token: holdToken, order_id: orderId })
   });
   return res.json();
 }
+
 
 /* === SFX helper (reset + play, keeps it in user-gesture chain) === */
 function playUploadSfx(){
@@ -506,11 +507,12 @@ async function notifyExpire(orderId, reason){
   try {
     await fetch(EXPIRE_API, {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // ⬅️ changed
       body: JSON.stringify({ action:'expire', orderId, reason: reason || 'TIMEOUT' })
     });
   } catch (e) {}
 }
+
   
 /* ===== Payment timer length (10 minutes) ===== */
 const TIMER_MS = 15 * 60 * 1000;
@@ -863,10 +865,11 @@ async function uploadPaymentProofJSON() {
 
   try {
     const res = await fetch(UPLOAD_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  method: 'POST',
+  headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
+  body: JSON.stringify(payload)
+});
+
 
     const ct = res.headers.get('content-type') || '';
     if (ct.includes('application/json')) {
