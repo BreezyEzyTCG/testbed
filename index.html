@@ -500,13 +500,23 @@
 .status-label.hold { color:#2563eb; }          /* blue when on-hold 0 available */
 .status-label.soft-hold { color:#6b7280; }     /* gray hint when some units on hold */
 
-    .hold-note{
-  margin-left:6px;
-  font-size:.85rem;
-  color:#1f25de;        
-  font-style:italic;
+   /* reserved note default (desktop) → inline with stock */
+.reserved-note {
+  color:#1f25de;
+  font-size:0.9em;
   white-space:nowrap;
+  margin-left:4px;
 }
+
+/* mobile view → force it below stock line */
+@media (max-width:600px){
+  .reserved-note {
+    display:block;      /* break onto new line */
+    margin:2px 0 0 0;   /* reset margin so it sits neatly under */
+    font-size:0.85em;
+  }
+}
+
 
     /* ================== QUICKVIEW STYLES ================== */
     .qv-backdrop{
@@ -1574,9 +1584,8 @@ allProducts = rows.map(src => {
   container.innerHTML = "";
 
   list.forEach((p) => {
-    // Backend sends: Stock = (stock - reserved), plus Reserved and StatusLabel
-    const available   = safeNumber(p.stock, 0);
-    const reserved    = safeNumber(p.reserved, 0);
+    const available   = safeNumber(p.stock, 0);       // Stock − Reserved from backend
+    const reserved    = safeNumber(p.reserved, 0);    // may be 0
     const statusLabel = String(p.status_label || "").trim();
     const price       = safeNumber(p.price, 0);
     const out         = available <= 0;
@@ -1595,13 +1604,13 @@ allProducts = rows.map(src => {
       ? `disabled aria-disabled="true" tabindex="-1"`
       : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${available}, '${safeCategory}', '${safeSubcat}')"`;
 
-    // inline “being checked out” note (only when some are on hold)
-    const holdNote = reserved > 0
-      ? ` <span class="hold-note">(${reserved} being checked out right now)</span>`
+    const reservedNote = (reserved > 0 && available > 0)
+      ? ` <span class="hold-note">(🔥${reserved} in checkout now)</span>`
       : "";
 
-    // decide button label when out
-    const outLabel = statusLabel || (reserved > 0 ? "On hold" : "Out of stock");
+     const statusLine = out
+      ? `<p class="status-line">${statusLabel || "Out of stock"}</p>`
+      : "";
 
     const card = document.createElement("div");
     card.className = "card";
@@ -1616,17 +1625,16 @@ allProducts = rows.map(src => {
         <p class="price">$${price.toFixed(2)}</p>
         <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
         <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
-        <p class="stock"><strong>Stock:</strong> ${available}${holdNote}</p>
+        <p class="stock"><strong>Stock:</strong> ${available}${reservedNote}</p>
+        ${statusLine}
       </div>
       <div class="product-actions">
-        <button type="button" ${btnAttrs}>${out ? outLabel : "Add to Cart"}</button>
+        <button type="button" ${btnAttrs}>${out ? (statusLabel || "Out of Stock") : "Add to Cart"}</button>
       </div>
     `;
     container.appendChild(card);
   });
 }
-
-
     /* ---------- Dropdown population ---------- */
     // Case-insensitive, trimmed, de-duplicated, alphabetically sorted
 const byUniqueSorted = (arr) => {
