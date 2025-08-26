@@ -786,7 +786,8 @@
   }
 
   /* ===== OOS Modal helpers ===== */
-  function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowHold = []){
+  // ---- replace your current buildOOSModalHTML with this ----
+function buildOOSModalHTML(removed = [], clamped = [], priced = [], nowOos = []){
   const parts = [];
 
   if (removed.length){
@@ -858,6 +859,7 @@
   `);
   return parts.join('');
 }
+
 
   function openOOSModal(removed = [], clamped = [], priced = [], nowOos = []){
   const modal = document.getElementById('oosModal');
@@ -1261,54 +1263,33 @@ function decQty(key){
     if (sumShipping) sumShipping.textContent = fmtMoney(shippingFee);
     if (sumTotal)    sumTotal.textContent    = fmtMoney(total);
   }
-// Remember the last changes we showed, so we don't re-open for the same payload
-const MODAL_KEY = 'lastCartChangeModalKey';
 
-function buildModalKey({ removed = [], clamped = [], priced = [], nowOos = [] } = {}) {
-  // Sort to make the key order-insensitive
-  const by = (list, mapFn) => list.map(mapFn).sort((a,b)=> (a>b)-(a<b));
-  const pack = {
-    r: by(removed, x => `${x.name}|${x.attrs||''}`),
-    c: by(clamped, x => `${x.name}|${x.attrs||''}|${x.before}|${x.after}`),
-    p: by(priced,  x => `${x.name}|${x.attrs||''}|${x.before}|${x.after}`),
-    o: by(nowOos,  x => `${x.name}|${x.attrs||''}`),
-  };
-  return JSON.stringify(pack);
-}
-
-function shouldOpenChangeModal(payload){
-  const nonEmpty = (payload.removed?.length || payload.clamped?.length || payload.priced?.length || payload.nowOos?.length);
-  if (!nonEmpty) return false;               // nothing to show
-
-  const key  = buildModalKey(payload);
-  const prev = sessionStorage.getItem(MODAL_KEY);
-
-  if (key === prev) return false;            // identical to what we already showed
-
-  sessionStorage.setItem(MODAL_KEY, key);    // remember this payload
-  return true;
-}
-
-  /* === renderCart with spinner + button state (FINAL + guarded modal) === */
+    
+  /* === renderCart with spinner + button state (OPEN ONLY ON REAL CHANGES) === */
 async function renderCart() {
   showSpinner();
   try {
-    if (!allProducts.length) {
-      await fetchInventoryFromSheet();
-    }
+    if (!allProducts.length) { await fetchInventoryFromSheet(); }
 
     let cart = getCart();
 
-    const { cart: fixed, removed, clamped, priced, nowOos } =
+    const { cart: fixed, changed, removed, clamped, priced, nowOos } =
       reconcileCartWithInventory(cart);
 
-    // Show the modal only for new, user-visible changes
-    const payload = { removed, clamped, priced, nowOos };
-    if (shouldOpenChangeModal(payload)) {
+    // Visible changes the shopper cares about
+    const hasVisibleDiffs =
+      (removed && removed.length) ||
+      (clamped && clamped.length) ||
+      (priced  && priced.length)  ||
+      (nowOos  && nowOos.length);
+
+    // Open only when reconcile really changed the cart AND there are visible diffs
+    if (changed && hasVisibleDiffs) {
       openOOSModal(removed, clamped, priced, nowOos);
     }
 
-    cart = fixed; // render with reconciled data
+    // Render with reconciled data
+    cart = fixed;
 
     const cartContainer = document.getElementById("cart-items");
     const cartList      = document.getElementById("cart-list");
