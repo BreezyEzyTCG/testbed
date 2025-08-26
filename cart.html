@@ -1261,43 +1261,60 @@ function decQty(key){
     if (sumShipping) sumShipping.textContent = fmtMoney(shippingFee);
     if (sumTotal)    sumTotal.textContent    = fmtMoney(total);
   }
+// Remember the last changes we showed, so we don't re-open for the same payload
+const MODAL_KEY = 'lastCartChangeModalKey';
 
-  /* === renderCart with spinner + button state (CHANGED) === */
-  /* === renderCart with spinner + button state (FINAL) === */
+function buildModalKey({ removed = [], clamped = [], priced = [], nowOos = [] } = {}) {
+  // Sort to make the key order-insensitive
+  const by = (list, mapFn) => list.map(mapFn).sort((a,b)=> (a>b)-(a<b));
+  const pack = {
+    r: by(removed, x => `${x.name}|${x.attrs||''}`),
+    c: by(clamped, x => `${x.name}|${x.attrs||''}|${x.before}|${x.after}`),
+    p: by(priced,  x => `${x.name}|${x.attrs||''}|${x.before}|${x.after}`),
+    o: by(nowOos,  x => `${x.name}|${x.attrs||''}`),
+  };
+  return JSON.stringify(pack);
+}
+
+function shouldOpenChangeModal(payload){
+  const nonEmpty = (payload.removed?.length || payload.clamped?.length || payload.priced?.length || payload.nowOos?.length);
+  if (!nonEmpty) return false;               // nothing to show
+
+  const key  = buildModalKey(payload);
+  const prev = sessionStorage.getItem(MODAL_KEY);
+
+  if (key === prev) return false;            // identical to what we already showed
+
+  sessionStorage.setItem(MODAL_KEY, key);    // remember this payload
+  return true;
+}
+
+  /* === renderCart with spinner + button state (FINAL + guarded modal) === */
 async function renderCart() {
   showSpinner();
   try {
-    // 1) Make sure we have fresh inventory
     if (!allProducts.length) {
       await fetchInventoryFromSheet();
     }
 
-    // 2) Read current cart and reconcile with live inventory
     let cart = getCart();
+
     const { cart: fixed, removed, clamped, priced, nowOos } =
       reconcileCartWithInventory(cart);
 
-    // Only show the modal when there are user-visible changes
-    const hasVisibleDiffs =
-      (removed && removed.length) ||
-      (clamped && clamped.length) ||
-      (priced  && priced.length)  ||
-      (nowOos  && nowOos.length);
-
-    if (hasVisibleDiffs) {
+    // Show the modal only for new, user-visible changes
+    const payload = { removed, clamped, priced, nowOos };
+    if (shouldOpenChangeModal(payload)) {
       openOOSModal(removed, clamped, priced, nowOos);
     }
 
-    // Use the reconciled cart for rendering
-    cart = fixed;
+    cart = fixed; // render with reconciled data
 
-    // 3) Prepare DOM targets
     const cartContainer = document.getElementById("cart-items");
     const cartList      = document.getElementById("cart-list");
     if (cartContainer) cartContainer.innerHTML = "";
     if (cartList)      cartList.innerHTML = "";
 
-    // 4) Empty-cart UI
     if (!cart.length) {
       if (cartContainer) {
         cartContainer.innerHTML =
@@ -1315,14 +1332,11 @@ async function renderCart() {
       return;
     }
 
-    // 5) Split groups: purchasable vs OOS
     const normals = cart.filter(i => !i.status);
     const oos     = cart.filter(i => i.status === 'oos');
 
-    // Subtotal is ONLY for purchasable lines
     let subtotal = 0;
 
-    // ----- helpers (desktop row + mobile card)
     const renderRow = (item) => {
       const imagePath = item.image || item.image_url || "assets/images/default.png";
       const qty  = Number(item.quantity) || 0;
@@ -1340,7 +1354,6 @@ async function renderCart() {
 
       const tr = document.createElement("tr");
       tr.className = item.status === 'oos' ? 'cart-oos' : '';
-
       tr.innerHTML = `
         <td class="col-item">
           <div style="display:flex; gap:10px; align-items:center; min-width:0;">
@@ -1389,19 +1402,14 @@ async function renderCart() {
 
       const safeKey = escapeKeyString(item.key);
       const isMaxedMobile = qty >= (Number(item.stock) || Infinity);
-
       const statusNote = item.status === 'oos'
         ? `<div style="font-size:.7rem; color:#dc2626; font-weight:700; margin-top:2px;">Out of stock</div>`
         : ``;
 
       const wrap = document.createElement('div');
       wrap.className = 'cart-item ' + (item.status === 'oos' ? 'ci-oos' : '');
-
       wrap.innerHTML = `
-        <div class="ci-thumb">
-          <img src="${imagePath}" alt="${item.name || 'Item'}" />
-        </div>
-
+        <div class="ci-thumb"><img src="${imagePath}" alt="${item.name || 'Item'}" /></div>
         <div class="ci-meta">
           <h4 class="ci-name" title="${item.name || ''}">${item.name || ''}</h4>
           <p class="ci-attrs">
@@ -1429,52 +1437,47 @@ async function renderCart() {
             </button>
           </div>
         </div>
-
         <div class="ci-right"><strong>$${line.toFixed(2)}</strong></div>
       `;
       return wrap;
     };
-    // ----- end helpers
 
-    // 6) Desktop table
+    // Desktop list
     if (cartContainer) {
       if (normals.length) {
-        normals.forEach(item => cartContainer.appendChild(renderRow(item)));
+        normals.forEach(i => cartContainer.appendChild(renderRow(i)));
       } else if (oos.length) {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">No items currently available to purchase.</td>`;
         cartContainer.appendChild(tr);
       }
-
       if (oos.length) {
-        const trH = document.createElement('tr');
-        trH.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:#dc2626; background:#fafafa;">Out of Stock</td>`;
-        cartContainer.appendChild(trH);
-        oos.forEach(item => cartContainer.appendChild(renderRow(item)));
+        const hdr = document.createElement('tr');
+        hdr.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:#dc2626; background:#fafafa;">Out of Stock</td>`;
+        cartContainer.appendChild(hdr);
+        oos.forEach(i => cartContainer.appendChild(renderRow(i)));
       }
     }
 
-    // 7) Mobile list
+    // Mobile list
     if (cartList) {
       if (normals.length) {
-        normals.forEach(item => cartList.appendChild(renderMobileCard(item)));
+        normals.forEach(i => cartList.appendChild(renderMobileCard(i)));
       } else if (oos.length) {
         const d = document.createElement('div');
         d.style.cssText = 'padding:8px; text-align:center; opacity:.8;';
         d.textContent = 'No items currently available to purchase.';
         cartList.appendChild(d);
       }
-
       if (oos.length) {
-        const hdr = document.createElement('div');
-        hdr.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
-        hdr.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
-        cartList.appendChild(hdr);
-        oos.forEach(item => cartList.appendChild(renderMobileCard(item)));
+        const h = document.createElement('div');
+        h.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
+        h.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
+        cartList.appendChild(h);
+        oos.forEach(i => cartList.appendChild(renderMobileCard(i)));
       }
     }
 
-    // 8) Totals + button state
     window.currentCartSubtotal = subtotal;
     updateSummaryTotals(subtotal);
     updateCheckoutDisabled();
