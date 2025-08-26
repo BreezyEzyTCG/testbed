@@ -1626,11 +1626,11 @@ allProducts = rows.map(src => {
     // Inline stock note (reserved or on-hold)
     let stockNote = "";
     if (reserved > 0 && available > 0) {
-      stockNote = ` <span class="reserved-note" style="font-size:0.85rem; color:#2563eb; font-weight:500;">
+      stockNote = ` <span class="reserved-note" style="font-size:0.75rem; color:#2563eb; font-weight:500;">
                       (🔥${reserved} in checkout now)
                     </span>`;
     } else if (reserved > 0 && available <= 0) {
-      stockNote = ` <span class="reserved-note" style="font-size:0.85rem; color:#2563eb; font-weight:500;">
+      stockNote = ` <span class="reserved-note" style="font-size:0.75rem; color:#2563eb; font-weight:500;">
                       (${statusLabel || "On hold — last unit in checkout"})
                     </span>`;
     }
