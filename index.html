@@ -494,12 +494,19 @@
   margin: 0.15rem 0 0.35rem;
   font-size: .85rem;
   font-weight: 600;
-  color: #b45309;           /* amber-ish hint */
+  color: #1f25de;          
 }
 .status-label.oos { color:#b91c1c; }           /* red when unavailable */
 .status-label.hold { color:#2563eb; }          /* blue when on-hold 0 available */
 .status-label.soft-hold { color:#6b7280; }     /* gray hint when some units on hold */
- 
+
+    .hold-note{
+  margin-left:6px;
+  font-size:.85rem;
+  color:#1f25de;        
+  font-style:italic;
+  white-space:nowrap;
+}
 
     /* ================== QUICKVIEW STYLES ================== */
     .qv-backdrop{
@@ -1567,25 +1574,15 @@ allProducts = rows.map(src => {
   container.innerHTML = "";
 
   list.forEach((p) => {
-    const available   = safeNumber(p.stock, 0);                 // buyable units (Stock − Reserved from backend)
-    const reserved    = safeNumber(p.reserved ?? p.Reserved, 0);
-    const statusLabel = String(p.statuslabel || p.status_label || '').trim();
+    // Backend sends: Stock = (stock - reserved), plus Reserved and StatusLabel
+    const available   = safeNumber(p.stock, 0);
+    const reserved    = safeNumber(p.reserved, 0);
+    const statusLabel = String(p.status_label || "").trim();
     const price       = safeNumber(p.price, 0);
     const out         = available <= 0;
 
-    // ---- decide status line to show on the card
-    let displayStatus = '';
-    if (available > 0 && reserved > 0) {
-      displayStatus = 'Some units on hold';
-    } else if (available === 0 && reserved > 0) {
-      displayStatus = statusLabel || 'On hold — may free up soon';
-    } else if (available === 0 && reserved === 0) {
-      displayStatus = 'Out of stock';
-    }
-    // ---------------------------------------------
-
     const badge = getBadgeInfo(p.badge);
-    const esc = s => String(s||'').replace(/'/g,"\\'");
+    const esc = s => String(s||"").replace(/'/g,"\\'");
     const safeName      = esc(p.name);
     const safeImg       = esc(p.image_url);
     const safeSeries    = esc(p["series name"]);
@@ -1596,7 +1593,15 @@ allProducts = rows.map(src => {
 
     const btnAttrs = out
       ? `disabled aria-disabled="true" tabindex="-1"`
-      : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${available}, '${safeCategory}', '${safeSubcat}')"`; 
+      : `onclick="addToCart('${safeName}', ${price}, '${safeImg}', '${safeSeries}', '${safeRarity}', '${safeCondition}', ${available}, '${safeCategory}', '${safeSubcat}')"`;
+
+    // inline “being checked out” note (only when some are on hold)
+    const holdNote = reserved > 0
+      ? ` <span class="hold-note">(${reserved} being checked out right now)</span>`
+      : "";
+
+    // decide button label when out
+    const outLabel = statusLabel || (reserved > 0 ? "On hold" : "Out of stock");
 
     const card = document.createElement("div");
     card.className = "card";
@@ -1611,16 +1616,16 @@ allProducts = rows.map(src => {
         <p class="price">$${price.toFixed(2)}</p>
         <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
         <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
-        <p class="stock"><strong>Stock:</strong> ${available}</p>
-        ${displayStatus ? `<p class="status-line">${displayStatus}</p>` : ``}
+        <p class="stock"><strong>Stock:</strong> ${available}${holdNote}</p>
       </div>
       <div class="product-actions">
-        <button type="button" ${btnAttrs}>${out ? (displayStatus || "Out of Stock") : "Add to Cart"}</button>
+        <button type="button" ${btnAttrs}>${out ? outLabel : "Add to Cart"}</button>
       </div>
     `;
     container.appendChild(card);
   });
 }
+
 
     /* ---------- Dropdown population ---------- */
     // Case-insensitive, trimmed, de-duplicated, alphabetically sorted
