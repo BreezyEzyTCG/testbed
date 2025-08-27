@@ -995,6 +995,104 @@
   <script>
     let allProducts = [];
 
+    /* ========= FACETED FILTERS: state + helpers ========= */
+const ALL = 'all';   // matches your <option value="all">
+const state = {
+  kw: '',            // search keyword (lowercased)
+  category: ALL,
+  subcategory: ALL,
+  rarity: ALL,
+  condition: ALL,
+  inStockOnly: true  // show options based only on available items
+};
+
+// Cache your select elements
+const $cat  = document.getElementById('category-filter');
+const $sub  = document.getElementById('subcategory-filter');
+const $rar  = document.getElementById('rarity-filter');
+const $con  = document.getElementById('condition-filter');
+const $kw   = document.getElementById('search');
+
+// Availability — your sheet already returns Available in `stock`
+function isAvailable(p){
+  return Number(p?.stock || 0) > 0;
+}
+
+// Product must pass *other* filters + keyword
+function passes(p){
+  if (state.inStockOnly && !isAvailable(p)) return false;
+  if (state.category   !== ALL && (p.category||'')    !== state.category) return false;
+  if (state.subcategory!== ALL && (p.subcategory||'') !== state.subcategory) return false;
+  if (state.rarity     !== ALL && (p.rarity||'')      !== state.rarity) return false;
+  if (state.condition  !== ALL && (p.condition||'')   !== state.condition) return false;
+  if (state.kw){
+    const blob = `${p.name||''} ${p['series name']||''} ${p.rarity||''} ${p.condition||''}`.toLowerCase();
+    if (!blob.includes(state.kw)) return false;
+  }
+  return true;
+}
+
+// Build counts for one facet while ignoring that facet’s current selection
+function buildFacetCounts(products, facetKey){
+  const saved = state[facetKey];
+  state[facetKey] = ALL;                    // temporarily clear this facet
+  const counts = new Map();                 // value -> count
+  for (const p of products){
+    if (!passes(p)) continue;
+    const v = (p[facetKey] || '').trim() || '(Unknown)';
+    counts.set(v, (counts.get(v) || 0) + 1);
+  }
+  state[facetKey] = saved;                  // restore
+  return counts;
+}
+
+// Fill a <select> from counts, preserving selection if still valid
+function fillSelect(selectEl, counts, currentValue, allLabel){
+  const frag = document.createDocumentFragment();
+  const optAll = document.createElement('option');
+  optAll.value = ALL; optAll.textContent = allLabel;
+  frag.appendChild(optAll);
+
+  // sort by label
+  const sorted = Array.from(counts.entries())
+    .sort((a,b) => a[0].localeCompare(b[0], undefined, {numeric:true, sensitivity:'base'}));
+
+  for (const [val, cnt] of sorted){
+    const o = document.createElement('option');
+  o.value = val;
+  o.textContent = val;        // or `${val} (${cnt})`
+  if (cnt <= 0) o.disabled = true;
+  frag.appendChild(o);
+    }
+
+  const prev = selectEl.value;
+  selectEl.innerHTML = '';
+  selectEl.appendChild(frag);
+
+  // restore if still present; otherwise All
+  if (currentValue !== ALL && selectEl.querySelector(`option[value="${CSS.escape(currentValue)}"]`)){
+    selectEl.value = currentValue;
+  } else {
+    selectEl.value = ALL;
+  }
+}
+
+// Refresh all four dropdowns based on current state
+function updateAllFacetOptions(){
+  const products = allProducts;
+
+  const catCounts = buildFacetCounts(products, 'category');
+  const subCounts = buildFacetCounts(products, 'subcategory');
+  const rarCounts = buildFacetCounts(products, 'rarity');
+  const conCounts = buildFacetCounts(products, 'condition');
+
+  fillSelect($cat, catCounts, state.category,     'All Categories');
+  fillSelect($sub, subCounts, state.subcategory,  'All Subcategories');
+  fillSelect($rar, rarCounts, state.rarity,       'All Rarity');
+  fillSelect($con, conCounts, state.condition,    'All Conditions');
+}
+
+
     // === Cart / Header Cart Sound===
 const SFX_PATH = 'assets/audio/Pokémon RedBlueYellow - PC Turning On - Sound Effect.mp3';
 const sfx = new Audio(encodeURI(SFX_PATH)); // handles spaces/é/– etc.
@@ -1565,11 +1663,11 @@ allProducts = rows.map(src => {
 });
 
 
-    populateAllDropdowns();
+    initFacets();                 // build smart options from inventory
     filteredProducts = allProducts.slice();
     paging.page = 1;
     renderPage();
-    enforceResponsiveGrid();
+
 
     console.log('[SHEET] OK — items:', allProducts.length);
   } catch (err) {
@@ -1675,69 +1773,37 @@ const byUniqueSorted = (arr) => {
     a.localeCompare(b, undefined, { sensitivity: 'base' })
   );
 };
+function applyFilters(){
+  // 1) sync state from controls
+  state.kw         = ($kw.value || '').toLowerCase();
+  state.category   = $cat.value;
+  state.subcategory= $sub.value;
+  state.rarity     = $rar.value;
+  state.condition  = $con.value;
 
-    function populateAllDropdowns(){
-      const catSel = document.getElementById("category-filter");
-      catSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      byUniqueSorted(allProducts.map(p => p.category)).forEach(c => {
-        const opt = document.createElement("option"); opt.value = c; opt.textContent = c; catSel.appendChild(opt);
-      });
+  // 2) filter products
+  const filtered = allProducts.filter(passes);
 
-      const rarSel = document.getElementById("rarity-filter");
-      rarSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      byUniqueSorted(allProducts.map(p => p.rarity)).forEach(r => {
-        const opt = document.createElement("option"); opt.value = r; opt.textContent = r; rarSel.appendChild(opt);
-      });
+  // 3) update global list + reset page + render
+  filteredProducts = filtered;
+  paging.page = 1;
+  renderPage();
 
-      const conSel = document.getElementById("condition-filter");
-      conSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      byUniqueSorted(allProducts.map(p => p.condition)).forEach(c => {
-        const opt = document.createElement("option"); opt.value = c; opt.textContent = c; conSel.appendChild(opt);
-      });
-
-      updateSubcategoryOptions();
-    }
-
-    function updateSubcategoryOptions(){
-      const cat = document.getElementById("category-filter").value;
-      const subSel = document.getElementById("subcategory-filter");
-
-      const pool = (cat === "all") ? allProducts : allProducts.filter(p => p.category === cat);
-      const subs = byUniqueSorted(pool.map(p => p.subcategory));
-
-      const current = subSel.value;
-      subSel.querySelectorAll("option:not([value='all'])").forEach(o => o.remove());
-      subs.forEach(s => {
-        const opt = document.createElement("option"); opt.value = s; opt.textContent = s; subSel.appendChild(opt);
-      });
-
-      if (current !== "all" && subs.includes(current)) subSel.value = current;
-      else subSel.value = "all";
-    }
-
-    function onCategoryChange(){ updateSubcategoryOptions(); applyFilters(); }
-
-    /* ---------- Filtering ---------- */
-    function applyFilters(){
-      const kw   = document.getElementById("search").value.toLowerCase();
-      const cat  = document.getElementById("category-filter").value;
-      const sub  = document.getElementById("subcategory-filter").value;
-      const rar  = document.getElementById("rarity-filter").value;
-      const cond = document.getElementById("condition-filter").value;
-
-     const filtered = allProducts.filter(p =>
-  (p.name || "").toLowerCase().includes(kw) &&
-  (cat === "all" || p.category === cat) &&
-  (sub === "all" || p.subcategory === sub) &&
-  (rar === "all" || p.rarity === rar) &&
-  (cond === "all" || p.condition === cond)
-);
-
-// update global list + reset to page 1
-filteredProducts = filtered;
-paging.page = 1;
-renderPage();
+  // 4) refresh facet options (preserves current selections if still valid)
+  updateAllFacetOptions();
 }
+
+  // Initialize facet options from full inventory
+function initFacets(){
+  updateAllFacetOptions();
+}
+
+// Category change still works; we just update state then re-apply
+function onCategoryChange(){
+  state.category = $cat.value;
+  applyFilters();
+}
+
     /* ---------- Grid toggle icons (new) ---------- */
     const ICONS = {
       1: { active: "assets/images/single grid.svg",  inactive: "assets/images/inactive single grid.svg" },
@@ -2310,20 +2376,21 @@ attachImageClickDelegation();
 setToggleIcons(2); // default matches the "double active" button initially
 setupMiniCart();   // ← ADD THIS
 
-    /* === Live refresh every 60s (preserves current filters & page) === */
 // (Uses the REFRESH_MS you declared earlier)
 
 async function refreshInventoryPreserveFilters(){
-  // 1) snapshot current filters & page
-  const kw   = document.getElementById("search").value;
-  const cat  = document.getElementById("category-filter").value;
-  const sub  = document.getElementById("subcategory-filter").value;
-  const rar  = document.getElementById("rarity-filter").value;
-  const cond = document.getElementById("condition-filter").value;
+  // 1) snapshot current selections + page
+  const saved = {
+    kw:  document.getElementById("search").value,
+    cat: document.getElementById("category-filter").value,
+    sub: document.getElementById("subcategory-filter").value,
+    rar: document.getElementById("rarity-filter").value,
+    con: document.getElementById("condition-filter").value,
+  };
   const pageBefore = paging.page;
 
-  // 2) fetch latest rows (no args)
-  await fetchInventoryFromSheet();
+  // 2) fetch latest rows
+  await fetchInventoryFromSheet(); // this calls initFacets() inside
 
   // 3) reconcile cart
   const rec = reconcileCartWithInventory(allProducts);
@@ -2335,21 +2402,27 @@ async function refreshInventoryPreserveFilters(){
     }
   }
 
-  // 4) restore filter selections, then re-apply filters
-  document.getElementById("category-filter").value = cat;
-  updateSubcategoryOptions();
-  document.getElementById("subcategory-filter").value = sub;
-  document.getElementById("rarity-filter").value = rar;
-  document.getElementById("condition-filter").value = cond;
-  document.getElementById("search").value = kw;
+  // 4) restore state, then apply filters (rebuilds smart dropdowns)
+  state.kw          = (saved.kw || '').toLowerCase();
+  state.category    = saved.cat;
+  state.subcategory = saved.sub;
+  state.rarity      = saved.rar;
+  state.condition   = saved.con;
 
-  // Re-apply (this sets paging.page = 1)
-  applyFilters();
+  // also reflect the saved values back into the DOM inputs
+  document.getElementById("search").value              = saved.kw;
+  document.getElementById("category-filter").value     = saved.cat;
+  document.getElementById("subcategory-filter").value  = saved.sub;
+  document.getElementById("rarity-filter").value       = saved.rar;
+  document.getElementById("condition-filter").value    = saved.con;
 
-  // Restore page and re-render
+  applyFilters(); // will update options & reset to page 1
+
+  // 5) restore page (clamped) and render
   paging.page = clampPage(pageBefore);
   renderPage();
 }
+
 
 // start the timer
 let refreshTimer = setInterval(refreshInventoryPreserveFilters, REFRESH_MS);
