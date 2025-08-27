@@ -198,6 +198,30 @@
   }
 }
 
+    /* === Global loading overlay === */
+#loading-spinner{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 10000;
+}
+#loading-spinner.hidden { display: none; }
+
+#loading-spinner .spinner{
+  width: 50px;
+  height: 50px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #5725AE; /* matches your checkout purple */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
     /* ========= Search input now lives in banner ========= */
     #search{
       padding:0.5rem; border-radius:5px; border:1px solid #ccc; background:#fff;
@@ -993,6 +1017,10 @@
   <div id="toast"></div>
 
   <script>
+
+    function showSpinner(){ document.getElementById('loading-spinner')?.classList.remove('hidden'); }
+    function hideSpinner(){ document.getElementById('loading-spinner')?.classList.add('hidden'); }
+
     let allProducts = [];
 
     /* ========= FACETED FILTERS: state + helpers ========= */
@@ -1605,20 +1633,17 @@ function setupMiniCart(){
     }
 
    async function fetchInventoryFromSheet(){
+  showSpinner();
   try {
     const res = await fetch(SHEET_API, { cache: 'no-store' });
     console.log('[SHEET] status', res.status, res.statusText);
 
     const ct = (res.headers.get('content-type') || '').toLowerCase();
-    console.log('[SHEET] content-type', ct);
-
     if (!res.ok) {
       const text = await res.text().catch(()=> '');
       console.error('[SHEET] non-OK response:', res.status, text);
       throw new Error(`Inventory fetch failed: HTTP ${res.status}`);
     }
-
-    // Ensure it’s JSON
     if (!ct.includes('application/json')) {
       const text = await res.text().catch(()=> '');
       console.error('[SHEET] Expected JSON, got:', ct, '\nPreview:\n', text.slice(0, 800));
@@ -1626,48 +1651,39 @@ function setupMiniCart(){
     }
 
     let rows = await res.json();
-    // Accept either an array or {data:[...]}
-    if (!Array.isArray(rows) && rows && Array.isArray(rows.data)) {
-      rows = rows.data;
-    }
-    if (!Array.isArray(rows)) {
-      console.error('[SHEET] Unexpected payload:', rows);
-      throw new Error('JSON payload is not an array');
-    }
+    if (!Array.isArray(rows) && rows && Array.isArray(rows.data)) rows = rows.data;
+    if (!Array.isArray(rows)) throw new Error('JSON payload is not an array');
 
-    // Normalize
-allProducts = rows.map(src => {
-  const obj = {};
-  for (const [k, v] of Object.entries(src)) {
-    const key = String(k).trim().toLowerCase();
-    obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
-  }
-  if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
-  if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
+    // normalize rows → allProducts (unchanged from your version)
+    allProducts = rows.map(src => {
+      const obj = {};
+      for (const [k, v] of Object.entries(src)) {
+        const key = String(k).trim().toLowerCase();
+        obj[key] = (key === 'price' || key === 'stock') ? safeNumber(v) : String(v ?? '').trim();
+      }
+      if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
+      if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
 
-  // Ensure expected keys exist
-  obj.name           = obj.name           || '';
-  obj.category       = obj.category       || '';
-  obj.subcategory    = obj.subcategory    || '';
-  obj.description    = obj.description    || '';
-  obj.condition      = obj.condition      || '';
-  obj['series name'] = obj['series name'] || '';
-  obj.back           = obj.back           || '';
-  obj.img2           = obj.img2           || '';
-  obj.img3           = obj.img3           || '';
-  obj.price          = safeNumber(obj.price, 0);
-  obj.stock          = safeNumber(obj.stock, 0);         // ← this is already Available
-  obj.reserved       = safeNumber(src.Reserved ?? src.reserved ?? 0, 0);          // NEW
-  obj.status_label   = String(src.StatusLabel ?? src.statuslabel ?? obj.status_label ?? ''); // NEW
-  return obj;
-});
+      obj.name           = obj.name           || '';
+      obj.category       = obj.category       || '';
+      obj.subcategory    = obj.subcategory    || '';
+      obj.description    = obj.description    || '';
+      obj.condition      = obj.condition      || '';
+      obj['series name'] = obj['series name'] || '';
+      obj.back           = obj.back           || '';
+      obj.img2           = obj.img2           || '';
+      obj.img3           = obj.img3           || '';
+      obj.price          = safeNumber(obj.price, 0);
+      obj.stock          = safeNumber(obj.stock, 0);
+      obj.reserved       = safeNumber(src.Reserved ?? src.reserved ?? 0, 0);
+      obj.status_label   = String(src.StatusLabel ?? src.statuslabel ?? obj.status_label ?? '');
+      return obj;
+    });
 
-
-    initFacets();                 // build smart options from inventory
+    initFacets();
     filteredProducts = allProducts.slice();
     paging.page = 1;
     renderPage();
-
 
     console.log('[SHEET] OK — items:', allProducts.length);
   } catch (err) {
@@ -1680,6 +1696,9 @@ allProducts = rows.map(src => {
           <p style="color:#555;font-size:.9rem">Details: ${String(err?.message || err)}</p>
         </div>`;
     }
+  } finally {
+    hideSpinner();
+  }
   }
 }
     function getBadgeInfo(raw){
@@ -2478,6 +2497,12 @@ document.addEventListener('DOMContentLoaded', () => {
 <button id="scrollTopBtn" type="button" aria-label="Scroll to top">
   <img src="assets/images/return to top.svg" alt="Back to top" />
 </button>
+
+<!-- Loading Spinner -->
+<div id="loading-spinner" class="hidden">
+  <div class="spinner"></div>
+</div>
+    
 </body>
 </html>
 
