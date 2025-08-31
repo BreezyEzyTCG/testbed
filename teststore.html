@@ -2302,7 +2302,7 @@ const cardNo = getField(product, ['Card #','card #','card no','card no.']);
 // Build the 3 lines only when values exist
 const lines = [];
 if (illustrator) lines.push(`<strong>Illustrator's Name:</strong> ${esc(illustrator)}`);
-if (release)     lines.push(`<strong>Set Release Date/Year:</strong> ${esc(release)}${year ? ` (${year})` : ''}`);
+if (release) lines.push(`<strong>Set Release Date/Year:</strong> ${esc(release)}`);
 if (cardNo)      lines.push(`<strong>Card #:</strong> ${esc(cardNo)}`);
 
 // Original free-text description (keep your line breaks)
