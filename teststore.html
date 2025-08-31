@@ -2226,6 +2226,23 @@ function clampPage(p){
       qv._setZoom = setZoom;
     }
 
+   // Case-insensitive field getter for products (tries several keys)
+function getField(p, keys){
+  for (const k of keys){
+    const v = p?.[k] ?? p?.[k.toLowerCase?.() || k];
+    if (v != null && String(v).trim() !== '') return String(v).trim();
+  }
+  return '';
+}
+
+// Very small HTML escaper so we can safely inject text
+function esc(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+ 
     function openQuickview(product){
   qv.product = product;
   qv.images  = buildImagesArray(product);
@@ -2252,9 +2269,34 @@ function clampPage(p){
   }
   qv.stock.innerHTML = stockHTML;
 
-  // Description (unchanged)
-  const desc = (product.description || '').trim();
-  document.getElementById('qvDesc').innerHTML = desc ? desc.replace(/\n/g, '<br>') : '-';
+  // ===== Description + extra metadata lines =====
+const illustrator = getField(product, ['Illustrated By','illustrated by','illustrator']);
+const release     = getField(product, ['Release Date','release date','set release date']);
+const cardNo      = getField(product, ['Card #','card #','card no','card no.']);
+
+// Try to pick a 4-digit year out of the release text, if any
+let year = '';
+if (release) {
+  const m = release.match(/\b(19|20)\d{2}\b/);
+  if (m) year = m[0];
+}
+
+// Build the 3 lines only when the value exists
+const lines = [];
+if (illustrator) lines.push(`<strong>Illustrator's Name:</strong> ${esc(illustrator)}`);
+if (release)     lines.push(`<strong>Set Release Date/Year:</strong> ${esc(release)}${year ? ` (${year})` : ''}`);
+if (cardNo)      lines.push(`<strong>Card #:</strong> ${esc(cardNo)}`);
+
+// Original free-text description (keep your line breaks)
+const desc = (product.description || '').trim();
+const descHtml = desc ? esc(desc).replace(/\n/g, '<br>') : '';
+
+// Final block: the 3 lines (if any), then a blank line, then the description (if any)
+const combined = [lines.join('<br>'), descHtml].filter(Boolean).join('<br><br>');
+
+// Render or fallback to a dash if truly empty
+document.getElementById('qvDesc').innerHTML = combined || '-';
+
 
   // === Button label/state ===
   const isOut = available <= 0;
