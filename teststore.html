@@ -2285,41 +2285,36 @@ function esc(s){
   qv.stock.innerHTML = stockHTML;
 
   // ===== Description + extra metadata lines =====
-const illustrator = getField(product, ['Illustrated By','illustrated by','illustrator']);
-const releaseRaw = getField(product, ['Release Date','release date','set release date']);
+const illustrator   = getField(product, ['Illustrated By','illustrated by','illustrator']);
+const releaseRaw    = getField(product, ['Release Date','release date','set release date']);
 const releasePretty = prettyRelease(releaseRaw);
-let year = '';
-if (releasePretty) {
-  const ym = releasePretty.match(/\b(19|20)\d{2}\b/);
-  if (ym) year = ym[0];
-}
-if (releasePretty) lines.push(
-  `<strong>Set Release Date/Year:</strong> ${esc(releasePretty)}${year ? ` (${year})` : ''}`
-);
-const cardNo      = getField(product, ['Card #','card #','card no','card no.']);
 
-// Try to pick a 4-digit year out of the release text, if any
+// Normalize to a single variable and derive year once
+const release = releasePretty || '';
 let year = '';
 if (release) {
   const m = release.match(/\b(19|20)\d{2}\b/);
   if (m) year = m[0];
 }
 
-// Build the 3 lines only when the value exists
+const cardNo = getField(product, ['Card #','card #','card no','card no.']);
+
+// Build the 3 lines only when values exist
 const lines = [];
 if (illustrator) lines.push(`<strong>Illustrator's Name:</strong> ${esc(illustrator)}`);
 if (release)     lines.push(`<strong>Set Release Date/Year:</strong> ${esc(release)}${year ? ` (${year})` : ''}`);
 if (cardNo)      lines.push(`<strong>Card #:</strong> ${esc(cardNo)}`);
 
 // Original free-text description (keep your line breaks)
-const desc = (product.description || '').trim();
+const desc     = (product.description || '').trim();
 const descHtml = desc ? esc(desc).replace(/\n/g, '<br>') : '';
 
 // Final block: the 3 lines (if any), then a blank line, then the description (if any)
 const combined = [lines.join('<br>'), descHtml].filter(Boolean).join('<br><br>');
 
-// Render or fallback to a dash if truly empty
+// Render (fallback to a dash if truly empty)
 document.getElementById('qvDesc').innerHTML = combined || '-';
+
 
 
   // === Button label/state ===
