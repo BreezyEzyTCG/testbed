@@ -1176,6 +1176,21 @@ function playSfx(){
     toast.addEventListener("transitionend", done);
   }, duration);
 }
+function prettyRelease(s){
+  if (!s) return '';
+  // If ISO like "YYYY-MM-DDTHH:mm:ssZ"
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d)) return d.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+  }
+  // If "YYYY-MM-DD"
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const d = new Date(+m[1], +m[2]-1, +m[3]);
+    if (!isNaN(d)) return d.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+  }
+  return s; // leave as-is
+}
 
     function safeNumber(val, fallback=0){
       if (typeof val === "number" && Number.isFinite(val)) return val;
@@ -2271,7 +2286,16 @@ function esc(s){
 
   // ===== Description + extra metadata lines =====
 const illustrator = getField(product, ['Illustrated By','illustrated by','illustrator']);
-const release     = getField(product, ['Release Date','release date','set release date']);
+const releaseRaw = getField(product, ['Release Date','release date','set release date']);
+const releasePretty = prettyRelease(releaseRaw);
+let year = '';
+if (releasePretty) {
+  const ym = releasePretty.match(/\b(19|20)\d{2}\b/);
+  if (ym) year = ym[0];
+}
+if (releasePretty) lines.push(
+  `<strong>Set Release Date/Year:</strong> ${esc(releasePretty)}${year ? ` (${year})` : ''}`
+);
 const cardNo      = getField(product, ['Card #','card #','card no','card no.']);
 
 // Try to pick a 4-digit year out of the release text, if any
