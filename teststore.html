@@ -998,7 +998,7 @@
             <p id="qvCondition"></p>
             <p id="qvStock"></p>
             <div class="qv-descwrap">
-              <strong class="qv-desclabel">Description:</strong>
+              <strong class="qv-desclabel">Description</strong>
               <p class="qv-desc" id="qvDesc"></p>
             </div>
           </div>
@@ -2285,7 +2285,11 @@ function esc(s){
   qv.stock.innerHTML = stockHTML;
 
   // ===== Description + extra metadata lines =====
-const illustrator   = getField(product, ['Illustrated By','illustrated by','illustrator']);
+const illustrator = getField(product, [
+  'Illustrated By', 'illustrated by',           // new header (title + lowercase)
+  "Illustrator's Name", "illustrator's name",   // old header (title + lowercase)
+  'illustrator'                                 // generic fallback
+]);
 const releaseRaw    = getField(product, ['Release Date','release date','set release date']);
 const releasePretty = prettyRelease(releaseRaw);
 
@@ -2301,7 +2305,7 @@ const cardNo = getField(product, ['Card #','card #','card no','card no.']);
 
 // Build the 3 lines only when values exist
 const lines = [];
-if (illustrator) lines.push(`<strong>Illustrator's Name:</strong> ${esc(illustrator)}`);
+if (illustrator) lines.push(`<strong>Illustrated By:</strong> ${esc(illustrator)}`);
 if (release) lines.push(`<strong>Set Release Date/Year:</strong> ${esc(release)}`);
 if (cardNo)      lines.push(`<strong>Card #:</strong> ${esc(cardNo)}`);
 
