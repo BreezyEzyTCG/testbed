@@ -83,6 +83,8 @@
   @media (max-width:600px){
     .sum-item .attrs{ max-width:260px; }
   }
+  #discRowInput input{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; }
+  #discRowAmount small{ font-weight:500; margin-left:6px; }
   .sum-total{ background:var(--surface-2); color:var(--text); padding:10px 14px; font-weight:800; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:var(--size-total); }
   .option-group{ display:grid; gap:8px; }
   .opt-item{ display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:start; padding:9px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
@@ -250,7 +252,21 @@
           <div id="sumItems" style="margin-bottom:6px;"></div>
           <div class="sum-row"><span><strong>Subtotal</strong></span><strong id="sumSubtotal">$0.00</strong></div>
           <div class="sum-row"><span><strong>Shipping</strong></span><strong id="sumShipping">$0.00</strong></div>
+          <!-- Discount: code input -->
+        <div class="sum-row" id="discRowInput">
+          <span style="display:flex; gap:8px; align-items:center; width:100%;">
+            <input id="discCode" placeholder="Discount code" autocomplete="off" style="flex:1; min-width:0;">
+            <button id="discApply" class="btn outline" type="button" style="white-space:nowrap;">Apply</button>
+          </span>
+          <span></span>
         </div>
+<!-- Discount: amount (hidden until applied) -->
+<div class="sum-row" id="discRowAmount" hidden>
+  <span><strong>Discount</strong> <small id="discCodeTag" style="color:#64748b;"></small></span>
+  <strong id="sumDiscount">-$0.00</strong>
+</div>
+        </div>
+      
         <div class="sum-total">
           <span>Total</span><span id="sumTotal">$0.00</span>
         </div>
@@ -348,14 +364,13 @@ function normalizeCart(arr){
 }
 
 function getCart(){
-  try{
-    const raw = JSON.parse(localStorage.getItem("cart") || "[]");
-    return normalizeCart(Array.isArray(raw) ? raw : []);
-  }catch{ return []; }
+  try{ const raw = JSON.parse(localStorage.getItem("cart") || "[]"); return Array.isArray(raw)? raw:[]; }
+  catch{ return []; }
 }
+function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
 
 // A line is purchasable only if it has NO status flag and has qty > 0
-const isPurchasable = i => !i.status && (Number(i.quantity)||0) > 0;
+const isPurchasable = i => !i.status && (Number(i.qty ?? i.quantity) || 0) > 0;
 
 // Replace your old fetch-based functions with these:
 async function apiHold(items, userRef){
@@ -455,13 +470,6 @@ function proxyFetch(endpoint, params) {
   });
 }
 
-/* ========= Cart helpers ========= */
-function getCart(){
-  try{ const raw = JSON.parse(localStorage.getItem("cart") || "[]"); return Array.isArray(raw)? raw:[]; }
-  catch{ return []; }
-}
-function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
-
 /* ========= Shipping from cart ========= */
 function getSavedShippingFromCart(){
   const RAW = localStorage.getItem('shippingMethod');
@@ -506,7 +514,7 @@ function getShippingSafe(){
 }
 function cartFingerprint(){
   const cart = getCartSafe()
-    .filter(isPurchasable)                      // ✅ match what we charge
+    .filter(isPurchasable)
     .map(i => ({
       name: i.name || '',
       price: Number(i.price || 0),
@@ -515,14 +523,61 @@ function cartFingerprint(){
       year: i.year || i.release_year || ''
     }));
   const ship = getShippingSafe();
-  return JSON.stringify({ cart, shipId: ship?.id || ship?.label || '' });
+  const discCode = getSavedDiscountCode();
+  return JSON.stringify({ cart, shipId: ship?.id || ship?.label || '', discCode });
 }
+
 
 function totalCentsFromText(s){
   const n = Number(String(s).replace(/[^0-9.]/g,''));
   return Math.round((Number.isFinite(n) ? n : 0) * 100);
 }
 
+/* ===== Discount rules (edit anytime) =====
+   kind: 'percent' → value = % off (items only)
+         'amount'  → value = fixed $ off (applied to subtotal first)
+         'ship'    → free shipping (sets shipping fee to 0)
+*/
+const DISCOUNT_RULES = {
+  save5:   { kind: 'percent', value: 5,  label: '5% off' },
+  take2:   { kind: 'amount',  value: 2,  label: '$2 off' },
+  freeship:{ kind: 'ship',    value: 1,  label: 'Free shipping' },
+};
+const DISC_KEY = 'checkout.discountCode';
+
+function getSavedDiscountCode(){
+  try { return (localStorage.getItem(DISC_KEY) || '').trim(); } catch { return ''; }
+}
+function setSavedDiscountCode(code){
+  try { if (code) localStorage.setItem(DISC_KEY, code); else localStorage.removeItem(DISC_KEY); } catch {}
+}
+
+function computeDiscount(subtotal, ship, codeRaw){
+  const code = String(codeRaw || '').trim().toLowerCase();
+  const rule = DISCOUNT_RULES[code];
+  if (!rule) return { amount: 0, ship: ship, code: '', label: '' };
+
+  let discountAmt = 0;
+  let newShip = ship;
+
+  if (rule.kind === 'percent'){
+    discountAmt = +(subtotal * (rule.value/100)).toFixed(2);
+  } else if (rule.kind === 'amount'){
+    discountAmt = Math.min(rule.value, Math.max(0, subtotal));  // don’t exceed subtotal
+  } else if (rule.kind === 'ship'){
+    newShip = 0;
+  }
+
+  const maxAll = Math.max(0, subtotal + newShip);
+  discountAmt = Math.min(discountAmt, maxAll); // sanity cap
+
+  return {
+    amount: discountAmt,
+    ship: newShip,
+    code,
+    label: rule.label || code.toUpperCase()
+  };
+}
   /* ====== 15‑MINUTE PAYMENT SESSION PERSISTENCE ====== */
 const DRAFT_KEY = 'breezy.checkout.draft';
 const SESSION_MINUTES = 15;                   // 15 minutes
@@ -1021,7 +1076,7 @@ function renderSummary(){
   const totalEl    = document.getElementById('sumTotal');
 
   const raw  = getCart();
-  const cart = raw.filter(isPurchasable); // <- only show/charge purchasable
+  const cart = raw.filter(isPurchasable);
 
   const rows = cart.map(i => {
     const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
@@ -1043,21 +1098,40 @@ function renderSummary(){
 
   itemsEl.innerHTML = rows || '<div class="hint">No items available to purchase.</div>';
 
+  // base amounts
   const subtotal = cart.reduce((s, i) => {
     const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
     const u = Number(i.price ?? 0) || 0;
     return s + (u * q);
   }, 0);
 
-  const saved  = getSavedShippingFromCart();
-  const ship   = Number(saved?.fee ?? 0);
+  const savedShip = getSavedShippingFromCart();
+  let ship = Number(savedShip?.fee ?? 0);
 
+  // apply discount
+  const code = getSavedDiscountCode();
+  const disc = computeDiscount(subtotal, ship, code);
+  ship = disc.ship;
+
+  // update rows
   subtotalEl.textContent = fmt(subtotal);
   shippingEl.textContent = fmt(ship);
-  totalEl.textContent    = fmt(subtotal + ship);
+
+  const discRow = document.getElementById('discRowAmount');
+  const discTag = document.getElementById('discCodeTag');
+  const discAmtEl = document.getElementById('sumDiscount');
+
+  if (disc.amount > 0 || code) {
+    discRow.hidden = false;
+    discAmtEl.textContent = `-${fmt(disc.amount)}`;
+    discTag.textContent = code ? `(${(disc.label || code).toString()})` : '';
+  } else {
+    discRow.hidden = true;
+  }
+
+  const total = Math.max(0, subtotal + ship - disc.amount);
+  totalEl.textContent    = fmt(total);
 }
-
-
 
   /* Build reservation items from the cart (server uses these to match rows) */
 function buildHoldItemsFromCart(){
@@ -1087,34 +1161,41 @@ function buildHoldItemsFromCart(){
   const methodLabel   = v('fMethodLabel');
   const methodId      = v('fMethod');
 
-    // 2) Cart summary (chargeables only)
-  const cart = getCart();
-  const purch = cart.filter(isPurchasable);    // ✅
-  const savedShip = getSavedShippingFromCart();
-  const shipFee   = Number(savedShip?.fee ?? 0);
+  // 2) Cart summary (chargeables only)
+const cart = getCart();
+const purch = cart.filter(isPurchasable);
+const savedShip = getSavedShippingFromCart();
+const shipFee   = Number(savedShip?.fee ?? 0);
 
-  let subtotal = 0;
-  const items = purch.map(i => {
-    const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
-    const unit = Number(i.price ?? 0) || 0;
-    const line = unit * qty;
-    subtotal  += line;
-
-    return {
-      name: String(i.name || 'Item'),
-      attrs: formatAttrs(i),
-      qty,
-      unit_price: unit,
-      line_total: line
-    };
-  });
-
-
-  const totals = {
-    subtotal,
-    shipping: shipFee,
-    total: subtotal + shipFee
+// Compute subtotal first
+let subtotal = 0;
+const items = purch.map(i => {
+  const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
+  const unit = Number(i.price ?? 0) || 0;
+  const line = unit * qty;
+  subtotal  += line;
+  return {
+    name: String(i.name || 'Item'),
+    attrs: formatAttrs(i),
+    qty,
+    unit_price: unit,
+    line_total: line
   };
+});
+
+// Apply discount
+const discCode = getSavedDiscountCode();
+const disc     = computeDiscount(subtotal, shipFee, discCode);
+const finalShip= disc.ship;
+const discount = disc.amount;
+
+const totals = {
+  subtotal,
+  shipping: finalShip,
+  discount,
+  total: Math.max(0, subtotal + finalShip - discount),
+  discount_code: discCode || ''
+};
 
   return {
     order_id: currentOrderId || genOrderId(),
@@ -1395,6 +1476,57 @@ postalEl?.addEventListener('input', debounce(() => {
 }, 400));
 postalEl?.addEventListener('blur', () => tryLookupPostal());
 
+function wireDiscountUI(){
+  const input = document.getElementById('discCode');
+  const apply = document.getElementById('discApply');
+
+  // Preload saved code into the box (nice UX)
+  const saved = getSavedDiscountCode();
+  if (saved && input) input.value = saved;
+  if (saved && DISCOUNT_RULES[saved]) apply.textContent = 'Remove';
+
+  // Toggle Apply/Remove in one place
+  apply?.addEventListener('click', () => {
+    const mode = apply.textContent.trim().toLowerCase();
+
+    // Remove current code
+    if (mode === 'remove') {
+      setSavedDiscountCode('');
+      if (input) input.value = '';
+      apply.textContent = 'Apply';
+      renderSummary();
+      syncPayCta();
+      return;
+    }
+
+    // Apply entered code
+    const entered = (input?.value || '').trim().toLowerCase();
+    if (!entered) {                       // empty → clear
+      setSavedDiscountCode('');
+      renderSummary();
+      syncPayCta();
+      return;
+    }
+    if (!DISCOUNT_RULES[entered]) {
+      alert('Invalid code. Please check and try again.');
+      return;
+    }
+
+    setSavedDiscountCode(entered);
+    apply.textContent = 'Remove';
+    renderSummary();                       // recompute totals
+    syncPayCta();
+  });
+
+  // (Nice UX) Press Enter in the input acts like clicking Apply
+  input?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      apply?.click();
+    }
+  });
+}
+
 function beforeUnloadHandler(e){
   if (isRedirecting || suppressUnloadOnce) {
     suppressUnloadOnce = false;
@@ -1505,7 +1637,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   isModalOpen = true;
 });
   
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  wireDiscountUI();
+});
 </script>
 </body>
 </html>
