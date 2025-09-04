@@ -1494,7 +1494,7 @@ function wireDiscountUI(){
   const apply = document.getElementById('discApply');
 
   // Preload saved code into the box (nice UX)
-  const saved = getSavedDiscountCode();
+  const saved = (getSavedDiscountCode() || '').toLowerCase();  // in wireDiscountUI()
   if (saved && input) input.value = saved;
   if (saved && DISCOUNT_RULES[saved]) apply.textContent = 'Remove';
 
