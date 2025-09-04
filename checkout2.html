@@ -350,7 +350,7 @@ const PAYNOW_API  = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwt
 const UPLOAD_API  = 'https://script.google.com/macros/s/AKfycbxriS7NptwgUanj7DIRS0SO6_CvbWAr6RgFKt3LetnGcT1RoRIGnkZGvJsDrcR_TwKR/exec';
 const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8lv5gp8lLchlfXpTBxNRhd-Whg8VS4INsCpOguGakPSpPnOn3sl3g/exec';
 /* ===== Inventory reservation API (Apps Script Web App) ===== */
-const INVENTORY_API = 'https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec'; 
+const DISCOUNTS_API = INVENTORY_API; = 'https://script.google.com/macros/s/AKfycbx6Jw_-Y1T3DUDY5_tX0ARpwmcOD5Lzfspa1EFOD15QcdfLHPGsAN6cDDBZ9bKmlnXR/exec'; 
 
   // Same normalizer you use on cart page (short version)
 function normalizeCart(arr){
@@ -396,6 +396,19 @@ async function apiConfirm(holdId, holdToken, orderId){
   });
 }
 
+async function loadDiscountRules(){
+  try {
+    // Use JSONP-with-base64 like other INVENTORY_API calls
+    const res = await jsonpFetchB64(DISCOUNTS_API, 'discounts', {}); 
+    if (res && res.ok && res.rules) {
+      DISCOUNT_RULES = res.rules; // {code:{kind,value,label,minSubtotal}}
+    } else {
+      console.warn('[discounts] Bad response:', res);
+    }
+  } catch (e) {
+    console.warn('[discounts] load failed:', e);
+  }
+}
 
 /* === SFX helper (reset + play, keeps it in user-gesture chain) === */
 function playUploadSfx(){
@@ -533,16 +546,9 @@ function totalCentsFromText(s){
   return Math.round((Number.isFinite(n) ? n : 0) * 100);
 }
 
-/* ===== Discount rules (edit anytime) =====
-   kind: 'percent' → value = % off (items only)
-         'amount'  → value = fixed $ off (applied to subtotal first)
-         'ship'    → free shipping (sets shipping fee to 0)
-*/
-const DISCOUNT_RULES = {
-  save5:   { kind: 'percent', value: 5,  label: '5% off' },
-  take2:   { kind: 'amount',  value: 2,  label: '$2 off' },
-  freeship:{ kind: 'ship',    value: 1,  label: 'Free shipping' },
-};
+// Will be filled from the spreadsheet at runtime
+let DISCOUNT_RULES = {};  // { code: { kind, value, label, minSubtotal } }
+
 const DISC_KEY = 'checkout.discountCode';
 
 function getSavedDiscountCode(){
@@ -555,21 +561,26 @@ function setSavedDiscountCode(code){
 function computeDiscount(subtotal, ship, codeRaw){
   const code = String(codeRaw || '').trim().toLowerCase();
   const rule = DISCOUNT_RULES[code];
-  if (!rule) return { amount: 0, ship: ship, code: '', label: '' };
+  if (!rule) return { amount: 0, ship, code: '', label: '' };
+
+  // Optional gate: minimum subtotal requirement
+  if (Number(rule.minSubtotal || 0) > 0 && subtotal < Number(rule.minSubtotal)) {
+    return { amount: 0, ship, code: '', label: '' }; // not eligible yet
+  }
 
   let discountAmt = 0;
   let newShip = ship;
 
   if (rule.kind === 'percent'){
-    discountAmt = +(subtotal * (rule.value/100)).toFixed(2);
+    discountAmt = +(subtotal * (Number(rule.value||0)/100)).toFixed(2);
   } else if (rule.kind === 'amount'){
-    discountAmt = Math.min(rule.value, Math.max(0, subtotal));  // don’t exceed subtotal
+    discountAmt = Math.min(Number(rule.value||0), Math.max(0, subtotal));
   } else if (rule.kind === 'ship'){
     newShip = 0;
   }
 
-  const maxAll = Math.max(0, subtotal + newShip);
-  discountAmt = Math.min(discountAmt, maxAll); // sanity cap
+  const cappedBase = Math.max(0, subtotal + newShip);
+  discountAmt = Math.min(discountAmt, cappedBase);
 
   return {
     amount: discountAmt,
@@ -578,6 +589,7 @@ function computeDiscount(subtotal, ship, codeRaw){
     label: rule.label || code.toUpperCase()
   };
 }
+
   /* ====== 15‑MINUTE PAYMENT SESSION PERSISTENCE ====== */
 const DRAFT_KEY = 'breezy.checkout.draft';
 const SESSION_MINUTES = 15;                   // 15 minutes
@@ -1508,10 +1520,20 @@ function wireDiscountUI(){
       return;
     }
     if (!DISCOUNT_RULES[entered]) {
-      alert('Invalid code. Please check and try again.');
-      return;
-    }
-
+  alert('Invalid or expired code. Please check and try again.');
+  return;
+}
+// if we want to check eligibility right away (instead of during renderSummary)
+const subtotalNow = getCart().filter(isPurchasable).reduce((s,i)=>{
+  const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
+  const u = Number(i.price ?? 0) || 0;
+  return s + (u*q);
+}, 0);
+const min = Number(DISCOUNT_RULES[entered].minSubtotal || 0);
+if (min > 0 && subtotalNow < min) {
+  alert(`This code requires a minimum subtotal of ${fmt(min)}.`);
+  return;
+}
     setSavedDiscountCode(entered);
     apply.textContent = 'Remove';
     renderSummary();                       // recompute totals
@@ -1637,9 +1659,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   isModalOpen = true;
 });
   
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-  wireDiscountUI();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadDiscountRules();   // ← get rules from the sheet
+  init();                      // renders summary (now aware of rules)
+  wireDiscountUI();            // wires Apply/Remove using those rules
 });
 </script>
 </body>
