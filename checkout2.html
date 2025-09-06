@@ -1175,45 +1175,47 @@ function buildHoldItemsFromCart(){
   const methodId      = v('fMethod');
 
   // 2) Cart summary (chargeables only)
-const cart = getCart();
-const purch = cart.filter(isPurchasable);
-const savedShip = getSavedShippingFromCart();
-const shipFee   = Number(savedShip?.fee ?? 0);
+  const cart  = getCart();
+  const purch = cart.filter(isPurchasable);
+  const savedShip = getSavedShippingFromCart();
+  const shipFee   = Number(savedShip?.fee ?? 0);
 
-// Compute subtotal first
-let subtotal = 0;
-const items = purch.map(i => {
-  const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
-  const unit = Number(i.price ?? 0) || 0;
-  const line = unit * qty;
-  subtotal  += line;
-  return {
-    name: String(i.name || 'Item'),
-    attrs: formatAttrs(i),
-    qty,
-    unit_price: unit,
-    line_total: line
+  // Compute subtotal first
+  let subtotal = 0;
+  const items = purch.map(i => {
+    const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
+    const unit = Number(i.price ?? 0) || 0;
+    const line = unit * qty;
+    subtotal  += line;
+    return {
+      name: String(i.name || 'Item'),
+      attrs: formatAttrs(i),
+      qty,
+      unit_price: unit,
+      line_total: line
+    };
+  });
+
+  // Apply discount
+  const discCode = getSavedDiscountCode();
+  const disc     = computeDiscount(subtotal, shipFee, discCode);
+  const finalShip= Number(disc.ship || 0);
+  const discount = Number(disc.amount || 0);
+
+  // Build totals (send positive magnitude for discounts)
+  const totalNum = Math.max(0, +(subtotal + finalShip - discount).toFixed(2));
+  const totals = {
+    subtotal,
+    shipping: finalShip,
+    discount,                     // ✅ numeric, positive magnitude
+    total: totalNum,              // ✅ clean number, 2dp
+    discount_code: discCode || '',
+    discount_label: disc.label || ''
   };
-});
-
-// Apply discount
-const discCode = getSavedDiscountCode();
-const disc     = computeDiscount(subtotal, shipFee, discCode);
-const finalShip= disc.ship;
-
-// Build totals (send positive magnitude for discounts)
-const totals = {
-  subtotal,
-  shipping: finalShip,
-  discount,                       // numeric (e.g. 0.10)
-  total: Math.max(0, subtotal + finalShip - discount),
-  discount_code: discCode || '',
-  discount_label: disc.label || '' // e.g. "5% off"
-};
 
   return {
     order_id: currentOrderId || genOrderId(),
-    created_at: formatDDMMYYYYHHMM(),
+    created_at: formatDDMMYYYYHHMM(),  // matches your Apps Script parser
     customer_name,
     email,
     phone,
@@ -1228,6 +1230,7 @@ const totals = {
     totals
   };
 }
+
   
 function isValidShipForm(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
