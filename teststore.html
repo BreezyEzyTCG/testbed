@@ -308,7 +308,7 @@
   margin:0 auto;
   display:grid;
   gap:0.75rem;                     /* was 0.5rem */
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .filter-grid select{
@@ -923,22 +923,27 @@
 
     <!-- Filter selects under the banner (search removed here) -->
     <div class="filter-bar">
-      <div class="filter-grid">
-        <select id="category-filter" onchange="onCategoryChange()">
-          <option value="all">All Categories</option>
-        </select>
-        <select id="subcategory-filter" onchange="applyFilters()">
-          <option value="all">All Subcategories</option>
-        </select>
-        <select id="rarity-filter" onchange="applyFilters()">
-          <option value="all">All Rarity</option>
-        </select>
-        <select id="condition-filter" onchange="applyFilters()">
-          <option value="all">All Conditions</option>
-        </select>
-      </div>
-    </div>
+  <div class="filter-grid">
+    <select id="category-filter" onchange="onCategoryChange()">
+      <option value="all">All Categories</option>
+    </select>
+    <select id="subcategory-filter" onchange="applyFilters()">
+      <option value="all">All Subcategories</option>
+    </select>
+    <select id="rarity-filter" onchange="applyFilters()">
+      <option value="all">All Rarity</option>
+    </select>
+    <select id="condition-filter" onchange="applyFilters()">
+      <option value="all">All Conditions</option>
+    </select>
+
+    <!-- 🔵 ADD THIS -->
+    <select id="language-filter" onchange="applyFilters()">
+      <option value="all">All Languages</option>
+    </select>
   </div>
+</div>
+
 
   <!-- ===== Content Panel (grid toggle + cards) ===== -->
 <div class="container-panel">
@@ -1028,13 +1033,15 @@ const url = 'https://script.google.com/macros/s/AKfycbxXkVLXwPwvEwj6X_ugCQmGJz9H
 
 const ALL = 'all';   // matches your <option value="all">
 const state = {
-  kw: '',            // search keyword (lowercased)
+  kw: '',
   category: ALL,
   subcategory: ALL,
   rarity: ALL,
   condition: ALL,
-  inStockOnly: true  // show options based only on available items
+  language: ALL,   // 🔵 added
+  inStockOnly: true
 };
+
 
 // Cache your select elements
 const $cat  = document.getElementById('category-filter');
@@ -1042,6 +1049,7 @@ const $sub  = document.getElementById('subcategory-filter');
 const $rar  = document.getElementById('rarity-filter');
 const $con  = document.getElementById('condition-filter');
 const $kw   = document.getElementById('search');
+const $lang = document.getElementById('language-filter'); // 🔵 added    
 
 // Availability — your sheet already returns Available in `stock`
 function isAvailable(p){
@@ -1055,6 +1063,7 @@ function passes(p){
   if (state.subcategory!== ALL && (p.subcategory||'') !== state.subcategory) return false;
   if (state.rarity     !== ALL && (p.rarity||'')      !== state.rarity) return false;
   if (state.condition  !== ALL && (p.condition||'')   !== state.condition) return false;
+  if (state.language   !== ALL && (p.language||'')    !== state.language)  return false;   // 🔵 added
   if (state.kw){
     const blob = `${p.name||''} ${p['series name']||''} ${p.rarity||''} ${p.condition||''}`.toLowerCase();
     if (!blob.includes(state.kw)) return false;
@@ -1115,11 +1124,13 @@ function updateAllFacetOptions(){
   const subCounts = buildFacetCounts(products, 'subcategory');
   const rarCounts = buildFacetCounts(products, 'rarity');
   const conCounts = buildFacetCounts(products, 'condition');
+  const lanCounts = buildFacetCounts(products, 'language');  // 🔵 added
 
-  fillSelect($cat, catCounts, state.category,     'All Categories');
-  fillSelect($sub, subCounts, state.subcategory,  'All Subcategories');
-  fillSelect($rar, rarCounts, state.rarity,       'All Rarity');
-  fillSelect($con, conCounts, state.condition,    'All Conditions');
+  fillSelect($cat,  catCounts, state.category,     'All Categories');
+  fillSelect($sub,  subCounts, state.subcategory,  'All Subcategories');
+  fillSelect($rar,  rarCounts, state.rarity,       'All Rarity');
+  fillSelect($con,  conCounts, state.condition,    'All Conditions');
+  fillSelect($lang, lanCounts, state.language,     'All Languages'); // 🔵 added
 }
 
 
@@ -1680,6 +1691,7 @@ function setupMiniCart(){
       }
       if (obj['sub-category'] && !obj.subcategory) obj.subcategory = obj['sub-category'];
       if (obj['image url'] && !obj.image_url)       obj.image_url  = obj['image url'];
+      if (obj.lang && !obj.language) obj.language = obj.lang;  // 🔵 optional alias
 
       obj.name           = obj.name           || '';
       obj.category       = obj.category       || '';
@@ -1690,6 +1702,7 @@ function setupMiniCart(){
       obj.back           = obj.back           || '';
       obj.img2           = obj.img2           || '';
       obj.img3           = obj.img3           || '';
+      obj.language = obj.language || '';   
       obj.price          = safeNumber(obj.price, 0);
       obj.stock          = safeNumber(obj.stock, 0);
       obj.reserved       = safeNumber(src.Reserved ?? src.reserved ?? 0, 0);
@@ -1815,6 +1828,7 @@ function applyFilters(){
   state.subcategory= $sub.value;
   state.rarity     = $rar.value;
   state.condition  = $con.value;
+  state.language    = $lang.value;   // 🔵 added
 
   // 2) filter products
   const filtered = allProducts.filter(passes);
