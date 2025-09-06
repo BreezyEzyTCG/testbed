@@ -1200,13 +1200,15 @@ const items = purch.map(i => {
 const discCode = getSavedDiscountCode();
 const disc     = computeDiscount(subtotal, shipFee, discCode);
 const finalShip= disc.ship;
-const discount = disc.amount;
+-const discount = disc.amount;
++const discounts = disc.amount;   // <- name must be plural
 
 const totals = {
   subtotal,
   shipping: finalShip,
-  discount,
-  total: Math.max(0, subtotal + finalShip - discount),
+-  discount,
++  discounts,              // <- send as totals.discounts (positive magnitude)
+  total: Math.max(0, subtotal + finalShip - discounts),
   discount_code: discCode || ''
 };
 
