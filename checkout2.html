@@ -1242,7 +1242,7 @@ function buildHoldItemsFromCart(){
     unit,
     city,
     shipping_method: methodLabel || methodId,
-    remarks: (document.getElementById('orderNotes')?.value || '').trim(),
+    remarks: escapeHtml((document.getElementById('orderNotes')?.value || '').trim()),
     items,
     totals
   };
