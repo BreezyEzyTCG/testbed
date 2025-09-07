@@ -191,6 +191,11 @@
               </div>
             </div>
 
+            <div style="display:none;">
+          <label>Leave this empty</label>
+          <input id="trapField" type="text" autocomplete="off" tabindex="-1" />
+        </div>
+
             <div class="row">
               <div>
                 <label class="req">Phone (+65)</label>
@@ -1252,6 +1257,8 @@ function isValidShipForm(){
   }
   const agree = document.getElementById('disc1');
   const hasPurch = getCart().some(isPurchasable);           // ✅
+  const trap = document.getElementById('trapField');
+  if (trap && trap.value.trim()) return false;  // bot detected
   return !!(agree && agree.checked && hasPurch);
 }
 
