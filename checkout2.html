@@ -935,34 +935,70 @@ postalEl?.addEventListener('blur', () => tryLookupPostal());
 function wireDiscountUI(){
   const input = document.getElementById('discCode');
   const apply = document.getElementById('discApply');
+
+  // If the discount UI isn't in the DOM, just skip quietly.
+  if (!input || !apply) {
+    console.warn('[wireDiscountUI] discount inputs not found — skipping.');
+    return;
+  }
+
+  // Preload saved code into the box (nice UX)
   const saved = (getSavedDiscountCode() || '').toLowerCase();
-  if (saved && input) input.value = saved;
+  if (saved) input.value = saved;
   if (saved && DISCOUNT_RULES[saved]) apply.textContent = 'Remove';
-  apply?.addEventListener('click', () => {
-    const mode = apply.textContent.trim().toLowerCase();
+
+  // Toggle Apply/Remove in one place
+  apply.addEventListener('click', () => {
+    const mode = (apply.textContent || '').trim().toLowerCase();
+
+    // Remove current code
     if (mode === 'remove') {
       setSavedDiscountCode('');
-      if (input) input.value = '';
+      input.value = '';
       apply.textContent = 'Apply';
-      renderSummary(); syncPayCta();
+      renderSummary();
+      syncPayCta();
       return;
     }
-    const entered = (input?.value || '').trim().toLowerCase();
-    if (!entered) { setSavedDiscountCode(''); renderSummary(); syncPayCta(); return; }
-    if (!DISCOUNT_RULES[entered]) { alert('Invalid or expired code. Please check and try again.'); return; }
+
+    // Apply entered code
+    const entered = (input.value || '').trim().toLowerCase();
+    if (!entered) {
+      setSavedDiscountCode('');
+      renderSummary();
+      syncPayCta();
+      return;
+    }
+
+    if (!DISCOUNT_RULES[entered]) {
+      alert('Invalid or expired code. Please check and try again.');
+      return;
+    }
+
+    // (Optional) minimum subtotal check now
     const subtotalNow = getCart().filter(isPurchasable).reduce((s,i)=>{
       const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
       const u = Number(i.price ?? 0) || 0;
       return s + (u*q);
     }, 0);
     const min = Number(DISCOUNT_RULES[entered].minSubtotal || 0);
-    if (min > 0 && subtotalNow < min) { alert(`This code requires a minimum subtotal of ${fmt(min)}.`); return; }
+    if (min > 0 && subtotalNow < min) {
+      alert(`This code requires a minimum subtotal of ${fmt(min)}.`);
+      return;
+    }
+
     setSavedDiscountCode(entered);
     apply.textContent = 'Remove';
-    renderSummary(); syncPayCta();
+    renderSummary();
+    syncPayCta();
   });
-  input?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); apply?.click(); }
+
+  // Enter key applies/removes
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      apply.click();
+    }
   });
 }
 
