@@ -1,338 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Checkout</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="preconnect" href="https://script.google.com">
-<link rel="preconnect" href="https://www.onemap.gov.sg">
-
-<style>
-  :root{
-    --page-bg:#f6f7f9;
-    --surface:#ffffff;
-    --surface-2:#FAFAFA;
-    --border:rgba(15,23,42,.10);
-    --shadow:0 10px 24px rgba(2,6,23,.08);
-    --accent:#ef4444;
-    --text:#0f172a;
-    --muted:#475569;
-    --chip-bg:#0f172a;
-    --chip-fg:#fff;
-    --bw-bg:#111;
-    --bw-fg:#fff;
-    --bw-border:#e5e7eb;
-    --size-base:14.5px;
-    --size-label:12.75px;
-    --size-input:14px;
-    --size-h2:15px;
-    --size-h3:14px;
-    --size-row:14px;
-    --size-total:16.5px;
-  }
-
-  body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-size:var(--size-base); background:var(--page-bg); color:var(--text); }
-  .wrap{ max-width:1040px; margin:18px auto; padding:12px; }
-  .grid{ display:grid; gap:14px; grid-template-columns:1.15fr 1fr; }
-  @media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
-  .card{ background:var(--surface); border-radius:12px; padding:0; border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
-  .form-header{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); }
-  .back-btn{ display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border-radius:10px; text-decoration:none; font-weight:600; color:#111; background:#fff; border:1px solid rgba(0,0,0,.12); }
-  .card-body{ padding:14px; }
-  .card-body h2{ margin:0 0 10px; font-size:var(--size-h2); letter-spacing:.2px; }
-  .card-body > .hint{ background:var(--surface-2); padding:8px 10px; border-radius:8px; font-size:13px; margin-bottom:12px; display:block; }
-  #fPostal[data-state="ok"]{ border-color:#16a34a; }
-  #fPostal[data-state="err"]{ border-color:#ef4444; }
-  .fields{ display:grid; gap:10px; }
-  .row{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
-  @media (max-width:600px){ .row{ grid-template-columns:1fr; } }
-  label{ font-size:var(--size-label); font-weight:600; margin-bottom:5px; color:var(--muted); }
-  .req::after{ content:" *"; color:#ef4444; }
-  input,select,textarea{ box-sizing:border-box; width:100%; padding:9px 11px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; font-size:var(--size-input); outline:none; transition:box-shadow .15s ease,border-color .15s ease; }
-  input:focus,select:focus,textarea:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
-  .invalid{border-color:#ef4444 !important;box-shadow:0 0 0 3px rgba(239,68,68,.15) !important;}
-  .valid{border-color:#16a34a !important;box-shadow:0 0 0 3px rgba(22,163,74,.15) !important;}
-  .errlist{color:#b91c1c; margin-top:8px;line-height:1.4;white-space:pre-line;}
-  #fMethodLabel[readonly]{ background:#fff; color:inherit; opacity:1; cursor:default; }
-  .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
-  .pay-cta{ display:none; margin-top:12px; width:100%; padding:10px 12px; border-radius:10px; font-weight:700; border:1px solid transparent; cursor:pointer; background:var(--chip-bg); color:var(--chip-fg); transition:opacity .15s ease, transform .05s ease; font-size:14px; }
-  .pay-cta:hover:not([disabled]){ transform:translateY(-1px); }
-  .pay-cta[disabled]{ opacity:.5; cursor:not-allowed; }
-  .pay-cta.show{ display:block; }
-  .summary{ border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); position:sticky; top:12px; align-self:start; font-family:'Outfit',sans-serif; }
-  .summary *{ font-family:inherit; }
-  .sum-header{ padding:12px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); color:var(--text); font-weight:700; font-size: calc(var(--size-h3) * 1.2); }
-  .sum-body{ background:#fff; padding:10px 14px; }
-  .sum-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:var(--size-row); }
-  .sum-row .price{ font-weight:400; }
-  .sum-item{display:flex; flex-direction:column; min-width:0;}
-  .sum-item .name{font-weight:600;}
-  .sum-item .attrs{
-    font-weight:400;
-    font-size:12px;
-    line-height:1.25;
-    color:#64748b;
-    margin-top:2px;
-    white-space:normal;
-    word-break:break-word;
-    max-width:420px;
-  }
-  @media (max-width:600px){
-    .sum-item .attrs{ max-width:260px; }
-  }
-  #discRowInput input{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; }
-  #discRowAmount small{ font-weight:500; margin-left:6px; }
-  .sum-total{ background:var(--surface-2); color:var(--text); padding:10px 14px; font-weight:800; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:var(--size-total); }
-  .option-group{ display:grid; gap:8px; }
-  .opt-item{ display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:start; padding:9px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
-  .disc-text{ font-size:13px; color:var(--muted); }
-  #qrModal[hidden]{ display:none; }
-  .qr-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; display:flex; align-items:center; justify-content:center; padding:16px; }
-  .qr-dialog{ width:min(660px,96vw); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; }
-  .qr-head{ background:var(--surface-2); color:var(--text); padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); font-size:var(--size-h3); }
-  .qr-body{ padding:14px; display:grid; gap:10px; }
-  #qrBox { width: 220px; height: 220px; border:1px solid rgba(0,0,0,.1); border-radius:10px; overflow:hidden; }
-  #qrBox img, #qrBox canvas { width: 100%; height: 100%; display:block; }
-  .qr-info{ font-size:var(--size-row); }
-  .qr-flex{ display:flex; gap:14px; align-items:flex-start; }
-  @media (max-width:600px){ .qr-flex{ flex-direction:column; align-items:stretch; } }
-  .danger{ background:var(--accent); color:#fff; border:1px solid rgba(0,0,0,.04); }
-  .outline{ background:#fff; color:#0f172a; border:1px solid rgba(0,0,0,.12); }
-  .btn{ padding:9px 11px; border-radius:10px; font-weight:700; cursor:pointer; font-size:14px; }
-  @media (max-height:820px) and (min-width:981px){
-    :root{ --size-base:13.75px; --size-label:12.25px; --size-input:13.25px; --size-h2:14px; --size-row:13.25px; --size-total:15.5px; }
-    .wrap{ margin:14px auto; }
-    .card-body{ padding:12px; }
-    .sum-body{ padding:9px 12px; }
-    .sum-header,.sum-total{ padding:9px 12px; }
-  }
-  .sum-notes{
-    background:#fff;
-    padding:10px 14px;
-    border-top:1px solid var(--border);
-  }
-  .sum-notes label{
-    display:block;
-    margin-bottom:6px;
-    font-weight:600;
-    font-size:var(--size-label);
-    color:var(--muted);
-  }
-  #orderNotes{ min-height:90px; resize:vertical; }
-
-  #qrClose { display: none; }
-  #qrTimer.timer-urgent { color: #dc2626; font-weight: 800; }
-  #uploadStatus { font-size:12.5px; color:#6b7280; margin-top:6px; }
-  #uploadStatus.ok { color:#065f46; }
-  #uploadStatus.err{ color:#991b1b; }
-
-  #formErrors {
-    color:#b91c1c;
-    margin-top:6px;
-    font-size:0.9rem;
-    line-height:1.4;
-    white-space:pre-line;
-  }
-
-  #fAddr1[readonly]{ background:#f3f4f6; color:#6b7280; border-color:#cbd5e1; }
-  #fAddr1[readonly]:focus{ box-shadow:none; border-color:#cbd5e1; }
-  
-  .btn-icon{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:0;
-    border:0;
-    background:transparent;
-  }
-  .btn-icon.btn-plain{
-    width:auto; height:auto; padding:0; background:transparent; border:0; border-radius:0;
-    box-shadow:none; gap:0; line-height:0; appearance:none; -webkit-appearance:none; transition:none; cursor:pointer;
-  }
-  .btn-icon.btn-plain img,
-  .btn-icon.btn-plain svg{
-    height:30px; width:auto; display:block; filter:none;
-  }
-  .btn-icon[disabled]{ opacity:.55; cursor:not-allowed;}
-
-  .pay-cta[disabled]{ opacity:0.6; cursor:not-allowed; }
-  .pay-cta.waiting::after{
-    content:"…"; animation:dots 1.2s steps(3,end) infinite; margin-left:4px;
-  }
-  @keyframes dots{0%{content:" "}33%{content:"."}66%{content:".."}100%{content:"..."}}
-</style>
-<script src="assets/js/qrcode.min.js" defer></script>
-</head>
-<body>
-  <div class="wrap">
-    <div class="grid">
-      <section class="card">
-        <div class="form-header">
-          <a href="cart.html" class="back-btn">← Back</a>
-        </div>
-        <div class="card-body">
-          <h2>Shipping Details</h2>
-          <div class="hint" style="margin-bottom:10px;">
-            Note: Providing accurate information helps us deliver your order smoothly (^_<)〜☆
-          </div>
-
-          <div class="fields" id="shipForm">
-            <div class="row">
-              <div>
-                <label class="req">Full Name</label>
-                <input id="fName" required autocomplete="name" placeholder="e.g., Roronoa Zoro"/>
-              </div>
-              <div>
-                <label class="req">Email</label>
-                <input id="fEmail" type="email" required autocomplete="email" placeholder="foreverlostzoro@example.com"/>
-              </div>
-            </div>
-
-            <div style="display:none;">
-          <label>Leave this empty</label>
-          <input id="trapField" type="text" autocomplete="off" tabindex="-1" />
-        </div>
-
-            <div class="row">
-              <div>
-                <label class="req">Phone (+65)</label>
-                <input id="fPhone" type="tel" required inputmode="numeric" maxlength="8"
-                  pattern="^[89]\d{7}$" placeholder="8-digit number (starts with 8 or 9)"/>
-              </div>
-              <div>
-                <label class="req">Postal Code</label>
-                <input id="fPostal" required inputmode="numeric" maxlength="6" placeholder="6 digits" pattern="^\d{6}$" autocomplete="postal-code">
-                <div id="postalHint" class="hint" aria-live="polite"></div>
-              </div>
-            </div>
-
-            <div>
-              <label class="req">Address Line 1</label>
-              <input id="fAddr1" required placeholder="Block & Street Name" readonly title="Autofilled from Postal Code"/>
-              <div class="hint">Autofilled from Postal Code (uneditable)</div>
-            </div>
-            <div>
-              <label>Address Line 2 (optional)</label>
-              <input id="fAddr2" placeholder="Building name etc. (optional)"/>
-            </div>
-            <div>
-              <label class="req">Unit No.</label>
-              <input id="fUnit" type="text" required inputmode="text" maxlength="8"
-                pattern="^[0-9A-Za-z\-]{1,8}$"
-                placeholder="Unit No. (max 8 chars, letters allowed)" autocomplete="off"/>
-            </div>
-            <div class="row">
-              <div>
-                <label class="req">City</label>
-                <input id="fCity" required value="Singapore" readonly />
-              </div>
-              <div>
-                <label class="req">Selected Mailing Option</label>
-                <input id="fMethodLabel" readonly placeholder="Choose on cart page"/>
-                <input type="hidden" id="fMethod" required />
-                <div class="hint">Selected on cart page. Go back to change.</div>
-              </div>
-            </div>
-
-            <div class="option-group option-list" style="margin-top:8px;">
-              <label class="opt-item">
-                <input type="checkbox" id="disc1">
-                <span class="disc-text">By proceeding, you agree that the information above is correct.</span>
-              </label>
-            </div>
-
-            <button id="btnPay" class="pay-cta" disabled>Make Payment</button>
-            <div class="hint">Button is greyed out until all required fields are valid.</div>
-            <div id="formErrors" class="hint errlist" aria-live="polite"></div>
-          </div>
-        </div>
-      </section>
-
-      <aside class="summary">
-        <div class="sum-header"><strong>Detailed Order Summary</strong></div>
-        <div class="sum-body" id="sumBody">
-          <div id="sumItems" style="margin-bottom:6px;"></div>
-          <div class="sum-row"><span><strong>Subtotal</strong></span><strong id="sumSubtotal">$0.00</strong></div>
-          <div class="sum-row"><span><strong>Shipping</strong></span><strong id="sumShipping">$0.00</strong></div>
-          <!-- Discount: code input -->
-        <div class="sum-row" id="discRowInput">
-          <span style="display:flex; gap:8px; align-items:center; width:100%;">
-            <input id="discCode" placeholder="Discount code" autocomplete="off" style="flex:1; min-width:0;">
-            <button id="discApply" class="btn outline" type="button" style="white-space:nowrap;">Apply</button>
-          </span>
-          <span></span>
-        </div>
-<!-- Discount: amount (hidden until applied) -->
-<div class="sum-row" id="discRowAmount" hidden>
-  <span><strong>Discount</strong> <small id="discCodeTag" style="color:#64748b;"></small></span>
-  <strong id="sumDiscount">-$0.00</strong>
-</div>
-        </div>
-      
-        <div class="sum-total">
-          <span>Total</span><span id="sumTotal">$0.00</span>
-        </div>
-
-        <div class="sum-notes">
-          <label for="orderNotes">Remarks (optional)</label>
-          <textarea id="orderNotes" rows="4" maxlength="500" placeholder="Any delivery notes or special requests?"></textarea>
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- QR Modal -->
-  <div id="qrModal" hidden>
-    <div class="qr-backdrop" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
-      <div class="qr-dialog">
-        <div class="qr-head">
-          <h3 id="qrTitle">PayNow/PayLah QR Payment</h3>
-          <button class="btn outline" id="qrClose">Close</button>
-        </div>
-        <div class="qr-body">
-          <div class="qr-flex">
-            <div id="qrBox" aria-label="QR code will render here"></div>
-            <div class="qr-info">
-              <div style="margin-bottom:8px;">
-                <div><strong>Pay to:</strong> <span id="qrPayTo">—</span></div>
-                <div><strong>Amount:</strong> <span id="qrAmount">$0.00</span></div>
-                <div><strong>Order ID:</strong> <span id="qrOrderId">—</span></div>
-                <div><strong>Time left:</strong> <span id="qrTimer">10:00</span></div>
-              </div>
-              <div class="hint">Your Order ID will be inputted automatically.<strong> Please do not edit.</strong></div>
-              <div class="proof" style="margin-top:12px;">
-                <label>Upload payment screenshot <strong>(required)</strong></label>
-                <input id="proofFile" type="file" accept="image/*" required />
-                <div id="uploadStatus" class="hint" aria-live="polite"></div>
-                <p class="hint">Stay on this page; we'll teleport you back to the store once upload finishes.</p>
-              </div>
-
-              <div style="display:flex; gap:8px; margin-top:12px;">
-                <button id="qrCancel" class="btn-icon btn-plain" type="button" aria-label="Cancel">
-                  <img src="assets/images/cancel.png" alt="Cancel" />
-                </button>
-
-                <button id="qrPaid" class="btn-icon btn-plain" type="button" aria-label="Upload payment proof">
-                  <img src="assets/images/upload.png" alt="Upload" />
-                </button>
-              </div>
-            </div>
-          </div>
-          <p class="hint">Your details are transmitted directly to us and used only to confirm your order.</p>
-          <p class="hint">Orders without a valid payment screenshot will be voided. Contact us right away if you left before uploading.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 🔊 Audio element (with source for better compatibility) -->
-  <audio id="uploadSfx" preload="auto">
-    <source src="assets/audio/Uploading.mp3" type="audio/mpeg">
-  </audio>
-  
 <script>
 let isUploading = false;
 let isOpeningQr = false;
@@ -342,14 +7,37 @@ let isRedirecting = false;
 let lastProofUrl = ''; 
 let _tickExpiredHandled = false;
 
+/* ========= CLOUD RUN PROXY =========
+   Browser -> Cloud Run -> Apps Script
+   Cloud Run injects the secret; browser never sees it.
+*/
+const PROXY_URL = "https://checkoutproxy-294769499638.asia-southeast1.run.app/apps-script"; // ← your Cloud Run URL
 
-  function formatDDMMYYYYHHMM(d = new Date()) {
+async function proxyPost(payload) {
+  const res = await fetch(PROXY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {})
+  });
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || `Proxy ${res.status}`);
+    return data;
+  } else {
+    const text = await res.text();
+    if (!res.ok) throw new Error(text || `Proxy ${res.status}`);
+    try { return JSON.parse(text); } catch { return { ok: true, raw: text }; }
+  }
+}
+
+function formatDDMMYYYYHHMM(d = new Date()) {
   return new Intl.DateTimeFormat('en-GB', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit', hour12: false
   }).format(d).replace(/\//g, '-').replace(',', '');
 }
-  
+
 /* ========= CONFIG ========= */
 const ONEMAP_PROXY = 'https://script.google.com/macros/s/AKfycbxI0PMIvEx9qZNyB9KF1S0A_kkiA9TYpXI5hBG36Ys1mbrV35LgCWwGalVzQuaA6G5I/exec';
 const PAYNOW_API  = 'https://script.google.com/macros/s/AKfycbwsSpKoO5bM_nEBAhwtiSpo9QZcD8KH3xgO9gaIvh3-_VBQDg0pSzgBwFtHbhep9POi/exec';
@@ -359,31 +47,25 @@ const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8
 const INVENTORY_API  = 'https://script.google.com/macros/s/AKfycbxXkVLXwPwvEwj6X_ugCQmGJz9HcGyKxsJG2KSMkO9UthlmjNI2hMPlbB8ksr9sX4I/exec';
 const DISCOUNTS_API = INVENTORY_API;
 
-  // Same normalizer you use on cart page (short version)
+/* ========= Reservation/Discount helpers (unchanged) ========= */
 function normalizeCart(arr){
   return (arr || []).map(i => {
     const obj = { ...i };
     obj.category    = obj.category    ?? '';
     obj.subcategory = obj.subcategory ?? '';
-    // keep existing key; cart page already upgrades it
     return obj;
   });
 }
-
 function getCart(){
   try{ const raw = JSON.parse(localStorage.getItem("cart") || "[]"); return Array.isArray(raw)? raw:[]; }
   catch{ return []; }
 }
 function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', currency:'SGD'}); }
-
-// A line is purchasable only if it has NO status flag and has qty > 0
 const isPurchasable = i => !i.status && (Number(i.qty ?? i.quantity) || 0) > 0;
 
-// Replace your old fetch-based functions with these:
 async function apiHold(items, userRef){
   return await jsonpFetchB64(INVENTORY_API, 'hold', { items, user_ref: userRef || '' });
 }
-
 async function apiCancel(holdId, holdToken, reason){
   if (!holdId || !holdToken) return { ok:true };
   return await jsonpFetchB64(INVENTORY_API, 'cancel', {
@@ -392,7 +74,6 @@ async function apiCancel(holdId, holdToken, reason){
     reason: reason || ''
   });
 }
-
 async function apiConfirm(holdId, holdToken, orderId){
   if (!holdId || !holdToken || !orderId)
     return { ok:false, error:'Missing fields' };
@@ -402,13 +83,11 @@ async function apiConfirm(holdId, holdToken, orderId){
     order_id: orderId
   });
 }
-
 async function loadDiscountRules(){
   try {
-    // Use JSONP-with-base64 like other INVENTORY_API calls
     const res = await jsonpFetchB64(DISCOUNTS_API, 'discounts', {}); 
     if (res && res.ok && res.rules) {
-      DISCOUNT_RULES = res.rules; // {code:{kind,value,label,minSubtotal}}
+      DISCOUNT_RULES = res.rules;
     } else {
       console.warn('[discounts] Bad response:', res);
     }
@@ -417,80 +96,63 @@ async function loadDiscountRules(){
   }
 }
 
-/* === SFX helper (reset + play, keeps it in user-gesture chain) === */
+/* === SFX helper === */
 function playUploadSfx(){
   const a = document.getElementById('uploadSfx');
   if (!a) return;
   try{
-    a.pause();
-    a.currentTime = 0;
+    a.pause(); a.currentTime = 0;
     const p = a.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(err => console.warn('[SFX] play blocked or failed:', err));
-    }
-  }catch(err){
-    console.warn('[SFX] error:', err);
-  }
+    if (p && typeof p.catch === 'function') p.catch(()=>{});
+  }catch{}
 }
 
-/* Simple JSONP fetch for PayNow/EMVQR */
+/* Simple JSONP (unchanged) */
 function jsonpFetch(baseUrl, params) {
   return new Promise((resolve, reject) => {
     const cb = `pay_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
     const qs = new URLSearchParams({ ...params, callback: cb, _: Date.now() });
     const s = document.createElement('script');
     s.src = `${baseUrl}?${qs.toString()}`;
-
     const timeout = setTimeout(() => { cleanup(); reject(new Error('PAY_JSONP_TIMEOUT')); }, 15000);
     function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
-
     window[cb] = (data) => { cleanup(); resolve(data); };
     s.onerror = () => { cleanup(); reject(new Error('PAY_JSONP_LOAD_ERROR')); };
-
     document.head.appendChild(s);
   });
 }
-
- // JSONP with base64 payload (for INVENTORY_API hold/cancel/confirm)
 function jsonpFetchB64(baseUrl, action, obj) {
   const cb  = `inv_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
   const json= JSON.stringify(obj || {});
-  const b64 = btoa(unescape(encodeURIComponent(json))); // UTF-8 -> base64
+  const b64 = btoa(unescape(encodeURIComponent(json)));
   const qs  = new URLSearchParams({ action, payload_b64: b64, callback: cb, _: Date.now() });
-
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     const timeout = setTimeout(() => { cleanup(); reject(new Error('JSONP_TIMEOUT')); }, 15000);
     function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
-
     window[cb] = (data) => { cleanup(); resolve(data); };
     s.onerror  = () => { cleanup(); reject(new Error('JSONP_LOAD_ERROR')); };
-
     s.src = `${baseUrl}?${qs.toString()}`;
     document.head.appendChild(s);
   });
 }
- 
 
-/* JSONP proxy to OneMap (bypasses CORS) */
+/* JSONP proxy to OneMap (unchanged) */
 function proxyFetch(endpoint, params) {
   return new Promise((resolve, reject) => {
     const cb = `onemap_cb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
     const qs = new URLSearchParams({ ...params, endpoint, callback: cb, _: Date.now() });
     const s = document.createElement('script');
     s.src = `${ONEMAP_PROXY}?${qs.toString()}`;
-
     const timeout = setTimeout(() => { cleanup(); reject(new Error('JSONP_TIMEOUT')); }, 8000);
     function cleanup(){ clearTimeout(timeout); delete window[cb]; s.remove(); }
-
     window[cb] = (data) => { cleanup(); resolve(data); };
     s.onerror = () => { cleanup(); reject(new Error('JSONP_LOAD_ERROR')); };
-
     document.head.appendChild(s);
   });
 }
 
-/* ========= Shipping from cart ========= */
+/* ========= Shipping from cart (unchanged) ========= */
 function getSavedShippingFromCart(){
   const RAW = localStorage.getItem('shippingMethod');
   if (!RAW) return null;
@@ -524,7 +186,7 @@ function applySavedShippingToForm(){
   }
 }
 
-  function getCartSafe(){
+function getCartSafe(){
   try { const a = JSON.parse(localStorage.getItem('cart') || '[]'); return Array.isArray(a) ? a : []; }
   catch { return []; }
 }
@@ -547,37 +209,28 @@ function cartFingerprint(){
   return JSON.stringify({ cart, shipId: ship?.id || ship?.label || '', discCode });
 }
 
-
 function totalCentsFromText(s){
   const n = Number(String(s).replace(/[^0-9.]/g,''));
   return Math.round((Number.isFinite(n) ? n : 0) * 100);
 }
 
-// Will be filled from the spreadsheet at runtime
-let DISCOUNT_RULES = {};  // { code: { kind, value, label, minSubtotal } }
-
+let DISCOUNT_RULES = {};
 const DISC_KEY = 'checkout.discountCode';
-
 function getSavedDiscountCode(){
   try { return (localStorage.getItem(DISC_KEY) || '').trim(); } catch { return ''; }
 }
 function setSavedDiscountCode(code){
   try { if (code) localStorage.setItem(DISC_KEY, code); else localStorage.removeItem(DISC_KEY); } catch {}
 }
-
 function computeDiscount(subtotal, ship, codeRaw){
   const code = String(codeRaw || '').trim().toLowerCase();
   const rule = DISCOUNT_RULES[code];
   if (!rule) return { amount: 0, ship, code: '', label: '' };
-
-  // Optional gate: minimum subtotal requirement
   if (Number(rule.minSubtotal || 0) > 0 && subtotal < Number(rule.minSubtotal)) {
-    return { amount: 0, ship, code: '', label: '' }; // not eligible yet
+    return { amount: 0, ship, code: '', label: '' };
   }
-
   let discountAmt = 0;
   let newShip = ship;
-
   if (rule.kind === 'percent'){
     discountAmt = +(subtotal * (Number(rule.value||0)/100)).toFixed(2);
   } else if (rule.kind === 'amount'){
@@ -585,49 +238,30 @@ function computeDiscount(subtotal, ship, codeRaw){
   } else if (rule.kind === 'ship'){
     newShip = 0;
   }
-
   const cappedBase = Math.max(0, subtotal + newShip);
   discountAmt = Math.min(discountAmt, cappedBase);
-
-  return {
-    amount: discountAmt,
-    ship: newShip,
-    code,
-    label: rule.label || code.toUpperCase()
-  };
+  return { amount: discountAmt, ship: newShip, code, label: rule.label || code.toUpperCase() };
 }
 
-  /* ====== 15‑MINUTE PAYMENT SESSION PERSISTENCE ====== */
+/* ====== 15-MINUTE PAYMENT SESSION PERSISTENCE ====== */
 const DRAFT_KEY = 'breezy.checkout.draft';
-const SESSION_MINUTES = 15;                   // 15 minutes
-const EXPIRE_API = 'https://script.google.com/macros/s/AKfycbyNAIzqGn_dRSfuG08mHewR5dX-ki9-a1g6Rr-Ztc5wlvEqqz0iXjDIEgO8UhBWSHndog/exec'; // <-- replace with your Web App URL
-
-function getDraft() {
-  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { return null; }
-}
-function setDraft(obj) {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(obj || null)); } catch {}
-}
-function clearDraft() {
-  try { localStorage.removeItem(DRAFT_KEY); } catch {}
-}
+const SESSION_MINUTES = 15;
+function getDraft() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { return null; } }
+function setDraft(obj) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(obj || null)); } catch {} }
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch {} }
 function now(){ return Date.now(); }
 function isExpired(d){ return !d || !d.endTime || (now() >= Number(d.endTime)); }
 function remainingMs(d){ return Math.max(0, Number(d.endTime) - now()); }
 
+/* 👇 Changed to go via Cloud Run */
 async function notifyExpire(orderId, reason){
   if (!orderId) return;
   try {
-    await fetch(EXPIRE_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // ⬅️ changed
-      body: JSON.stringify({ action:'expire', orderId, reason: reason || 'TIMEOUT' })
-    });
-  } catch (e) {}
+    await proxyPost({ action:'expire', orderId, reason: reason || 'TIMEOUT' });
+  } catch (e) { console.warn('[expire] failed:', e); }
 }
 
-  
-/* ===== Payment timer length (10 minutes) ===== */
+/* ===== Payment timer length (10–15 min typical) ===== */
 const TIMER_MS = 15 * 60 * 1000;
 
 /* Track order id for tagging upload */
@@ -637,16 +271,12 @@ let currentOrderId = null;
 let countdown = null, endTime = 0;
 function genOrderId(){ const t = Date.now().toString(36).toUpperCase().slice(-6); const r = Math.random().toString(36).toUpperCase().slice(2,6); return `BE-${t}${r}`; }
 let qrInstance = null;
-
 function renderQr(text){
   const box = document.getElementById('qrBox');
   if (!box) return;
   box.innerHTML = '';
-  qrInstance = new QRCode(box, {
-    text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M
-  });
+  qrInstance = new QRCode(box, { text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
 }
-
 function parseCurrencyToNumber(s){
   if (!s) return 0;
   const n = Number(String(s).replace(/[^0-9.]/g,''));
@@ -670,51 +300,35 @@ async function openQrCreateNew(){
   let holdRes;
   try {
     holdRes = await apiHold(holdItems, userRef);
-    console.log('[apiHold result]', holdRes);   // <--- ADD THIS LINE
+    console.log('[apiHold result]', holdRes);
   } catch (err) {
     alert('Could not reach the reservation server. Please try again.');
     return;
   }
   if (!holdRes?.ok) {
-  // accept different backend property names safely
-  const list =
-    holdRes?.lacks ||
-    holdRes?.missing ||
-    holdRes?.insufficient ||
-    holdRes?.items ||
-    [];
-
-  const problems = (Array.isArray(list) ? list : []).map(x => {
-    const name   = x?.item?.name || 'Item';
-    const reason = x?.reason || 'UNAVAILABLE';
-    const left   = (typeof x?.available === 'number') ? ` (left: ${x.available})` : '';
-    return `• ${name} — ${reason}${left}`;
-  }).join('\n');
-
-  alert(
-    problems
-      ? `Some items can’t be reserved:\n\n${problems}\n\nPlease update your cart and try again.`
-      : (holdRes?.error || 'Could not reserve stock. Please review your cart and try again.')
-  );
-  return;
-}
+    const list = holdRes?.lacks || holdRes?.missing || holdRes?.insufficient || holdRes?.items || [];
+    const problems = (Array.isArray(list) ? list : []).map(x => {
+      const name   = x?.item?.name || 'Item';
+      const reason = x?.reason || 'UNAVAILABLE';
+      const left   = (typeof x?.available === 'number') ? ` (left: ${x.available})` : '';
+      return `• ${name} — ${reason}${left}`;
+    }).join('\n');
+    alert(problems ? `Some items can’t be reserved:\n\n${problems}\n\nPlease update your cart and try again.`
+                   : (holdRes?.error || 'Could not reserve stock. Please review your cart and try again.'));
+    return;
+  }
 
   const holdId    = holdRes.hold_id;
   const holdToken = holdRes.hold_token;
 
-  // 3) Try to generate PayNow QR. If this fails, cancel the reservation in catch.
+  // 3) Generate PayNow QR
   try {
-    const res = await jsonpFetch(PAYNOW_API, {
-      endpoint: 'pay',
-      amount: totalNum.toFixed(2),
-      orderId: orderId
-    });
+    const res = await jsonpFetch(PAYNOW_API, { endpoint: 'pay', amount: totalNum.toFixed(2), orderId: orderId });
     if (!res || !res.ok || !res.payload) throw new Error(res && res.error || 'PAY_BAD_RESPONSE');
 
     document.getElementById('qrPayTo').textContent   = res.payToLabel || 'PayNow';
     document.getElementById('qrAmount').textContent  = totalText;
     document.getElementById('qrOrderId').textContent = orderId;
-
     renderQr(res.payload);
 
     // 4) Save draft (so modal survives reloads)
@@ -732,7 +346,7 @@ async function openQrCreateNew(){
     };
     setDraft(draft);
 
-    // 5) Ping your reserve logger (no-cors fire-and-forget)
+    // 5) 👇 Send "reserve" to GAS via Cloud Run proxy
     try {
       const payload = gatherOrderPayload();
       payload.order_id   = orderId;
@@ -743,13 +357,8 @@ async function openQrCreateNew(){
       payload.action     = 'reserve';
       payload.source     = 'checkout';
 
-      const RESERVE_API = 'https://script.google.com/macros/s/AKfycbyNAIzqGn_dRSfuG08mHewR5dX-ki9-a1g6Rr-Ztc5wlvEqqz0iXjDIEgO8UhBWSHndog/exec';
-      fetch(RESERVE_API, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      }).catch(err => console.warn('[reserve] send failed:', err));
+      // fire-and-forget (or await if you want to block UX on failure)
+      proxyPost(payload).catch(err => console.warn('[reserve via proxy] send failed:', err));
     } catch (e) {
       console.warn('[reserve] payload build failed:', e);
     }
@@ -770,160 +379,102 @@ async function openQrCreateNew(){
   }
 }
 
-// Guarded public opener: reuse existing draft if still valid
 async function openQr(formData){
- const d = getDraft();
+  const d = getDraft();
   const currentHash  = cartFingerprint();
   const currentTotal = totalCentsFromText(document.getElementById('sumTotal')?.textContent || '');
-
   if (d && !isExpired(d)) {
-    // Reopen with previous QR + resume countdown
     currentOrderId = d.orderId || currentOrderId;
     if (d.qrPayload) renderQr(d.qrPayload);
     endTime = d.endTime;
     document.getElementById('qrPayTo').textContent   = d.payToLabel || document.getElementById('qrPayTo').textContent || 'PayNow';
     document.getElementById('qrAmount').textContent  = d.amountText || document.getElementById('qrAmount').textContent;
     document.getElementById('qrOrderId').textContent = d.orderId || '—';
-
     tick();
     if (countdown) clearInterval(countdown);
     countdown = setInterval(tick, 1000);
     document.getElementById('qrModal').hidden = false;
     isModalOpen = true;
     try { history.pushState({qr:true}, '', location.href); } catch {}
-    return; // <- do NOT create a new one
+    return;
   }
-
-  // No valid draft → create a fresh QR/order
   await openQrCreateNew(formData);
 }
-
 function closeQr(){
   document.getElementById('qrModal').hidden = true;
   isModalOpen = false;
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
-
   const t = document.getElementById('qrTimer');
-  if (t) {
-    t.classList.remove('timer-urgent');
-    t.textContent = mmss(TIMER_MS);
-  }
+  if (t) { t.classList.remove('timer-urgent'); t.textContent = mmss(TIMER_MS); }
 }
-
 async function confirmAbortAndExit(){
-  if (isUploading) {
-    alert('Upload in progress—please wait a moment so we don’t lose your proof.');
-    return;
-  }
-  const ok = window.confirm(
-    'Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to the store.'
-  );
+  if (isUploading) { alert('Upload in progress—please wait a moment so we don’t lose your proof.'); return; }
+  const ok = window.confirm('Are you sure you want to close this payment window?\n\nIf you haven’t paid yet, you’ll be returned to the store.');
   if (!ok) return;
-
   closeQr();
-
-  // 🔴 NEW: cancel the reservation before clearing draft
   const d = getDraft();
-  if (d?.holdId && d?.holdToken) {
-    try { await apiCancel(d.holdId, d.holdToken, 'USER_ABORT'); } catch {}
-  }
+  if (d?.holdId && d?.holdToken) { try { await apiCancel(d.holdId, d.holdToken, 'USER_ABORT'); } catch {} }
   clearDraft();
-
   window.location.href = 'teststore.html';
 }
-
 function mmss(ms){
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
   const s = String(totalSec % 60).padStart(2, '0');
   return `${m}:${s}`;
 }
-
 async function tick(){
   const remainMs = Math.max(0, endTime - Date.now());
   const el = document.getElementById('qrTimer');
   if (el) {
     el.textContent = mmss(remainMs);
     const remainSec = Math.floor(remainMs / 1000);
-    if (remainSec <= 60) el.classList.add('timer-urgent');
-    else el.classList.remove('timer-urgent');
+    if (remainSec <= 60) el.classList.add('timer-urgent'); else el.classList.remove('timer-urgent');
   }
-
   if (remainMs <= 0){
-    if (_tickExpiredHandled) return;     // re-entry guard
+    if (_tickExpiredHandled) return;
     _tickExpiredHandled = true;
-
-    clearInterval(countdown);
-    countdown = null;
-
+    clearInterval(countdown); countdown = null;
     closeQr();
-
     const d = getDraft();
-    try {
-      if (d?.orderId) await notifyExpire(d.orderId, 'TIMEOUT'); // await so it has a chance to send
-    } catch {}
-
-    if (d?.holdId && d?.holdToken) {
-      try { await apiCancel(d.holdId, d.holdToken, 'TIMEOUT'); } catch {}
-    }
-
+    try { if (d?.orderId) await notifyExpire(d.orderId, 'TIMEOUT'); } catch {}
+    if (d?.holdId && d?.holdToken) { try { await apiCancel(d.holdId, d.holdToken, 'TIMEOUT'); } catch {} }
     clearDraft();
-
     window.alert('Payment session expired. Please open checkout again to get a new QR.');
-
-    // optional: mark redirecting and keep history clean
     isRedirecting = true;
     try { window.removeEventListener('beforeunload', beforeUnloadHandler); } catch {}
     window.location.replace('teststore.html');
   }
 }
 
-/* ========= OneMap postal -> address ========= */
+/* ========= OneMap postal -> address (unchanged) ========= */
 const postalCache = Object.create(null);
 try { Object.assign(postalCache, JSON.parse(sessionStorage.getItem('postalCache') || '{}')); } catch {}
 function savePostalCache(){ try { sessionStorage.setItem('postalCache', JSON.stringify(postalCache)); } catch {} }
-
 async function fetchSGAddressByPostal(postal) {
   const clean = String(postal || '').replace(/\D/g, '');
   if (clean.length !== 6) throw new Error('INPUT_6_DIGITS');
-
   if (postalCache[clean]) return postalCache[clean];
-
-  const data = await proxyFetch('elastic', {
-    searchVal: clean, size: '5', returnGeom: 'N', getAddrDetails: 'Y', pageNum: '1'
-  });
-
+  const data = await proxyFetch('elastic', { searchVal: clean, size: '5', returnGeom: 'N', getAddrDetails: 'Y', pageNum: '1' });
   const rows = Array.isArray(data?.results) ? data.results : [];
   const exact = rows.find(r => String(r.POSTAL) === clean) || rows[0];
   if (!exact) throw new Error('POSTAL_NOT_FOUND');
-
   const { BLK_NO, ROAD_NAME, POSTAL } = exact;
-  const addr = {
-    addr1: [BLK_NO, ROAD_NAME].filter(Boolean).join(' '),
-    city: 'Singapore',
-    postal: POSTAL || clean
-  };
-
-  postalCache[clean] = addr;
-  savePostalCache();
-  return addr;
+  const addr = { addr1: [BLK_NO, ROAD_NAME].filter(Boolean).join(' '), city: 'Singapore', postal: POSTAL || clean };
+  postalCache[clean] = addr; savePostalCache(); return addr;
 }
-
 function fillAddressFields(addr){
   const a1 = document.getElementById('fAddr1');
   const city = document.getElementById('fCity');
   const postalEl = document.getElementById('fPostal');
-
   if (a1) a1.value = addr.addr1 || '';
   if (city) city.value = addr.city || 'Singapore';
   if (postalEl && addr.postal) postalEl.value = addr.postal;
-
-  renderSummary();
-  syncPayCta();
+  renderSummary(); syncPayCta();
 }
 
-/* ========= Utilities ========= */
+/* ========= Utilities (unchanged) ========= */
 function debounce(fn, ms=300){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
 function parseCurrencyToNumberOrZero(s){ return parseCurrencyToNumber(s); }
 function setTouched(el){ if (!el.dataset.touched) el.dataset.touched = '1'; }
@@ -937,7 +488,6 @@ function markValidity(el){
 function renderErrors(){
   const box = document.getElementById('formErrors');
   if (!box) return;
-
   const msgs = [];
   const ids = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fMethod'];
   ids.forEach(id => {
@@ -947,158 +497,93 @@ function renderErrors(){
       msgs.push(el.validationMessage || 'Please check this field.');
     }
   });
-
   const agree = document.getElementById('disc1');
   if (agree && agree.dataset.touched === '1' && !agree.checked){
     msgs.push('Please agree that the information above is correct.');
   }
-
   box.textContent = msgs.join('\n');
 }
-  
 function clearLocalCartHard() {
   try {
-    localStorage.removeItem('cart');               // items
-    localStorage.removeItem('shippingMethod');     // chosen shipping
-    setSavedDiscountCode('');                      // clears DISC_KEY
+    localStorage.removeItem('cart');
+    localStorage.removeItem('shippingMethod');
+    setSavedDiscountCode('');
   } catch {}
-  try { renderSummary(); } catch {}                // repaint “$0.00” etc.
-  // Let other pages/navbars react if they listen:
+  try { renderSummary(); } catch {}
   try { window.dispatchEvent(new CustomEvent('cart:cleared')); } catch {}
 }
 
-/* ========= Upload (JSON, same as demo) ========= */
+/* ========= Upload (unchanged) ========= */
 async function uploadPaymentProofJSON() {
   const paidBtn  = document.getElementById('qrPaid');
   const statusEl = document.getElementById('uploadStatus');
   const fileInput= document.getElementById('proofFile');
   const f = fileInput?.files?.[0] || null;
-
   const cancelBtn = document.getElementById('qrCancel');
-
   if (!f) { alert('Please choose a payment screenshot before continuing.'); return false; }
-
   const okTypes = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
   if (!okTypes.includes(f.type)) { alert('Please upload a JPG/PNG/WebP/HEIC image.'); return false; }
   if (f.size > 15 * 1024 * 1024) { alert('File too large (max 15 MB).'); return false; }
-
-  paidBtn.disabled = true;
-  cancelBtn.disabled = true;
-  statusEl.textContent = 'Preparing your file…';
-
+  paidBtn.disabled = true; cancelBtn.disabled = true; statusEl.textContent = 'Preparing your file…';
   const b64 = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const dataUrl = reader.result;
-        const comma = dataUrl.indexOf(',');
-        resolve(dataUrl.slice(comma + 1));
-      } catch (e) { reject(e); }
+      try { const dataUrl = reader.result; const comma = dataUrl.indexOf(','); resolve(dataUrl.slice(comma + 1)); }
+      catch (e) { reject(e); }
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(f);
+    reader.onerror = reject; reader.readAsDataURL(f);
   });
-
   const amt = document.getElementById('qrAmount')?.textContent || '';
-  const payload = {
-    file_b64: b64,
-    filename: f.name,
-    mimetype: f.type || 'application/octet-stream',
-    note: `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}`
-  };
-
-  isUploading = true;
-  statusEl.textContent = 'Uploading...';
-
+  const payload = { file_b64: b64, filename: f.name, mimetype: f.type || 'application/octet-stream', note: `Order: ${currentOrderId || 'N/A'} | Amount: ${amt}` };
+  isUploading = true; statusEl.textContent = 'Uploading...';
   try {
-    const res = await fetch(UPLOAD_API, {
-  method: 'POST',
-  headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // ⬅️ changed
-  body: JSON.stringify(payload)
-});
-
-
+    const res = await fetch(UPLOAD_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
     const ct = res.headers.get('content-type') || '';
     if (ct.includes('application/json')) {
       const data = await res.json();
       if (data && (data.ok || data.success)) {
         lastProofUrl = data.proof_url || data.fileUrl || data.url || data.webViewLink || data.webContentLink || lastProofUrl;
-
         statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-        statusEl.classList.add('ok');
-        statusEl.classList.remove('err');
-        isUploading = false;
-        return true;
-      } else {
-        throw new Error(data?.error || 'Upload failed to reach server');
-      }
+        statusEl.classList.add('ok'); statusEl.classList.remove('err'); isUploading = false; return true;
+      } else { throw new Error(data?.error || 'Upload failed to reach server'); }
     }
-
     if (res.ok) {
       statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-      statusEl.classList.add('ok'); 
-      statusEl.classList.remove('err');
-      isUploading = false;
-      return true;
+      statusEl.classList.add('ok'); statusEl.classList.remove('err'); isUploading = false; return true;
     }
-
     throw new Error('Server returned ' + res.status);
-
   } catch (errCors) {
     try {
-      await fetch(UPLOAD_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        mode: 'no-cors'
-      });
+      await fetch(UPLOAD_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), mode: 'no-cors' });
       statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';
-      statusEl.classList.add('ok'); 
-      statusEl.classList.remove('err');
-      isUploading = false;
-      return true;
+      statusEl.classList.add('ok'); statusEl.classList.remove('err'); isUploading = false; return true;
     } catch (errNoCors) {
       console.error(errNoCors);
       statusEl.textContent = 'Upload failed. Please try again.'; 
-      statusEl.classList.add('err'); 
-      statusEl.classList.remove('ok');
-      paidBtn.disabled = false;
-      cancelBtn.disabled = false;
-      isUploading = false;
-      return false;
+      statusEl.classList.add('err'); statusEl.classList.remove('ok');
+      paidBtn.disabled = false; cancelBtn.disabled = false; isUploading = false; return false;
     }
   }
 }
 
-/* --- Attribute formatting helpers --- */
+/* --- Attribute formatting helpers (unchanged) --- */
 function escapeHtml(s){
-  return String(s)
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'",'&#39;');
+  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 }
-function normSeries(obj){
-  return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim();
-}
+function normSeries(obj){ return (obj?.["series name"] || obj?.series || obj?.seriesName || obj?.series_name || "").trim(); }
 function formatAttrs(it){
   const series = normSeries(it);
   const set    = (it.subcategory || it.set || it['set name'] || it.set_name || '').trim();
   const year   = (it.year || it.release_year || '').toString().trim();
   const rarity = (it.rarity || '').trim();
   const cond   = (it.condition || '').trim();
-
   const L = [];
-  if (series && set) L.push(`${series}: ${set}`);
-  else if (series)   L.push(series);
-  else if (set)      L.push(set);
-
+  if (series && set) L.push(`${series}: ${set}`); else if (series) L.push(series); else if (set) L.push(set);
   const R = [year, rarity, cond].filter(Boolean).join(' · ');
   return [L.join(''), R ? `- ${R}` : ''].filter(Boolean).join(' ');
 }
 
-/* ========= Summary + CTA ========= */
+/* ========= Summary + CTA (unchanged) ========= */
 function renderSummary(){
   const itemsEl    = document.getElementById('sumItems');
   const subtotalEl = document.getElementById('sumSubtotal');
@@ -1128,7 +613,6 @@ function renderSummary(){
 
   itemsEl.innerHTML = rows || '<div class="hint">No items available to purchase.</div>';
 
-  // base amounts
   const subtotal = cart.reduce((s, i) => {
     const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
     const u = Number(i.price ?? 0) || 0;
@@ -1138,12 +622,10 @@ function renderSummary(){
   const savedShip = getSavedShippingFromCart();
   let ship = Number(savedShip?.fee ?? 0);
 
-  // apply discount
   const code = getSavedDiscountCode();
   const disc = computeDiscount(subtotal, ship, code);
   ship = disc.ship;
 
-  // update rows
   subtotalEl.textContent = fmt(subtotal);
   shippingEl.textContent = fmt(ship);
 
@@ -1163,7 +645,7 @@ function renderSummary(){
   totalEl.textContent    = fmt(total);
 }
 
-  /* Build reservation items from the cart (server uses these to match rows) */
+/* Build reservation items from the cart (unchanged) */
 function buildHoldItemsFromCart(){
   return getCart().filter(isPurchasable).map(i => ({
     name: String(i.name || 'Item'),
@@ -1176,9 +658,7 @@ function buildHoldItemsFromCart(){
   }));
 }
 
-  
-  function gatherOrderPayload() {
-  // 1) Get form values
+function gatherOrderPayload() {
   const v = id => (document.getElementById(id)?.value || '').trim();
   const customer_name = v('fName');
   const email         = v('fEmail');
@@ -1191,64 +671,38 @@ function buildHoldItemsFromCart(){
   const methodLabel   = v('fMethodLabel');
   const methodId      = v('fMethod');
 
-  // 2) Cart summary (chargeables only)
   const cart  = getCart();
   const purch = cart.filter(isPurchasable);
   const savedShip = getSavedShippingFromCart();
   const shipFee   = Number(savedShip?.fee ?? 0);
 
-  // Compute subtotal first
   let subtotal = 0;
   const items = purch.map(i => {
     const qty  = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
     const unit = Number(i.price ?? 0) || 0;
     const line = unit * qty;
     subtotal  += line;
-    return {
-      name: String(i.name || 'Item'),
-      attrs: formatAttrs(i),
-      qty,
-      unit_price: unit,
-      line_total: line
-    };
+    return { name: String(i.name || 'Item'), attrs: formatAttrs(i), qty, unit_price: unit, line_total: line };
   });
 
-  // Apply discount
   const discCode = getSavedDiscountCode();
   const disc     = computeDiscount(subtotal, shipFee, discCode);
   const finalShip= Number(disc.ship || 0);
   const discount = Number(disc.amount || 0);
 
-  // Build totals (send positive magnitude for discounts)
   const totalNum = Math.max(0, +(subtotal + finalShip - discount).toFixed(2));
-  const totals = {
-    subtotal,
-    shipping: finalShip,
-    discount,                     // ✅ numeric, positive magnitude
-    total: totalNum,              // ✅ clean number, 2dp
-    discount_code: discCode || '',
-    discount_label: disc.label || ''
-  };
+  const totals = { subtotal, shipping: finalShip, discount, total: totalNum, discount_code: discCode || '', discount_label: disc.label || '' };
 
   return {
     order_id: currentOrderId || genOrderId(),
-    created_at: formatDDMMYYYYHHMM(),  // matches your Apps Script parser
-    customer_name,
-    email,
-    phone,
-    postal,
-    addr1,
-    addr2,
-    unit,
-    city,
+    created_at: formatDDMMYYYYHHMM(),
+    customer_name, email, phone, postal, addr1, addr2, unit, city,
     shipping_method: methodLabel || methodId,
     remarks: escapeHtml((document.getElementById('orderNotes')?.value || '').trim()),
-    items,
-    totals
+    items, totals
   };
 }
 
-  
 function isValidShipForm(){
   const reqIds = ['fName','fEmail','fPhone','fPostal','fAddr1','fUnit','fCity','fMethod'];
   for (const id of reqIds){
@@ -1256,12 +710,11 @@ function isValidShipForm(){
     if (!el || !el.value || (el.validity && !el.validity.valid)) return false;
   }
   const agree = document.getElementById('disc1');
-  const hasPurch = getCart().some(isPurchasable);           // ✅
+  const hasPurch = getCart().some(isPurchasable);
   const trap = document.getElementById('trapField');
-  if (trap && trap.value.trim()) return false;  // bot detected
+  if (trap && trap.value.trim()) return false;
   return !!(agree && agree.checked && hasPurch);
 }
-
 function syncPayCta(){
   const cta = document.getElementById('btnPay');
   if (!cta) return;
@@ -1270,7 +723,6 @@ function syncPayCta(){
   cta.classList.add('show');
   cta.title = ok ? '' : 'Add at least one available item to proceed.';
 }
-
 
 /* ========= Init ========= */
 function init(){
@@ -1291,18 +743,11 @@ function init(){
   document.getElementById('btnPay')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     if (isModalOpen) return;
-
-    btn.disabled = true;
-    btn.textContent = "Loading payment screen";
-    btn.classList.add("waiting");
-
-    try {
-      await openQr();
-    } finally {
+    btn.disabled = true; btn.textContent = "Loading payment screen"; btn.classList.add("waiting");
+    try { await openQr(); }
+    finally {
       if (!isModalOpen) {
-        btn.disabled = false;
-        btn.textContent = "Make Payment";
-        btn.classList.remove("waiting");
+        btn.disabled = false; btn.textContent = "Make Payment"; btn.classList.remove("waiting");
       }
     }
   });
@@ -1333,7 +778,6 @@ function init(){
     });
   }
 
-  // warm up audio after any gesture (safari quirks)
   window.addEventListener('pointerdown', () => {
     const a = document.getElementById('uploadSfx');
     if (a && a.readyState < 2) { try { a.load(); } catch{} }
@@ -1344,51 +788,32 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 document.getElementById('qrPaid')?.addEventListener('click', async (e) => {
   e.preventDefault();
-
-  // 🔊 Play SFX immediately on user gesture
   playUploadSfx();
-
   const ok = await uploadPaymentProofJSON();
   if (!ok) return;
 
-  // ✅ NEW: confirm the reservation on the server
-const d = getDraft();
-if (d?.holdId && d?.holdToken && (currentOrderId || d.orderId)) {
-  try {
-    const conf = await apiConfirm(d.holdId, d.holdToken, currentOrderId || d.orderId);
-    if (!conf?.ok) console.warn('Inventory confirm failed:', conf?.error);
-  } catch (e) {
-    console.warn('Inventory confirm error:', e);
+  const d = getDraft();
+  if (d?.holdId && d?.holdToken && (currentOrderId || d.orderId)) {
+    try {
+      const conf = await apiConfirm(d.holdId, d.holdToken, currentOrderId || d.orderId);
+      if (!conf?.ok) console.warn('Inventory confirm failed:', conf?.error);
+    } catch (e) { console.warn('Inventory confirm error:', e); }
   }
-}
 
-try {
-  const orderPayload = gatherOrderPayload();
+  try {
+    const orderPayload = gatherOrderPayload();
     orderPayload.order_id = currentOrderId || orderPayload.order_id;
     if (lastProofUrl) orderPayload.proof_url = lastProofUrl;
 
     let pdfResOk = false;
     try {
-      const pdfRes = await fetch(EMAIL_PDF_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
-      });
+      const pdfRes = await fetch(EMAIL_PDF_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderPayload) });
       if ((pdfRes.headers.get('content-type') || '').includes('application/json')) {
-        const data = await pdfRes.json();
-        pdfResOk = !!(data && data.ok);
-      } else {
-        pdfResOk = pdfRes.ok;
-      }
-    } catch (_) {/* ignore */}
-
+        const data = await pdfRes.json(); pdfResOk = !!(data && data.ok);
+      } else { pdfResOk = pdfRes.ok; }
+    } catch (_) {}
     if (!pdfResOk) {
-      await fetch(EMAIL_PDF_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload),
-        mode: 'no-cors'
-      });
+      await fetch(EMAIL_PDF_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderPayload), mode: 'no-cors' });
       pdfResOk = true;
     }
     if (!pdfResOk) console.warn('PDF emailer did not confirm success, but continuing UX flow.');
@@ -1397,29 +822,16 @@ try {
   }
 
   clearLocalCartHard();
-
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
   const statusEl = document.getElementById('uploadStatus');
-  statusEl.classList.add('ok');
-  statusEl.classList.remove('err');
-
-  statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';  
-
+  statusEl.classList.add('ok'); statusEl.classList.remove('err');
   statusEl.textContent = 'We will verify and send order confirmation soon.'; 
   await sleep(1500);                                                      
-
-  for (let s = 3; s >= 1; s--) {
-  statusEl.textContent = `Redirecting in ${s}…`;
-  await sleep(1000);
-}
-  
+  for (let s = 3; s >= 1; s--) { statusEl.textContent = `Redirecting in ${s}…`; await sleep(1000); }
   clearDraft();
-
-  suppressUnloadOnce = true;
-  isRedirecting = true;
-  isModalOpen = false;
+  suppressUnloadOnce = true; isRedirecting = true; isModalOpen = false;
   window.removeEventListener('beforeunload', beforeUnloadHandler);
   window.location.replace('teststore.html');
   return;
@@ -1429,9 +841,7 @@ const EMAIL_DOMAINS = ['gmail.com','yahoo.com','outlook.com','hotmail.com','live
 function validateEmailDomain(value){
   const v = String(value || '').trim().toLowerCase();
   if (!v) return { ok:false, msg:'Email is required' };
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
-    return { ok:false, msg:'Enter a valid email address' };
-  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { return { ok:false, msg:'Enter a valid email address' }; }
   const domain = v.split('@')[1] || '';
   if (!EMAIL_DOMAINS.includes(domain)) {
     return { ok:false, msg:`Please use a common email domain (e.g. ${EMAIL_DOMAINS.slice(0,3).join(', ')})` };
@@ -1451,10 +861,8 @@ async function tryLookupPostal(){
   if (!postalEl) return;
   const val = postalEl.value.replace(/\D/g,'');
   if (val.length !== 6) { hint(''); postalEl.dataset.state = ''; return; }
-
   const myId = ++lastPostalReqId;
   hint('Looking up…');
-
   try {
     const addr = await fetchSGAddressByPostal(val);
     if (myId !== lastPostalReqId) return;
@@ -1516,73 +924,40 @@ postalEl?.addEventListener('blur', () => tryLookupPostal());
 function wireDiscountUI(){
   const input = document.getElementById('discCode');
   const apply = document.getElementById('discApply');
-
-  // Preload saved code into the box (nice UX)
-  const saved = (getSavedDiscountCode() || '').toLowerCase();  // in wireDiscountUI()
+  const saved = (getSavedDiscountCode() || '').toLowerCase();
   if (saved && input) input.value = saved;
   if (saved && DISCOUNT_RULES[saved]) apply.textContent = 'Remove';
-
-  // Toggle Apply/Remove in one place
   apply?.addEventListener('click', () => {
     const mode = apply.textContent.trim().toLowerCase();
-
-    // Remove current code
     if (mode === 'remove') {
       setSavedDiscountCode('');
       if (input) input.value = '';
       apply.textContent = 'Apply';
-      renderSummary();
-      syncPayCta();
+      renderSummary(); syncPayCta();
       return;
     }
-
-    // Apply entered code
     const entered = (input?.value || '').trim().toLowerCase();
-    if (!entered) {                       // empty → clear
-      setSavedDiscountCode('');
-      renderSummary();
-      syncPayCta();
-      return;
-    }
-    if (!DISCOUNT_RULES[entered]) {
-  alert('Invalid or expired code. Please check and try again.');
-  return;
-}
-// if we want to check eligibility right away (instead of during renderSummary)
-const subtotalNow = getCart().filter(isPurchasable).reduce((s,i)=>{
-  const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
-  const u = Number(i.price ?? 0) || 0;
-  return s + (u*q);
-}, 0);
-const min = Number(DISCOUNT_RULES[entered].minSubtotal || 0);
-if (min > 0 && subtotalNow < min) {
-  alert(`This code requires a minimum subtotal of ${fmt(min)}.`);
-  return;
-}
+    if (!entered) { setSavedDiscountCode(''); renderSummary(); syncPayCta(); return; }
+    if (!DISCOUNT_RULES[entered]) { alert('Invalid or expired code. Please check and try again.'); return; }
+    const subtotalNow = getCart().filter(isPurchasable).reduce((s,i)=>{
+      const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
+      const u = Number(i.price ?? 0) || 0;
+      return s + (u*q);
+    }, 0);
+    const min = Number(DISCOUNT_RULES[entered].minSubtotal || 0);
+    if (min > 0 && subtotalNow < min) { alert(`This code requires a minimum subtotal of ${fmt(min)}.`); return; }
     setSavedDiscountCode(entered);
     apply.textContent = 'Remove';
-    renderSummary();                       // recompute totals
-    syncPayCta();
+    renderSummary(); syncPayCta();
   });
-
-  // (Nice UX) Press Enter in the input acts like clicking Apply
   input?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      apply?.click();
-    }
+    if (e.key === 'Enter') { e.preventDefault(); apply?.click(); }
   });
 }
 
 function beforeUnloadHandler(e){
-  if (isRedirecting || suppressUnloadOnce) {
-    suppressUnloadOnce = false;
-    return;
-  }
-  if (isModalOpen || isUploading) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
+  if (isRedirecting || suppressUnloadOnce) { suppressUnloadOnce = false; return; }
+  if (isModalOpen || isUploading) { e.preventDefault(); e.returnValue = ''; }
 }
 window.addEventListener('beforeunload', beforeUnloadHandler);
 
@@ -1590,105 +965,62 @@ window.addEventListener('popstate', () => {
   if (isRedirecting) return;
   if (isModalOpen) {
     try { history.pushState({qr:true}, '', location.href); } catch {}
-    if (!document.getElementById('qrModal').hidden) {
-      confirmAbortAndExit();
-    }
+    if (!document.getElementById('qrModal').hidden) { confirmAbortAndExit(); }
   }
 });
 
-// Make sure DRAFT_KEY is defined above this
-// const DRAFT_KEY = '...';
-
 window.addEventListener('storage', async (e) => {
   if (e.key !== DRAFT_KEY) return;
-
   const d = getDraft();
-
   if (!d || isExpired(d)) {
     if (countdown) { clearInterval(countdown); countdown = null; }
-    if (d?.holdId && d?.holdToken) {
-      try { await apiCancel(d.holdId, d.holdToken, 'EXTERNAL_CLEAR'); } catch {}
-    }
-    closeQr();
-    return;
+    if (d?.holdId && d?.holdToken) { try { await apiCancel(d.holdId, d.holdToken, 'EXTERNAL_CLEAR'); } catch {} }
+    closeQr(); return;
   }
-
-  // Mirror an updated still-valid draft
   currentOrderId = d.orderId || currentOrderId;
   if (d.qrPayload) renderQr(d.qrPayload);
   endTime = d.endTime;
-
   if (countdown) { clearInterval(countdown); }
-  tick();
-  countdown = setInterval(tick, 1000);
-
+  tick(); countdown = setInterval(tick, 1000);
   document.getElementById('qrModal').hidden = false;
   isModalOpen = true;
 });
 
-
 document.addEventListener('keydown', (e) => {
   const isRefreshKey = (e.key === 'F5') || ((e.key?.toLowerCase?.() === 'r') && (e.ctrlKey || e.metaKey));
   if (!isRefreshKey) return;
-
-  if (isModalOpen || isUploading) {
-    e.preventDefault();
-    alert('Payment in progress — please do not refresh or close this page.');
-    return;
-  }
-
+  if (isModalOpen || isUploading) { e.preventDefault(); alert('Payment in progress — please do not refresh or close this page.'); return; }
   e.preventDefault();
   const ok = window.confirm('Return to the store? Unsaved checkout info will be lost.');
   if (ok) window.location.href = 'teststore.html';
 });
 
-// Auto-restore a live draft when the page loads
 window.addEventListener('DOMContentLoaded', async () => {
   const d = getDraft();
   if (!d) return;
-
-  if (isExpired(d)) { 
-    notifyExpire(d.orderId, 'TIMEOUT'); 
-    clearDraft(); 
-    return; 
-  }
-
+  if (isExpired(d)) { notifyExpire(d.orderId, 'TIMEOUT'); clearDraft(); return; }
   const currentHash  = cartFingerprint();
   const currentTotal = totalCentsFromText(document.getElementById('sumTotal')?.textContent || '');
-
   if (d.cartHash !== currentHash || d.totalCents !== currentTotal) {
-    const ok = window.confirm(
-      `Your cart changed from ${d.amountText} to ${document.getElementById('sumTotal')?.textContent || ''}.\n` +
-      `Generate a new QR for the updated amount?`
-    );
-    if (ok) {
-      try { await notifyExpire(d.orderId, 'CART_CHANGED'); } catch {}
-      clearDraft();
-      return; // user will click Make Payment again
-    }
+    const ok = window.confirm(`Your cart changed from ${d.amountText} to ${document.getElementById('sumTotal')?.textContent || ''}.\nGenerate a new QR for the updated amount?`);
+    if (ok) { try { await notifyExpire(d.orderId, 'CART_CHANGED'); } catch {} clearDraft(); return; }
   }
-
-  // Resume existing session
   currentOrderId = d.orderId || currentOrderId;
   if (d.qrPayload) renderQr(d.qrPayload);
   endTime = d.endTime;
-
   document.getElementById('qrPayTo').textContent   = d.payToLabel || 'PayNow';
   document.getElementById('qrAmount').textContent  = d.amountText || document.getElementById('sumTotal')?.textContent || '$0.00';
   document.getElementById('qrOrderId').textContent = d.orderId || '—';
-
   tick();
   if (countdown) clearInterval(countdown);
   countdown = setInterval(tick, 1000);
   document.getElementById('qrModal').hidden = false;
   isModalOpen = true;
 });
-  
+
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadDiscountRules();   // ← get rules from the sheet
-  init();                      // renders summary (now aware of rules)
-  wireDiscountUI();            // wires Apply/Remove using those rules
+  await loadDiscountRules();
+  init();
+  wireDiscountUI();
 });
 </script>
-</body>
-</html>
