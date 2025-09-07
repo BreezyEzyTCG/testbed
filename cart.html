@@ -831,10 +831,23 @@ async function renderCart(){
 
     if (!cart.length){
       if (cartContainer){
-        cartContainer.innerHTML = `<tr><td colspan="4" style="text-align:center;">Your cart is empty.</td></tr>`;
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 4;
+        td.style.textAlign = 'center';
+        td.textContent = 'Your cart is empty.';
+        tr.appendChild(td);
+        cartContainer.appendChild(tr);
       }
       if (cartList){
-        cartList.innerHTML = `<div class="cart-item" style="justify-content:center; grid-template-columns:1fr;"><div style="opacity:.75;">Your cart is empty.</div></div>`;
+const d = document.createElement('div');
+d.className = 'cart-item';
+d.style.cssText = 'justify-content:center; grid-template-columns:1fr;';
+const inner = document.createElement('div');
+inner.style.opacity = '0.75';
+inner.textContent = 'Your cart is empty.';
+d.appendChild(inner);
+cartList.appendChild(d);
       }
       window.currentCartSubtotal = 0;
       updateSummaryTotals(0);
@@ -862,12 +875,20 @@ async function renderCart(){
       holds.forEach(addRow);
       if (!normals.length && !holds.length && oos.length){
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="4" style="text-align:center; opacity:.8;">No items currently available to purchase.</td>`;
+      const td2 = document.createElement('td');
+      td2.colSpan = 4;
+      td2.style.cssText = 'text-align:center; opacity:.8;';
+      td2.textContent = 'No items currently available to purchase.';
+      tr.appendChild(td2);
         cartContainer.appendChild(tr);
       }
       if (oos.length){
         const hdr = document.createElement('tr');
-        hdr.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color:#dc2626; background:#fafafa;">Gone, for now:</td>`;
+      const td3 = document.createElement('td');
+      td3.colSpan = 4;
+      td3.style.cssText = 'text-align:center; font-weight:700; color:#dc2626; background:#fafafa;';
+      td3.textContent = 'Gone, for now:';
+      hdr.appendChild(td3);
         cartContainer.appendChild(hdr);
         oos.forEach(addRow);
       }
@@ -885,7 +906,10 @@ async function renderCart(){
       if (oos.length){
         const h = document.createElement('div');
         h.style.cssText = 'padding:8px; font-weight:700; text-align:center; border-bottom:1px solid #eee; background:#fafafa;';
-        h.innerHTML = `<span style="color:#dc2626">Out of Stock</span>`;
+const span = document.createElement('span');
+span.style.color = '#dc2626';
+span.textContent = 'Out of Stock';
+h.appendChild(span);
         cartList.appendChild(h);
         oos.forEach(addCard);
       }
