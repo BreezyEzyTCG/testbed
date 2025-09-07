@@ -590,6 +590,12 @@ function renderSummary(){
   const shippingEl = document.getElementById('sumShipping');
   const totalEl    = document.getElementById('sumTotal');
 
+  // If the summary container(s) aren't in the DOM yet, bail quietly.
+  if (!itemsEl || !subtotalEl || !shippingEl || !totalEl) {
+    console.warn('[renderSummary] summary elements not found yet — skipping this repaint.');
+    return;
+  }
+
   const raw  = getCart();
   const cart = raw.filter(isPurchasable);
 
@@ -613,6 +619,7 @@ function renderSummary(){
 
   itemsEl.innerHTML = rows || '<div class="hint">No items available to purchase.</div>';
 
+  // base amounts
   const subtotal = cart.reduce((s, i) => {
     const q = Math.max(1, Number(i.qty ?? i.quantity ?? 1) || 1);
     const u = Number(i.price ?? 0) || 0;
@@ -622,27 +629,31 @@ function renderSummary(){
   const savedShip = getSavedShippingFromCart();
   let ship = Number(savedShip?.fee ?? 0);
 
+  // apply discount
   const code = getSavedDiscountCode();
   const disc = computeDiscount(subtotal, ship, code);
   ship = disc.ship;
 
+  // update rows
   subtotalEl.textContent = fmt(subtotal);
   shippingEl.textContent = fmt(ship);
 
-  const discRow = document.getElementById('discRowAmount');
-  const discTag = document.getElementById('discCodeTag');
+  const discRow   = document.getElementById('discRowAmount');
+  const discTag   = document.getElementById('discCodeTag');
   const discAmtEl = document.getElementById('sumDiscount');
 
-  if (disc.amount > 0 || code) {
-    discRow.hidden = false;
-    discAmtEl.textContent = `-${fmt(disc.amount)}`;
-    discTag.textContent = code ? `(${(disc.label || code).toString()})` : '';
-  } else {
-    discRow.hidden = true;
+  if (discRow && discAmtEl) {
+    if (disc.amount > 0 || code) {
+      discRow.hidden = false;
+      discAmtEl.textContent = `-${fmt(disc.amount)}`;
+      if (discTag) discTag.textContent = code ? `(${(disc.label || code).toString()})` : '';
+    } else {
+      discRow.hidden = true;
+    }
   }
 
   const total = Math.max(0, subtotal + ship - disc.amount);
-  totalEl.textContent    = fmt(total);
+  totalEl.textContent = fmt(total);
 }
 
 /* Build reservation items from the cart (unchanged) */
