@@ -1717,10 +1717,10 @@ function setupMiniCart(){
     const c = document.querySelector('.card-container');
     if (c) {
       c.innerHTML = `
-        <div style="background:#fff;padding:14px;border-radius:10px">
-          <p><strong>Error loading store inventory.</strong></p>
-          <p style="color:#555;font-size:.9rem">Details: ${String(err?.message || err)}</p>
-        </div>`;
+  <div style="...">
+    <p><strong>Error loading store inventory.</strong></p>
+    <p style="...">Details: ${String(err?.message || err)}</p>
+  </div>`;
     }
   } finally {
     hideSpinner();
@@ -2354,16 +2354,25 @@ document.getElementById('qvDesc').innerHTML = combined || '-';
       product.subcategory || ''
     );
 
-  // Thumbs / nav
-  qv.thumbs.innerHTML = '';
-  qv.images.forEach((src, i) => {
-    const t = document.createElement('button');
-    t.type = 'button';
-    t.className = 'qv-thumb' + (i === 0 ? ' active' : '');
-    t.innerHTML = `<img src="${src}" alt="thumbnail ${i+1}">`;
-    t.addEventListener('click', (e) => { e.stopPropagation(); showSlide(i); });
-    qv.thumbs.appendChild(t);
+  // Thumbs / nav (safe DOM creation, no innerHTML)
+qv.thumbs.innerHTML = '';
+qv.images.forEach((src, i) => {
+  const t = document.createElement('button');
+  t.type = 'button';
+  t.className = 'qv-thumb' + (i === 0 ? ' active' : '');
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = `thumbnail ${i+1}`;
+
+  t.appendChild(img);
+  t.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showSlide(i);
   });
+
+  qv.thumbs.appendChild(t);
+});
 
   showSlide(0);
   if (qv._resetToFit) qv._resetToFit();
