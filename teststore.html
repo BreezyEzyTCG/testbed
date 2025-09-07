@@ -1531,8 +1531,8 @@ function renderMiniCart(){
 let miniNoteHTML = '';
 if (parts.available <= 0) {
   if (prod?.status_label) {
-    // Always use backend label (On hold — ~X min, last unit in checkout, etc.)
-    miniNoteHTML = ` <span class="mc-note ${parts.reserved > 0 ? 'hold' : 'oos'}">${prod.status_label}</span>`;
+    // ✅ escape status_label to prevent HTML injection
+    miniNoteHTML = ` <span class="mc-note ${parts.reserved > 0 ? 'hold' : 'oos'}">${esc(prod.status_label)}</span>`;
   } else {
     miniNoteHTML = ` <span class="mc-note oos">Out of stock</span>`;
   }
@@ -1541,10 +1541,6 @@ if (parts.available <= 0) {
   miniNoteHTML = ` <span class="mc-note">${parts.reservedNote.replace('reserved-note','')}</span>`;
 }
 
-    
-
-
-
   const row = document.createElement("div");
   row.className = "mc-item" + ((_oos || Number(stock||0) <= 0) ? " mc-oos" : "");
 
@@ -1552,7 +1548,7 @@ if (parts.available <= 0) {
   row.innerHTML = `
     <div class="mc-thumb"><img src="${image||''}" alt=""></div>
     <div class="mc-meta">
-      <p class="mc-name" title="${name||''}">${name||''}</p>
+      <p class="mc-name" title="${esc(name)}">${esc(name)}</p>
       <p class="mc-price">$${safeNumber(price,0).toFixed(2)}${miniNoteHTML}</p>
       <div class="mc-qty">
         <img src="assets/images/minus%20button.svg" alt="Decrease" onclick="decQty('${safeKey}')" />
@@ -1779,7 +1775,7 @@ function setupMiniCart(){
                     </span>`;
     } else if (reserved > 0 && available <= 0) {
       stockNote = ` <span class="reserved-note" style="font-size:0.75rem; color:#2563eb; font-weight:500;">
-                      (${statusLabel || "On hold — last unit in checkout"})
+                      (${esc(statusLabel) || "On hold — last unit in checkout"})
                     </span>`;
     }
 
@@ -1789,13 +1785,13 @@ function setupMiniCart(){
       ${badge ? `<div class="badge ${badge.cls}">${badge.label}</div>` : ``}
       <img src="${p.image_url || ""}" alt="${p.name || "Card"}" />
       <div class="title-block">
-        <h3 class="card-title">${p.name || ""}</h3>
-        <p class="series-name">${p["series name"] || ""}</p>
+        <h3 class="card-title">${esc(p.name)}</h3>
+        <p class="series-name">${esc(p["series name"])}</p>
       </div>
       <div class="card-info">
         <p class="price">$${price.toFixed(2)}</p>
-        <p class="rarity"><strong>Rarity:</strong> ${p.rarity || ""}</p>
-        <p class="condition"><strong>Condition:</strong> ${p.condition || ""}</p>
+        <p class="rarity"><strong>Rarity:</strong> ${esc(p.rarity)}</p>
+        <p class="condition"><strong>Condition:</strong> ${esc(p.condition)}</p>
         <p class="stock"><strong>Stock:</strong> ${available}${stockNote}</p>
       </div>
       <div class="product-actions">
