@@ -362,18 +362,33 @@ const DISCOUNTS_API = INVENTORY_API;
 /* ===== Proxy (Cloud Run) ===== */
 const PROXY_URL = 'https://checkoutproxy-294769499638.asia-southeast1.run.app/apps-script';
 
+// REPLACE your existing proxyPost with this defensive version
 async function proxyPost(payload){
+  // Debug: see exactly what we’re sending
+  console.log('[proxyPost →]', payload);
+
   const res = await fetch(PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(payload || {})
   });
+
+  const text = await res.text();         // read once
   if (!res.ok) {
-    const t = await res.text().catch(()=>'');
-    throw new Error(`Proxy ${res.status}: ${t || 'request failed'}`);
+    throw new Error(`Proxy ${res.status}: ${text || 'request failed'}`);
   }
-  return res.json();  // Apps Script returns JSON
+  try {
+    return JSON.parse(text);             // parse if JSON
+  } catch {
+    // If server ever returns non-JSON, you’ll see it clearly
+    console.warn('[proxyPost] Non-JSON response:', text);
+    return { ok:false, error:'NON_JSON_RESPONSE', raw:text };
+  }
 }
+
   
   // Same normalizer you use on cart page (short version)
 function normalizeCart(arr){
