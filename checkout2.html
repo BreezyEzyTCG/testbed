@@ -359,6 +359,22 @@ const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8
 const INVENTORY_API  = 'https://script.google.com/macros/s/AKfycbxXkVLXwPwvEwj6X_ugCQmGJz9HcGyKxsJG2KSMkO9UthlmjNI2hMPlbB8ksr9sX4I/exec';
 const DISCOUNTS_API = INVENTORY_API;
 
+  /* ========= CLOUD RUN PROXY =========
+   This forwards JSON to your Apps Script logger/expire endpoints.
+   Replace the URL with your Cloud Run HTTPS URL. */
+const PROXY_URL = 'https://<your-cloud-run-host>/apps-script';
+
+async function proxyPost(payload){
+  const res = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload || {})
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Proxy ${res.status}: ${text}`);
+  try { return JSON.parse(text); } catch { return { ok:false, raw:text }; }
+}
+
   // Same normalizer you use on cart page (short version)
 function normalizeCart(arr){
   return (arr || []).map(i => {
