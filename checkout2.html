@@ -634,14 +634,11 @@ function remainingMs(d){ return Math.max(0, Number(d.endTime) - now()); }
 async function notifyExpire(orderId, reason){
   if (!orderId) return;
   try {
-    await fetch(EXPIRE_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // ⬅️ changed
-      body: JSON.stringify({ action:'expire', orderId, reason: reason || 'TIMEOUT' })
-    });
-  } catch (e) {}
+    await proxyPost({ endpoint: 'expire', data: { action:'expire', orderId, reason: reason || 'TIMEOUT' } });
+  } catch (e) {
+    console.warn('[expire] proxy send failed:', e);
+  }
 }
-
   
 /* ===== Payment timer length (10 minutes) ===== */
 const TIMER_MS = 15 * 60 * 1000;
