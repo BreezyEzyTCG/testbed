@@ -949,6 +949,17 @@ function renderErrors(){
 
   box.textContent = msgs.join('\n');
 }
+  
+function clearLocalCartHard() {
+  try {
+    localStorage.removeItem('cart');               // items
+    localStorage.removeItem('shippingMethod');     // chosen shipping
+    setSavedDiscountCode('');                      // clears DISC_KEY
+  } catch {}
+  try { renderSummary(); } catch {}                // repaint “$0.00” etc.
+  // Let other pages/navbars react if they listen:
+  try { window.dispatchEvent(new CustomEvent('cart:cleared')); } catch {}
+}
 
 /* ========= Upload (JSON, same as demo) ========= */
 async function uploadPaymentProofJSON() {
@@ -1376,7 +1387,9 @@ try {
   } catch (err) {
     console.error('PDF emailer error:', err);
   }
-  
+
+  clearLocalCartHard();
+
   if (countdown) { clearInterval(countdown); countdown = null; }
   endTime = 0;
 
@@ -1385,15 +1398,14 @@ try {
   statusEl.classList.remove('err');
 
   statusEl.textContent = 'Thank you for the wait, your upload is completed ✓';  
-  await sleep(1500);                                                       
 
   statusEl.textContent = 'We will verify and send order confirmation soon.'; 
-  await sleep(2000);                                                      
+  await sleep(1500);                                                      
 
-  for (let s = 5; s >= 1; s--) {
-    statusEl.textContent = `You’ll be redirected to the store in ${s} second${s===1?'':'s'}…`;
-    await sleep(1000);
-  }
+  for (let s = 3; s >= 1; s--) {
+  statusEl.textContent = `Redirecting in ${s}…`;
+  await sleep(1000);
+}
   
   clearDraft();
 
