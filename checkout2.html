@@ -359,37 +359,6 @@ const EMAIL_PDF_API = 'https://script.google.com/macros/s/AKfycbx5T0U7CoGlJ1-MY8
 const INVENTORY_API  = 'https://script.google.com/macros/s/AKfycbxXkVLXwPwvEwj6X_ugCQmGJz9HcGyKxsJG2KSMkO9UthlmjNI2hMPlbB8ksr9sX4I/exec';
 const DISCOUNTS_API = INVENTORY_API;
 
-/* ===== Proxy (Cloud Run) ===== */
-const PROXY_URL = 'https://checkoutproxy-294769499638.asia-southeast1.run.app/apps-script';
-
-// REPLACE your existing proxyPost with this defensive version
-async function proxyPost(payload){
-  // Debug: see exactly what we’re sending
-  console.log('[proxyPost →]', payload);
-
-  const res = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify(payload || {})
-  });
-
-  const text = await res.text();         // read once
-  if (!res.ok) {
-    throw new Error(`Proxy ${res.status}: ${text || 'request failed'}`);
-  }
-  try {
-    return JSON.parse(text);             // parse if JSON
-  } catch {
-    // If server ever returns non-JSON, you’ll see it clearly
-    console.warn('[proxyPost] Non-JSON response:', text);
-    return { ok:false, error:'NON_JSON_RESPONSE', raw:text };
-  }
-}
-
-  
   // Same normalizer you use on cart page (short version)
 function normalizeCart(arr){
   return (arr || []).map(i => {
@@ -410,26 +379,36 @@ function fmt(n){ return (n ?? 0).toLocaleString('en-SG',{style:'currency', curre
 // A line is purchasable only if it has NO status flag and has qty > 0
 const isPurchasable = i => !i.status && (Number(i.qty ?? i.quantity) || 0) > 0;
 
-// Use Cloud Run proxy (POST JSON) instead of JSONP
+// Replace your old fetch-based functions with these:
 async function apiHold(items, userRef){
-  return proxyPost({ action: 'hold', items, user_ref: userRef || '' });
+  return await jsonpFetchB64(INVENTORY_API, 'hold', { items, user_ref: userRef || '' });
 }
 
 async function apiCancel(holdId, holdToken, reason){
   if (!holdId || !holdToken) return { ok:true };
-  return proxyPost({ action: 'cancel', hold_id: holdId, hold_token: holdToken, reason: reason || '' });
+  return await jsonpFetchB64(INVENTORY_API, 'cancel', {
+    hold_id: holdId,
+    hold_token: holdToken,
+    reason: reason || ''
+  });
 }
 
 async function apiConfirm(holdId, holdToken, orderId){
-  if (!holdId || !holdToken || !orderId) return { ok:false, error:'Missing fields' };
-  return proxyPost({ action: 'confirm', hold_id: holdId, hold_token: holdToken, order_id: orderId });
+  if (!holdId || !holdToken || !orderId)
+    return { ok:false, error:'Missing fields' };
+  return await jsonpFetchB64(INVENTORY_API, 'confirm', {
+    hold_id: holdId,
+    hold_token: holdToken,
+    order_id: orderId
+  });
 }
 
 async function loadDiscountRules(){
   try {
-    const res = await proxyPost({ action: 'discounts' });
+    // Use JSONP-with-base64 like other INVENTORY_API calls
+    const res = await jsonpFetchB64(DISCOUNTS_API, 'discounts', {}); 
     if (res && res.ok && res.rules) {
-      DISCOUNT_RULES = res.rules;
+      DISCOUNT_RULES = res.rules; // {code:{kind,value,label,minSubtotal}}
     } else {
       console.warn('[discounts] Bad response:', res);
     }
@@ -638,9 +617,15 @@ function remainingMs(d){ return Math.max(0, Number(d.endTime) - now()); }
 
 async function notifyExpire(orderId, reason){
   if (!orderId) return;
-  try { await proxyPost({ action: 'expire', orderId, reason: reason || 'TIMEOUT' }); }
-  catch (_) { /* non-fatal */ }
+  try {
+    await fetch(EXPIRE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // ⬅️ changed
+      body: JSON.stringify({ action:'expire', orderId, reason: reason || 'TIMEOUT' })
+    });
+  } catch (e) {}
 }
+
   
 /* ===== Payment timer length (10 minutes) ===== */
 const TIMER_MS = 15 * 60 * 1000;
