@@ -1170,7 +1170,7 @@ function playSfx(){
     let toastHideTimer = null;
     function showToast(msg, duration = 4000) {
   const toast = document.getElementById("toast");
-  toast.innerHTML = msg; // ← was textContent
+  toast.textContent = msg;
   toast.style.display = "block";
   toast.classList.remove("show");
   void toast.offsetWidth;
